@@ -8,9 +8,9 @@ spring:
     import:
       - optional:file:./.env[.properties]
   datasource:
-    url: ${DB_URL_PROD}
-    username: ${DB_USERNAME_PROD}
-    password: ${DB_PASSWORD_PROD}
+    url: ${MYSQL_URL_PROD}
+    username: ${MYSQL_USERNAME_PROD}
+    password: ${MYSQL_PASSWORD_PROD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       connectionTimeout: 10000
@@ -35,7 +35,7 @@ spring:
     store-type: redis
     timeout: 1800
   flyway:
-    url: ${DB_URL_PROD}
+    url: ${MYSQL_URL_PROD}
     enabled: true
     locations: classpath:db/migration
   cache:
