@@ -4,10 +4,13 @@ server:
 spring:
   application:
     name: flexrate-back
+  config:
+    import:
+      - optional:file:./.env[.properties]
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       connectionTimeout: 10000
@@ -18,7 +21,7 @@ spring:
       leak-detection-threshold: 2000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         show_sql: true
@@ -42,8 +45,16 @@ spring:
       mode: always
 logging:
   level:
+    root: INFO
+    com.flexrate.flexrate_back: DEBUG
     org.hibernate.SQL: debug
     org.springframework: info
+  file:
+    path: logs
+  logback:
+    rollingpolicy:
+      max-history: 30
+      max-file-size: 10MB
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

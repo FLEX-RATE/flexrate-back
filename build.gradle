@@ -40,6 +40,8 @@ dependencies {
 	implementation 'org.flywaydb:flyway-mysql'
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	implementation 'io.netty:netty-resolver-dns-native-macos:4.1.96.Final:osx-aarch_64'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'

@@ -6,7 +6,7 @@ services:
     container_name: flexrate-mysql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_USER: ${MYSQL_USERNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
@@ -34,11 +34,11 @@ services:
       - redis
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+      MYSQL_URL: ${MYSQL_URL_PROD}
+      MYSQL_USERNAME: ${MYSQL_USERNAME_PROD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD_PROD}
+      REDIS_HOST: ${REDIS_HOST_PROD}
+      REDIS_PORT: ${REDIS_PORT_PROD}
     restart: always
 
 volumes:
