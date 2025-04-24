@@ -45,8 +45,16 @@ spring:
       mode: always
 logging:
   level:
+    root: INFO
+    com.flexrate.flexrate_back: DEBUG
     org.hibernate.SQL: debug
     org.springframework: info
+  file:
+    path: logs
+  logback:
+    rollingpolicy:
+      max-history: 30
+      max-file-size: 10MB
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
