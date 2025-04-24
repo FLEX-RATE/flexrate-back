@@ -8,7 +8,6 @@ import java.util.List;
 @Entity
 @Table(name = "LoanProduct")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

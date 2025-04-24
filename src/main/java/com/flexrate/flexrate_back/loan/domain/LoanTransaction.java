@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "LoanTransaction")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

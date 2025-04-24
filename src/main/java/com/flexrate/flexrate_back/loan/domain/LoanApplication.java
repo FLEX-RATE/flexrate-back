@@ -11,7 +11,6 @@ import java.util.List;
 @Entity
 @Table(name = "LoanApplication")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
