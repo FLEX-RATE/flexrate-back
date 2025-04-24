@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: flexrate-back
+  config:
+    import:
+      - optional:file:./.env[.properties]
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -18,7 +21,7 @@ spring:
       leak-detection-threshold: 2000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         show_sql: true
