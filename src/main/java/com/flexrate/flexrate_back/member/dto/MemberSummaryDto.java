@@ -18,5 +18,5 @@ public record MemberSummaryDto(
         LocalDateTime createdAt,
         LocalDateTime lastLoginAt,
         Boolean hasLoan,
-        Integer loanCount
+        Integer loanTransactionCount
 ) {}

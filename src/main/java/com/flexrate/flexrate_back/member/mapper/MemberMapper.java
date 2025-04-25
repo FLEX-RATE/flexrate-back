@@ -19,7 +19,7 @@ public class MemberMapper {
                 .lastLoginAt(member.getLastLoginAt())
                 // 현재 대출 서비스 이용 중 여부 (EXECUTED 상태인 경우)
                 .hasLoan(member.getLoanApplication() != null && member.getLoanApplication().getStatus() == LoanApplicationStatus.EXECUTED)
-                .loanCount(member.getLoanApplication() != null ? member.getLoanApplication().getLoanTransactions().size() : 0)
+                .loanTransactionCount(member.getLoanApplication() != null ? member.getLoanApplication().getLoanTransactions().size() : 0)
                 .build();
     }
 }

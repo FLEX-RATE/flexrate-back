@@ -42,7 +42,11 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         (request.endDate() != null ? member.createdAt.loe(request.endDate().atTime(23, 59, 59)) : null),
                         request.hasLoan() != null && request.hasLoan()
                                 ? member.loanApplication.status.ne(LoanApplicationStatus.APPROVED) : null,
-                        request.loanCount() != null ? member.loanApplication.getLoanTransactions().size().eq(request.loanCount().longValue()) : null
+                        request.loanTransactionCount() != null
+                                ? request.loanTransactionCount() == 0
+                                ? member.loanApplication.isNull()
+                                : member.loanApplication.isNotNull().and(member.loanApplication.loanTransactions.size().eq(request.loanTransactionCount()))
+                                : null
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -53,13 +57,6 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         .toArray(com.querydsl.core.types.OrderSpecifier[]::new))
                 .fetch();
 
-        Long totalResult = queryFactory
-                .select(member.count())
-                .from(member)
-                .fetchFirst();
-
-        long total = totalResult == null ? 0 : totalResult;
-
-        return new PageImpl<>(members, pageable, total);
+        return new PageImpl<>(members, pageable, members.size());
     }
 }

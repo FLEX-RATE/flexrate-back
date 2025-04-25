@@ -22,8 +22,8 @@ public record MemberSearchRequest(
         LocalDate endDate,
         Boolean hasLoan,
 
-        @Min(value = 0, message = "대출 횟수는 0 이상이어야 합니다.")
-        Integer loanCount,
+        @Min(value = 0, message = "거래 내역 횟수는 0 이상이어야 합니다.")
+        Integer loanTransactionCount,
 
         @Min(value = 0, message = "페이지는 0 이상이어야 합니다.")
         Integer page,
