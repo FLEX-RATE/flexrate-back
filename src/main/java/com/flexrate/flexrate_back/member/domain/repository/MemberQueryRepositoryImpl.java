@@ -42,7 +42,7 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         (request.endDate() != null ? member.createdAt.loe(request.endDate().atTime(23, 59, 59)) : null),
                         request.hasLoan() != null && request.hasLoan()
                                 ? member.loanApplication.status.ne(LoanApplicationStatus.APPROVED) : null,
-                        request.loanCount() != null ? member.loanApplication.count().eq(request.loanCount().longValue()) : null
+                        request.loanCount() != null ? member.loanApplication.getLoanTransactions().size().eq(request.loanCount().longValue()) : null
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
