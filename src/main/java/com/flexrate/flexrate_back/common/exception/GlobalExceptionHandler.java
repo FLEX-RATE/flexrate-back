@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
         if (profileUtil.isProduction()) {
             log.error("[{}] {} | path={}", code, message, path);
         } else {
-            log.error("[{}] {} | path={} | detail={} ㅋㅋ", code, message, path, ex.getMessage());
+            log.error("[{}] {} | path={} | detail={}", code, message, path, ex.getMessage());
         }
 
         return ResponseEntity.status(status)
