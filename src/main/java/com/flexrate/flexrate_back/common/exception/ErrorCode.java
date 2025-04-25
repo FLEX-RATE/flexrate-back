@@ -27,6 +27,7 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN("A004", "유효하지 않은 리프레시 토큰입니다."),
     INVALID_EMAIL_FORMAT("A005", "올바르지 않은 이메일 형식입니다."),
     AUTHENTICATION_REQUIRED("A006", "인증이 필요합니다."),
+    ADMIN_AUTH_REQUIRED("A007", "관리자 권한이 필요합니다."),
 
     // 상품
     PRODUCT_LOAD_ERROR("P001", "상품을 불러오는 중 오류가 발생했습니다."),
@@ -34,7 +35,10 @@ public enum ErrorCode {
 
     // 서버 오류
     INTERNAL_SERVER_ERROR("S500", "서버 내부 오류"),
-    NOT_FOUND_STATIC_RESOURCE("S404", "요청한 정적 리소스를 찾을 수 없습니다.");
+    NOT_FOUND_STATIC_RESOURCE("S404", "요청한 정적 리소스를 찾을 수 없습니다."),
+
+    // 유효성
+    VALIDATION_ERROR("V001", "유효성 검사 오류");
 
     private final String code;
     private final String message;
