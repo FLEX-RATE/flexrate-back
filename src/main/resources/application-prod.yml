@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: flexrate-back
+  profiles:
+    active: prod
   config:
     import:
       - optional:file:./.env[.properties]
