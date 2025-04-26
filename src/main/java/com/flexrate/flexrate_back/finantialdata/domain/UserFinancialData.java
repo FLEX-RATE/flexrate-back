@@ -27,7 +27,7 @@ public class UserFinancialData {
     @Column(nullable = false)
     private UserFinancialDataType dataType;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(nullable = false, precision = 12)
     private double value;
 
     @Column(nullable = false)
