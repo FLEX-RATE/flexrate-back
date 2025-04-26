@@ -1,6 +1,6 @@
 package com.flexrate.flexrate_back.member.enums;
 
-public enum UserStatus {
+public enum MemberStatus {
     ACTIVE,
     WITHDRAWN,
     SUSPENDED

@@ -1,11 +1,15 @@
 package com.flexrate.flexrate_back.member.domain;
 
 import com.flexrate.flexrate_back.member.enums.LoginMethod;
-import com.flexrate.flexrate_back.member.enums.UserStatus;
+import com.flexrate.flexrate_back.member.enums.Sex;
+import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,16 +36,24 @@ public class Member {
     @Column(nullable = false, length = 20)
     private String name;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = true, length = 20)
     private String phone;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Sex sex;
+
     private LocalDate birthDate;
+
+    @CreatedDate
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status;
+    private MemberStatus status;
 
     private LocalDateTime lastLoginAt;
 

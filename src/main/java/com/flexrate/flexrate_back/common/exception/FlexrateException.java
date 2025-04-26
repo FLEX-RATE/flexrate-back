@@ -1,7 +1,6 @@
 package com.flexrate.flexrate_back.common.exception;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * FLEXRATE 커스텀 예외
