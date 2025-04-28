@@ -27,6 +27,14 @@ public class SecurityConfig {
         return http.build();
     }
 
+
+
+    /*
+     * 비밀번호를 암호화하기 위한 PasswordEncoder 빈 등록
+     * @return BCryptPasswordEncoder 인스턴스
+     * @since 2025.04.28
+     * @author 윤영찬
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

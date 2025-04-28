@@ -6,6 +6,12 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.util.List;
 
+/*
+ * 회원가입 요청 시 사용되는 DTO
+ * @since 2025.04.28
+ * @author 윤영찬
+ */
+
 @Getter
 @Builder
 public class SignupDTO {
@@ -16,6 +22,6 @@ public class SignupDTO {
     private LocalDate birthDate;
     private String consumptionType;
     private String consumptionGoal;
-//    private List<PasskeyDTO> passkeys; 필수 X
+    //    private List<PasskeyDTO> passkeys; 필수 X
     private List<ConsentDTO> consents;
 }
