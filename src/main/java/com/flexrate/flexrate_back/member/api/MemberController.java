@@ -1,7 +1,7 @@
 package com.flexrate.flexrate_back.member.api;
 
-import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import com.flexrate.flexrate_back.member.application.MemberService;
+import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

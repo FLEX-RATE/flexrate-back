@@ -1,11 +1,12 @@
 package com.flexrate.flexrate_back.member.application;
 
-import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
+import com.flexrate.flexrate_back.member.enums.Sex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,10 +50,11 @@ public class MemberService {
         // Member 객체 생성 후 저장
         Member member = Member.builder()
                 .email(signupDTO.getEmail())
-                .passwordHash(hashedPassword)
+                .passwordHash(hashedPassword)  // 비밀번호는 해시 처리 후 저장
                 .name(signupDTO.getName())
-                .sex(signupDTO.getSex())
-                .status(MemberStatus.ACTIVE)  // 기본 상태로 ACTIVE 설정
+                .sex(convertToSex(signupDTO.getSex()))  // String을 Sex enum으로 변환
+                .birthDate(signupDTO.getBirthDate())
+                .status(MemberStatus.ACTIVE)  // 예시로 Active 상태
                 .build();
 
         memberRepository.save(member);
@@ -75,3 +77,14 @@ public class MemberService {
         }
 
         return password.matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*]).{6,}$");
+    }
+
+    // String을 Sex enum으로 변환
+    private Sex convertToSex(String sex) {
+        try {
+            return Sex.valueOf(sex);
+        } catch (IllegalArgumentException e) {
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS); // 잘못된 sex 값 처리
+        }
+    }
+}
