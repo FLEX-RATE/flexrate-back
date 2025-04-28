@@ -5,6 +5,7 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.SignupDTO;
+import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Sex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,6 @@ public class MemberService {
 
         String hashedPassword = passwordEncoder.encode(signupDTO.getPassword());
 
-
         Member member = Member.builder()
                 .email(signupDTO.getEmail())
                 .passwordHash(hashedPassword)
@@ -90,9 +90,11 @@ public class MemberService {
 
     private Sex convertToSex(String sex) {
         try {
-            return Sex.valueOf(sex);
+            // 대소문자 구분 없이 Enum 값으로 변환
+            return Sex.valueOf(sex.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS); // 잘못된 sex 값 처리
+            // 잘못된 sex 값 처리
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
 }

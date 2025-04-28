@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.dto;
 
+import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,8 +21,8 @@ public class SignupDTO {
     private String sex;
     private String name;
     private LocalDate birthDate;
-    private String consumptionType;
+    private ConsumptionType consumptionType;
     private String consumptionGoal;
     //    private List<PasskeyDTO> passkeys; 필수 X
-    private List<ConsentDTO> consents;
+//    private List<ConsentDTO> consents;
 }

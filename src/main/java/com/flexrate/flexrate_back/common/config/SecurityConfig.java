@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -30,13 +29,13 @@ public class SecurityConfig {
 
 
     /*
-     * 비밀번호를 암호화하기 위한 PasswordEncoder 빈 등록
+     * 비밀번호를 암호화하기 위한 빈 등록
      * @return BCryptPasswordEncoder 인스턴스
      * @since 2025.04.28
      * @author 윤영찬
      */
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
