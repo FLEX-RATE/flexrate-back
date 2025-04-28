@@ -30,7 +30,7 @@ public class LoanPreApplicationService {
         );
 
         if (externalResponse == null) {
-            throw new RuntimeException("심사 서버 응답이 없습니다.");
+            throw new IllegalStateException("심사 서버 응답이 없습니다.");
         }
 
         return LoanPreApplicationResponse.builder()
