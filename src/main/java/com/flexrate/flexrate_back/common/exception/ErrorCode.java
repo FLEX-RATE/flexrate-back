@@ -18,7 +18,7 @@ public enum ErrorCode {
     INVALID_APPLICATION("L001", "신청 정보가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     LOAN_NOT_FOUND("L002", "대출 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     APPROVAL_MISSING("L003", "승인 정보가 누락되었습니다.", HttpStatus.BAD_REQUEST),
-    LOAN_ALREADY_APPROVED("L004", "이미 승인된 대출입니다.", HttpStatus.BAD_REQUEST),
+    LOAN_ALREADY_APPROVED("L004", "이미 승인된 대출입니다.", HttpStatus.CONFLICT),
 
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
