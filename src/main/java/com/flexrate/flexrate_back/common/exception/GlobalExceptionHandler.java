@@ -61,17 +61,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(FlexrateException.class)
     public ResponseEntity<ErrorResponse> handleFlexrateException(FlexrateException ex, HttpServletRequest request) {
-        HttpStatus status = switch (ex.getCode()) {
-            case "A001" -> HttpStatus.CONFLICT;
-            case "A000", "A002", "A003", "A004", "M001", "M002" -> HttpStatus.UNAUTHORIZED;
-            case "L001", "L003", "L004", "P001" -> HttpStatus.BAD_REQUEST;
-            case "L002", "P002", "U001", "S404" -> HttpStatus.NOT_FOUND;
-            case "S500" -> HttpStatus.INTERNAL_SERVER_ERROR;
-            default -> HttpStatus.BAD_REQUEST;
-        };
-
-        String code = ex.getCode();
-        String message = ex.getMessage();
+        ErrorCode errorCode = ex.getErrorCode();
+        String code = errorCode.getCode();
+        String message = errorCode.getMessage();
         String path = request.getRequestURI();
 
         if (profileUtil.isProduction()) {
@@ -80,8 +72,8 @@ public class GlobalExceptionHandler {
             log.error("[{}] {} | path={} | detail={}", code, message, path, ex.getMessage());
         }
 
-        return ResponseEntity.status(status)
-                .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(code, message));
     }
 
     /**
