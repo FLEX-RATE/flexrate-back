@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,7 +27,7 @@ class LoanPreApplicationControllerTest {
 
     @Test
     @DisplayName("대출 사전 신청 - 정상 요청")
-    void preApplyLoan_success() throws Exception {
+    void preApplyLoanSuccess() throws Exception {
         LoanPreApplicationRequest request = LoanPreApplicationRequest.builder()
                 .businessType("IT")
                 .employmentType("FULL_TIME")
@@ -50,7 +51,7 @@ class LoanPreApplicationControllerTest {
 
     @Test
     @DisplayName("대출 사전 신청 - 필수값 누락 시 400 반환")
-    void preApplyLoan_validationFail() throws Exception {
+    void preApplyLoanValidationFail() throws Exception {
         LoanPreApplicationRequest request = LoanPreApplicationRequest.builder()
                 .employmentType("FULL_TIME")
                 .hireDate("2022-01")
@@ -66,6 +67,7 @@ class LoanPreApplicationControllerTest {
         mockMvc.perform(post("/api/loans/pre-applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 }
