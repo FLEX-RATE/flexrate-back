@@ -1,6 +1,6 @@
-package com.flexrate.flexrate_back.finantialdata.domain;
+package com.flexrate.flexrate_back.financialdata.domain;
 
-import com.flexrate.flexrate_back.finantialdata.enums.UserFinancialDataType;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;

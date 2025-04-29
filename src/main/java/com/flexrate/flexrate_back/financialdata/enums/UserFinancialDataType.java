@@ -1,4 +1,4 @@
-package com.flexrate.flexrate_back.finantialdata.enums;
+package com.flexrate.flexrate_back.financialdata.enums;
 
 public enum UserFinancialDataType {
     INCOME,
