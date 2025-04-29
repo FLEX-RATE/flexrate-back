@@ -77,6 +77,7 @@ public class MemberAdminService {
      * @since 2025.04.26
      * @author 허연규
      */
+    @Transactional
     public PatchMemberResponse patchMember(Long memberId, @Valid PatchMemberRequest request, String adminToken) {
         // A007 관리자 인증 체크
         if (!adminAuthChecker.isAdmin(adminToken)) {
