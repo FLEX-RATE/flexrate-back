@@ -65,4 +65,20 @@ public class Member {
 
     @OneToMany(mappedBy = "member")
     private List<Notification> notifications;
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updateSex(Sex sex) {
+        this.sex = sex;
+    }
+
+    public void updateBirthDate(LocalDate localDate) {
+        this.birthDate = localDate;
+    }
+
+    public void updateMemberStatus(MemberStatus memberStatus) {
+        this.status = memberStatus;
+    }
 }
