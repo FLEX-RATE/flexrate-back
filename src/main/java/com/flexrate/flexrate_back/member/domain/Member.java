@@ -1,8 +1,6 @@
 package com.flexrate.flexrate_back.member.domain;
 
-import com.flexrate.flexrate_back.member.enums.LoginMethod;
-import com.flexrate.flexrate_back.member.enums.Sex;
-import com.flexrate.flexrate_back.member.enums.MemberStatus;
+import com.flexrate.flexrate_back.member.enums.*;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import jakarta.persistence.*;
@@ -59,6 +57,12 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private LoginMethod lastLoginMethod;
+
+    @Enumerated(EnumType.STRING)
+    private ConsumeGoal consumeGoal;
+
+    @Enumerated(EnumType.STRING)
+    private ConsumptionType consumptionType;
 
     @OneToOne(mappedBy = "member")
     private LoanApplication loanApplication;

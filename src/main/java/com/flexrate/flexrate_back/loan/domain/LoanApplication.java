@@ -39,4 +39,6 @@ public class LoanApplication {
 
     @OneToMany(mappedBy = "application")
     private List<LoanTransaction> loanTransactions;
+
+    private double creditScore;
 }
