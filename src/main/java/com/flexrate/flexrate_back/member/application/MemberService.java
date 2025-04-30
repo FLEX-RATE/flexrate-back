@@ -28,7 +28,6 @@ public class MemberService {
 
     /*
      * 회원 가입 처리
-     *
      * @param signupDTO 회원가입 요청 데이터
      * @return 저장된 회원 객체
      * @throws FlexrateException 이메일 누락, 형식 오류, 중복 또는 비밀번호 유효성 검사 실패 시 예외 발생
@@ -130,5 +129,4 @@ public class MemberService {
 //
 //        memberRepository.save(updated);
 //    }
-
 }
