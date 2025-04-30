@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/members")
-public class MemberController {
+public class SignUpController {
 
     private final MemberService memberService;
 
     @Autowired
-    public MemberController(MemberService memberService) {
+    public SignUpController(MemberService memberService) {
         this.memberService = memberService;
     }
 
