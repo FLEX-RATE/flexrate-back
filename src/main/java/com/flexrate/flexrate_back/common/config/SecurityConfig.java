@@ -31,7 +31,7 @@ public class SecurityConfig {
     /*
      * 비밀번호를 암호화하기 위한 빈 등록
      * @return BCryptPasswordEncoder 인스턴스
-     * @since 2025.04.28
+     * @since 2025.04.27
      * @author 윤영찬
      */
     @Bean

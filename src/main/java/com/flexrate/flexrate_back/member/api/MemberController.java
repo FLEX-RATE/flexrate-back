@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 회원가입 및 로그인 관련 API 컨트롤러
+/*
+ * 회원가입 로그인 API 컨트롤러
  * @since 2025.04.28
  * @author 윤영찬
  */
@@ -28,7 +28,7 @@ public class MemberController {
 
     /*
      * 회원가입
-     * @param signupDTO 회원가입 요청 데이터
+     * @param signupDTO 데이터
      * @return 생성된 회원 ID, 이메일 (201 Created)
      * @throws FlexrateException 유효성 검사 또는 중복 등 오류 발생 시
      * @since 2025.04.28
@@ -73,6 +73,6 @@ public class MemberController {
     @PutMapping("/password")
     public ResponseEntity<String> changePassword(@RequestBody @Valid PasswordChangeDTO dto) {
         memberService.changePassword(dto);
-        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        return ResponseEntity.ok("비밀번호가 변경되었습니다.");
     }
 }

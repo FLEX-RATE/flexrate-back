@@ -29,11 +29,9 @@ public class MemberService {
     }
 
     /*
-     * 회원 가입 처리
-     *
      * @param signupDTO 회원가입 요청 데이터
      * @return 저장된 회원 객체
-     * @throws FlexrateException 이메일 누락, 형식 오류, 중복 또는 비밀번호 유효성 검사 실패 시 예외 발생
+     * @throws FlexrateException 유효성 검사 실패 시 예외 발생
      * @since 2025.04.29
      * @author 윤영찬
      */
@@ -70,8 +68,6 @@ public class MemberService {
 
 
     /*
-     * 로그인 인증 처리
-     *
      * @param email 로그인 시 입력한 이메일
      * @param password 로그인 시 입력한 비밀번호
      * @return 인증 성공 여부 (true)
@@ -83,12 +79,10 @@ public class MemberService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS));
 
-        // 비밀번호 확인
         if (!passwordEncoder.matches(password, member.getPasswordHash())) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // 로그인 성공 시 Member 객체를 수정 (toBuilder 사용)
         Member updatedMember = member.toBuilder()
                 .lastLoginAt(LocalDateTime.now())
                 .lastLoginMethod(LoginMethod.PASSWORD)
@@ -102,8 +96,6 @@ public class MemberService {
 
 
     /*
-     * 비밀번호 변경
-     *
      * @param dto 비밀번호 변경 요청 데이터
      * @throws FlexrateException 현재 비밀번호가 틀리거나 새 비밀번호가 유효하지 않을 경우 예외 발생
      * @since 2025.04.29

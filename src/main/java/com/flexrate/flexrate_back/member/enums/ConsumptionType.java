@@ -1,7 +1,13 @@
 package com.flexrate.flexrate_back.member.enums;
 
+/*
+* 소비 성향 정의
+* @since 2025.04.28
+* @author 윤영찬
+* */
+
 public enum ConsumptionType {
-    // 소비 성향 정의
+
     절약형("식비를 일주일 단위로 예산화해 지출 기록하기\n" +
             "불필요한 구독 서비스 1개 해지하기\n" +
             "이번 달 온라인 쇼핑 횟수 2회 이내로 제한\n" +
@@ -24,7 +30,7 @@ public enum ConsumptionType {
 
     private final String description;
 
-    // 생성자
+    // 생성자 주석
     ConsumptionType(String description) {
         this.description = description;
     }
