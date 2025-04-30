@@ -50,7 +50,9 @@ public class LoanAdminService {
 
         // 기본 정렬 occurredAt 내림차순
         Sort sort = sortBy != null
-                ? Sort.by(sortBy).ascending()
+                ? (sortBy.equals("occurredAt") 
+                    ? Sort.by(sortBy).descending() 
+                    : Sort.by(sortBy).ascending())
                 : Sort.by("occurredAt").descending();
 
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
