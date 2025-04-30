@@ -2,7 +2,6 @@ package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
-import com.flexrate.flexrate_back.member.dto.PasswordChangeDTO;
 import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import jakarta.validation.Valid;
@@ -54,13 +53,13 @@ public class MemberController {
      * @since 2025.04.28
      * @author 윤영찬
      */
-    @PostMapping("/login")
-    public ResponseEntity<String> login(
-            @RequestParam String email,
-            @RequestParam String password) {
-        boolean ok = memberService.authenticate(email, password);
-        return ResponseEntity.ok(ok ? "로그인 성공" : "로그인 실패");
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<String> login(
+//            @RequestParam String email,
+//            @RequestParam String password) {
+//        boolean ok = memberService.authenticate(email, password);
+//        return ResponseEntity.ok(ok ? "로그인 성공" : "로그인 실패");
+//    }
 
 
     /*
@@ -70,9 +69,9 @@ public class MemberController {
      * @since 2025.04.29
      * @author 윤영찬
      */
-    @PutMapping("/password")
-    public ResponseEntity<String> changePassword(@RequestBody @Valid PasswordChangeDTO dto) {
-        memberService.changePassword(dto);
-        return ResponseEntity.ok("비밀번호가 변경되었습니다.");
-    }
+//    @PutMapping("/password")
+//    public ResponseEntity<String> changePassword(@RequestBody @Valid PasswordChangeDTO dto) {
+//        memberService.changePassword(dto);
+//        return ResponseEntity.ok("비밀번호가 변경되었습니다.");
+//    }
 }

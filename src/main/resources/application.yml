@@ -38,7 +38,7 @@ spring:
     store-type: redis
     timeout: 1800
   flyway:
-    enabled: true
+    enabled: true 
     locations: classpath:db/migration
   cache:
     type: redis

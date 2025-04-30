@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * @since 2025.04.28
  * @author 윤영찬
  */
+
+
 @RestControllerAdvice
 public class AuthExceptionHandler {
 

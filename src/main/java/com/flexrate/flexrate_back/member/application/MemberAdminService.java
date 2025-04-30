@@ -22,7 +22,7 @@ public class MemberAdminService {
     private final MemberMapper memberMapper;
     private final AdminAuthChecker adminAuthChecker;
 
-    /**
+    /*
      * 관리자 권한으로 회원 목록 조회
      * @param request 검색 조건
      * @param adminToken 관리자 인증 토큰
