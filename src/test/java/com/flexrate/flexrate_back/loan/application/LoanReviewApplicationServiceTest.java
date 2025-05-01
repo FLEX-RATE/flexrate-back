@@ -1,7 +1,7 @@
 package com.flexrate.flexrate_back.loan.application;
 
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationRequest;
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationResponse;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,22 +13,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-class LoanPreApplicationServiceTest {
+class LoanReviewApplicationServiceTest {
 
     @Mock
     private RestTemplate restTemplate;
 
     @InjectMocks
-    private LoanPreApplicationService loanPreApplicationService;
+    private LoanReviewApplicationService loanPreApplicationService;
 
-    public LoanPreApplicationServiceTest() {
+    public LoanReviewApplicationServiceTest() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     @DisplayName("LoanPreApplicationService - 정상 응답 테스트")
     void preApplySuccess() {
-        LoanPreApplicationRequest request = LoanPreApplicationRequest.builder()
+        LoanReviewApplicationRequest request = LoanReviewApplicationRequest.builder()
                 .businessType("IT")
                 .employmentType("FULL_TIME")
                 .hireDate("2022-01")
@@ -41,7 +41,7 @@ class LoanPreApplicationServiceTest {
                 .loanPurpose("BUSINESS")
                 .build();
 
-        LoanPreApplicationResponse mockResponse = LoanPreApplicationResponse.builder()
+        LoanReviewApplicationResponse mockResponse = LoanReviewApplicationResponse.builder()
                 .name("홍길동")
                 .screeningDate("2025-04-28")
                 .loanLimit(5000)
@@ -53,7 +53,7 @@ class LoanPreApplicationServiceTest {
         when(restTemplate.postForObject(any(String.class), any(), any()))
                 .thenReturn(mockResponse);
 
-        LoanPreApplicationResponse result = loanPreApplicationService.preApply(request);
+        LoanReviewApplicationResponse result = loanPreApplicationService.preApply(request);
 
         assertThat(result.getName()).isEqualTo("홍길동");
         assertThat(result.getLoanLimit()).isEqualTo(5000);

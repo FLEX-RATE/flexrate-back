@@ -1,14 +1,14 @@
 package com.flexrate.flexrate_back.loan.application;
 
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationRequest;
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationResponse;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
-public class LoanPreApplicationService {
+public class LoanReviewApplicationService {
 
     private final RestTemplate restTemplate;
 
@@ -22,18 +22,18 @@ public class LoanPreApplicationService {
      * @since 2025.04.28
      * @author 서채연
      */
-    public LoanPreApplicationResponse preApply(LoanPreApplicationRequest request) {
-        LoanPreApplicationResponse externalResponse = restTemplate.postForObject(
+    public LoanReviewApplicationResponse preApply(LoanReviewApplicationRequest request) {
+        LoanReviewApplicationResponse externalResponse = restTemplate.postForObject(
                 SCREENING_SERVER_URL,
                 request,
-                LoanPreApplicationResponse.class
+                LoanReviewApplicationResponse.class
         );
 
         if (externalResponse == null) {
             throw new IllegalStateException("심사 서버 응답이 없습니다.");
         }
 
-        return LoanPreApplicationResponse.builder()
+        return LoanReviewApplicationResponse.builder()
                 .name(externalResponse.getName())
                 .screeningDate(externalResponse.getScreeningDate())
                 .loanLimit(externalResponse.getLoanLimit())
@@ -43,7 +43,7 @@ public class LoanPreApplicationService {
                 .build();
 
         // 테스트용 더미 데이터
-//        return LoanPreApplicationResponse.builder()
+//        return LoanReviewApplicationResponse.builder()
 //                .name("홍길동")
 //                .screeningDate("2025-04-28")
 //                .loanLimit(5000)
