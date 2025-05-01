@@ -39,7 +39,59 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD_PROD}
       REDIS_HOST: ${REDIS_HOST_PROD}
       REDIS_PORT: ${REDIS_PORT_PROD}
+      ELASTICSEARCH_HOST: ${ELASTICSEARCH_HOST}
+      ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT}
+      LOG_PATH: ${LOG_PATH}
+      LOGSTASH_HOST_PROD: ${LOGSTASH_HOST_PROD}
+      LOGSTASH_PORT_PROD: ${LOGSTASH_PORT_PROD}
+    restart: always
+    volumes:
+      - backend-logs:/logs
+    env_file:
+      - ./.env
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.2
+    container_name: flexrate-logstash
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro # Logstash 설정 파일을 읽기 전용으로 마운트 (보안)
+    depends_on:
+      - elasticsearch # Elasticsearch 서비스가 먼저 시작되어야 함 (Logstash와 Kibana는 Elasticsearch에 의존)
+    restart: always
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: flexrate-elasticsearch
+    environment:
+      - discovery.type=single-node # 단일 노드 모드로 실행
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g # JVM 메모리 설정 (최소 2GB, 최대 2GB)
+      - xpack.security.enabled=false # 보안 기능 비활성화 -> 개발 환경에서만 false. 운영 환경에서는 반드시 활성화.
+    ports:
+      - "9200:9200"
+    restart: always
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.2
+    container_name: flexrate-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=${KIBANA_ELASTICSEARCH_SERVICEACCOUNTTOKEN} # Elasticsearch 서비스 계정 토큰
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none # SSL 인증 모드 비활성화
+    depends_on:
+      - elasticsearch # Elasticsearch 서비스가 먼저 시작되어야 함 (Logstash와 Kibana는 Elasticsearch에 의존)
+    restart: always
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.2
+    container_name: flexrate-filebeat
+    user: root
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - backend-logs:/logs:ro
     restart: always
 
 volumes:
   mysql-data:
+  backend-logs:
