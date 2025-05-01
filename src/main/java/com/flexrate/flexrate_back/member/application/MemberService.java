@@ -24,6 +24,7 @@ public class MemberService {
                          PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
+
     }
 
     /*
