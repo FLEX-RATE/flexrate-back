@@ -1,13 +1,13 @@
 package com.flexrate.flexrate_back.member.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
-import lombok.Builder;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.time.LocalDate;
-
 
 @Builder
 public record SignupRequestDTO(
@@ -30,8 +30,10 @@ public record SignupRequestDTO(
         LocalDate birthDate,
 
         @NotBlank(message = "소비성향은 필수 항목입니다.")
+        @JsonProperty("consumption_type")  // 실제 컬럼 이름으로 매핑
         String consumptionType,
 
         @NotBlank(message = "소비 목표는 필수 항목입니다.")
+        @JsonProperty("consume_goal")  // 실제 컬럼 이름으로 매핑
         String consumptionGoal
 ) {}
