@@ -4,6 +4,7 @@ import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ public class SignUpController {
 
     private final MemberService memberService;
 
+
     @Autowired
     public SignUpController(MemberService memberService) {
         this.memberService = memberService;
@@ -32,6 +34,12 @@ public class SignUpController {
      * @throws FlexrateException 유효성 검사 또는 중복 등 오류 발생 시
      * @since 2025.04.28
      */
+    @Operation(
+            summary = "회원가입",
+            description = "사용자로부터 이메일, 비밀번호, 이름 등의 정보를 입력받아 회원을 등록합니다. " +
+                    "이메일 중복 여부와 입력값의 유효성을 검사합니다.",
+            tags = { "회원" }
+    )
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signup(
             @RequestBody @Valid SignupDTO signupDTO) {
@@ -44,34 +52,4 @@ public class SignUpController {
                 .status(201)
                 .body(body);
     }
-
-    /*
-     * 로그인 (테스트용)
-     * @param email    로그인 이메일
-     * @param password 로그인 비밀번호
-     * @return 로그인 성공/실패 메시지 (200 OK)
-     * @since 2025.04.28
-     * @author 윤영찬
-     */
-//    @PostMapping("/login")
-//    public ResponseEntity<String> login(
-//            @RequestParam String email,
-//            @RequestParam String password) {
-//        boolean ok = memberService.authenticate(email, password);
-//        return ResponseEntity.ok(ok ? "로그인 성공" : "로그인 실패");
-//    }
-
-
-    /*
-     * 비밀번호 변경
-     * @param dto 비밀번호 변경 요청 데이터
-     * @return 성공 메시지
-     * @since 2025.04.29
-     * @author 윤영찬
-     */
-//    @PutMapping("/password")
-//    public ResponseEntity<String> changePassword(@RequestBody @Valid PasswordChangeDTO dto) {
-//        memberService.changePassword(dto);
-//        return ResponseEntity.ok("비밀번호가 변경되었습니다.");
-//    }
 }
