@@ -1,6 +1,6 @@
 package com.flexrate.flexrate_back.member.api;
 
-import com.flexrate.flexrate_back.member.application.MemberService;
+import com.flexrate.flexrate_back.member.application.SignupMemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.dto.SignupDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/members")
 public class SignUpController {
 
-    private final MemberService memberService;
+    private final SignupMemberService signupMemberService;
 
 
     @Autowired
-    public SignUpController(MemberService memberService) {
-        this.memberService = memberService;
+    public SignUpController(SignupMemberService signupMemberService) {
+        this.signupMemberService = signupMemberService;
     }
 
     /*
@@ -43,7 +43,7 @@ public class SignUpController {
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signup(
             @RequestBody @Valid SignupDTO signupDTO) {
-        Member created = memberService.registerMember(signupDTO);
+        Member created = signupMemberService.registerMember(signupDTO);
         SignupResponseDTO body = SignupResponseDTO.builder()
                 .userId(created.getMemberId())
                 .email(created.getEmail())
