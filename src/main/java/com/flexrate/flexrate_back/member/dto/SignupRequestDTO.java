@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SignupDTO {
+public class SignupRequestDTO {
 
     @Email(message = "유효한 이메일을 입력해 주세요.")
     @NotBlank(message = "이메일은 필수 항목입니다.")

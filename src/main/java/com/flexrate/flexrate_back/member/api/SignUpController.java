@@ -2,7 +2,7 @@ package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.SignupMemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
-import com.flexrate.flexrate_back.member.dto.SignupDTO;
+import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -42,8 +42,8 @@ public class SignUpController {
     )
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signup(
-            @RequestBody @Valid SignupDTO signupDTO) {
-        Member created = signupMemberService.registerMember(signupDTO);
+            @RequestBody @Valid SignupRequestDTO signupRequestDTO) {
+        Member created = signupMemberService.registerMember(signupRequestDTO);
         SignupResponseDTO body = SignupResponseDTO.builder()
                 .userId(created.getMemberId())
                 .email(created.getEmail())

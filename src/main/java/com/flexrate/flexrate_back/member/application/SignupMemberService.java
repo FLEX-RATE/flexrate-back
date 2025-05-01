@@ -4,7 +4,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.SignupDTO;
+import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Sex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class SignupMemberService {
      * @since 2025.04.29
      * @author 윤영찬
      */
-    public Member registerMember(SignupDTO signupDTO) {
+    public Member registerMember(SignupRequestDTO signupDTO) {
         if (signupDTO.getEmail() == null || signupDTO.getEmail().isEmpty()) {
             throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
         }
