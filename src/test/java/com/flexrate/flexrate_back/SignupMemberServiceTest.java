@@ -38,13 +38,13 @@ public class SignupMemberServiceTest {
     @BeforeEach
     void setUp() {
         signupRequestDTO = new SignupRequestDTO(
-                "test@example.com",
+                "user@gmail.com",
                 "password123!",
                 "MALE",
-                "John Doe",
+                "yoon",
                 LocalDate.of(1990, 1, 1),
                 ConsumptionType.CONSERVATIVE,
-                "Save more money"
+                "졀약형"
         );
     }
 
@@ -53,9 +53,9 @@ public class SignupMemberServiceTest {
         // Given
         Member member = Member.builder()
                 .memberId(1L)
-                .email("test@example.com")
+                .email("user@gmail.com")
                 .passwordHash("encodedPassword")
-                .name("John Doe")
+                .name("yoon")
                 .sex(Sex.MALE)
                 .birthDate(LocalDate.of(1990, 1, 1))
                 .status(MemberStatus.ACTIVE)
@@ -70,7 +70,7 @@ public class SignupMemberServiceTest {
 
         // Then
         assertNotNull(createdMember);
-        assertEquals("test@example.com", createdMember.getEmail());
+        assertEquals("user@gmail.com", createdMember.getEmail());
         verify(memberRepository).save(any(Member.class));  // memberRepository.save()가 호출되었는지 확인
         verify(passwordEncoder).encode("password123!");  // 패스워드가 인코딩 되었는지 확인
     }
@@ -104,9 +104,9 @@ public class SignupMemberServiceTest {
         // Given
         Member member = Member.builder()
                 .memberId(1L)
-                .email("test@example.com")
+                .email("user@gmail.com")
                 .passwordHash("encodedPassword")
-                .name("John Doe")
+                .name("yoon")
                 .sex(Sex.MALE)
                 .birthDate(LocalDate.of(1990, 1, 1))
                 .status(MemberStatus.ACTIVE)
@@ -120,6 +120,6 @@ public class SignupMemberServiceTest {
         Member createdMember = signupMemberService.registerMember(signupRequestDTO);
 
         // Then
-        assertEquals(MemberStatus.ACTIVE, createdMember.getStatus());  // 회원 상태가 ACTIVE인지 확인
+        assertEquals(MemberStatus.ACTIVE, createdMember.getStatus());
     }
 }
