@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.member.domain;
 
+import com.flexrate.flexrate_back.member.enums.ConsumptionType; // 추가
+import com.flexrate.flexrate_back.member.enums.ConsumeGoal;     // 추가
 import com.flexrate.flexrate_back.member.enums.LoginMethod;
 import com.flexrate.flexrate_back.member.enums.Role;
 import com.flexrate.flexrate_back.member.enums.Sex;
@@ -71,6 +73,24 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<Notification> notifications;
 
+    // 추가된 필드
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ConsumptionType consumptionType;  // 소비성향 필드 추가
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ConsumeGoal consumeGoal;          // 소비목표 필드 추가
+
+    public void updateConsumptionType(ConsumptionType consumptionType) {
+        this.consumptionType = consumptionType;
+    }
+
+    public void updateConsumeGoal(ConsumeGoal consumeGoal) {
+        this.consumeGoal = consumeGoal;
+    }
+
+    // 기존의 update 메서드들
     public void updateName(String name) {
         this.name = name;
     }
