@@ -1,11 +1,10 @@
 package com.flexrate.flexrate_back.auth.dto;
 
-import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class CreateAccessTokenRequest {
     private String refreshToken;
 }

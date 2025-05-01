@@ -6,6 +6,7 @@ import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.time.Duration;
 
 @RequiredArgsConstructor
@@ -16,9 +17,18 @@ public class TokenService {
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
 
+    /**
+     * 관리자 권한으로 회원 목록 조회
+     *
+     * @param refreshToken 클라이언트로부터 전달받은 리프레시 토큰
+     * @return 새로 발급된 액세스 토큰 문자열
+     * @throws IllegalArgumentException 유효하지 않은 토큰일 경우
+     * @since 2025.05.01
+     * @author 유승한
+     */
     public String createNewAccessToken(String refreshToken) {
         // 토큰 유효성 검사 실패 시 예외 발생
-        if(!tokenProvider.validToken(refreshToken)){
+        if (!tokenProvider.validToken(refreshToken)) {
             throw new IllegalArgumentException("Unexpected token");
         }
         Long memberId = refreshTokenService.findByRefreshToken(refreshToken).getMemberId();

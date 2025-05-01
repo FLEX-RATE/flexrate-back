@@ -8,8 +8,6 @@ import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
 import com.flexrate.flexrate_back.member.enums.Sex;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +19,6 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 

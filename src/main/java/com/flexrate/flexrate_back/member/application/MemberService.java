@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class MemberService {
-    MemberRepository memberRepository;
+    private final MemberRepository memberRepository;
 
     public Member findById(Long memberId) {
     return memberRepository.findById(memberId)
