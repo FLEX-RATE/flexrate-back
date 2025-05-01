@@ -38,7 +38,7 @@ public class SignUpController {
             summary = "회원가입",
             description = "사용자로부터 이메일, 비밀번호, 이름 등의 정보를 입력받아 회원을 등록합니다. " +
                     "이메일 중복 여부와 입력값의 유효성을 검사합니다.",
-            tags = { "회원" }
+            tags = { "Sign-up-controller" }
     )
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signup(
