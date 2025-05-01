@@ -32,7 +32,7 @@ public class LoanTransaction {
     @Column(nullable = false)
     private TransactionType type;
 
-//    @Column(nullable = false, precision = 12)
+    @Column(nullable = false, precision = 12)
     private double amount;
 
     @Column(nullable = false)

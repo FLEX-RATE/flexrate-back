@@ -5,65 +5,58 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
+import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Sex;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @Service
+@RequiredArgsConstructor
 public class SignupMemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public SignupMemberService(MemberRepository memberRepository,
-                               PasswordEncoder passwordEncoder) {
-        this.memberRepository = memberRepository;
-        this.passwordEncoder = passwordEncoder;
-
-    }
-
-    /*
-     * 회원 가입 처리
-     * @param signupDTO 회원가입 요청 데이터
-     * @return 저장된 회원 객체
-     * @throws FlexrateException 이메일 누락, 형식 오류, 중복 또는 비밀번호 유효성 검사 실패 시 예외 발생
-     * @since 2025.04.29
-     * @author 윤영찬
-     */
-    public Member registerMember(SignupRequestDTO signupDTO) {
-        if (signupDTO.getEmail() == null || signupDTO.getEmail().isEmpty()) {
-            throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
-        }
-        if (!signupDTO.getEmail().contains("@")) {
-            throw new FlexrateException(ErrorCode.INVALID_EMAIL_FORMAT);
-        }
-        if (memberRepository.existsByEmail(signupDTO.getEmail())) {
+    public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
+        if (memberRepository.existsByEmail(signupDTO.email())) {
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
-        String rawPwd = signupDTO.getPassword();
-        if (rawPwd == null || rawPwd.length() < 6
-                || !rawPwd.matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*]).{6,}$")) {
-            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
-        }
+        String rawPwd = signupDTO.password();
         String hashedPwd = passwordEncoder.encode(rawPwd);
 
+        ConsumptionType consumptionType = ConsumptionType.fromLabel(signupDTO.consumptionType());
+        ConsumeGoal consumptionGoal = ConsumeGoal.fromCategory(signupDTO.consumptionGoal());
+
         Member member = Member.builder()
-                .email(signupDTO.getEmail())
+                .email(signupDTO.email())
                 .passwordHash(hashedPwd)
-                .name(signupDTO.getName())
-                .sex(Sex.valueOf(signupDTO.getSex().toUpperCase()))
-                .birthDate(signupDTO.getBirthDate())
+                .name(signupDTO.name())
+                .sex(Sex.valueOf(signupDTO.sex().toUpperCase()))
+                .birthDate(signupDTO.birthDate())
                 .status(MemberStatus.ACTIVE)
+                .consumptionType(consumptionType)
+                .consumeGoal(consumptionGoal)
                 .build();
 
-        return memberRepository.save(member);
+        Member saved = memberRepository.save(member);
+
+        return SignupResponseDTO.builder()
+                .userId(saved.getMemberId())
+                .email(saved.getEmail())
+                .build();
     }
 
 
-
-
+    private LocalDate convertToLocalDate(String birthDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return LocalDate.parse(birthDate, formatter);
+    }
 }

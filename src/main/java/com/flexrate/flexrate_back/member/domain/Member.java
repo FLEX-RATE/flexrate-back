@@ -1,6 +1,7 @@
 package com.flexrate.flexrate_back.member.domain;
 
 import com.flexrate.flexrate_back.member.enums.LoginMethod;
+import com.flexrate.flexrate_back.member.enums.Role;
 import com.flexrate.flexrate_back.member.enums.Sex;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
@@ -9,7 +10,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,18 +17,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "Member")
-
-/*
-* @EntityListeners
-* createdAt, updatedAt 값을 자동으로 세팅 역할
-* @since 2025.04.28
-* @author 윤영찬
-*/
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
+@Builder
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,6 +43,10 @@ public class Member {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Sex sex;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     private LocalDate birthDate;
 
@@ -90,5 +86,4 @@ public class Member {
     public void updateMemberStatus(MemberStatus memberStatus) {
         this.status = memberStatus;
     }
-
 }
