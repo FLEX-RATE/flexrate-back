@@ -87,6 +87,7 @@ services:
     user: root
     depends_on:
       - elasticsearch
+      - logstash
     volumes:
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - backend-logs:/logs:ro
