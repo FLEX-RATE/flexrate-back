@@ -42,7 +42,6 @@
     </appender>
 
     <!-- JSON 파일 로그 (ELK 연동용) -->
-    <!--  이 설정은 왜 있는걸까 ..?  -->
     <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/app-log.json</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
