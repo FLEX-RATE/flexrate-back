@@ -21,8 +21,6 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    ConsumptionType consumptionType;
-    ConsumeGoal consumeGoal;
 
     public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
         if (memberRepository.existsByEmail(signupDTO.email())) {
@@ -31,6 +29,10 @@ public class MemberService {
 
         String rawPwd = signupDTO.password();
         String hashedPwd = passwordEncoder.encode(rawPwd);
+
+        ConsumptionType consumptionType;
+        ConsumeGoal consumeGoal;
+
 
         try {
             consumptionType = ConsumptionType.valueOf(signupDTO.consumptionType().toUpperCase());
@@ -46,8 +48,8 @@ public class MemberService {
                 .sex(Sex.valueOf(signupDTO.sex().toUpperCase()))
                 .birthDate(signupDTO.birthDate())
                 .status(MemberStatus.ACTIVE)
-                .consumptionType(consumptionType) // 수정됨
-                .consumeGoal(consumeGoal)         // 수정됨
+                .consumptionType(consumptionType)
+                .consumeGoal(consumeGoal)
                 .role(Role.MEMBER)
                 .build();
 
@@ -57,11 +59,5 @@ public class MemberService {
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
                 .build();
-    }
-
-
-    private LocalDate convertToLocalDate(String birthDate) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        return LocalDate.parse(birthDate, formatter);
     }
 }
