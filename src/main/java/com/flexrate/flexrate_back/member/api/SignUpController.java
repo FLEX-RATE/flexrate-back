@@ -1,7 +1,7 @@
 package com.flexrate.flexrate_back.member.api;
 
 
-import com.flexrate.flexrate_back.member.application.SignupMemberService;
+import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SignUpController {
 
-    private final SignupMemberService signupMemberService;
+    private final MemberService memberService;
 
     /*
      * 회원가입
@@ -38,7 +38,8 @@ public class SignUpController {
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signup(
             @RequestBody @Valid SignupRequestDTO dto) {
+
         return ResponseEntity.status(201)
-                .body(signupMemberService.registerMember(dto));
+                .body(memberService.registerMember(dto));
     }
 }

@@ -6,10 +6,7 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
-import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
-import com.flexrate.flexrate_back.member.enums.ConsumptionType;
-import com.flexrate.flexrate_back.member.enums.MemberStatus;
-import com.flexrate.flexrate_back.member.enums.Sex;
+import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,10 +16,13 @@ import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
-public class SignupMemberService {
+public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+
+    ConsumptionType consumptionType;
+    ConsumeGoal consumeGoal;
 
     public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
         if (memberRepository.existsByEmail(signupDTO.email())) {
@@ -32,8 +32,12 @@ public class SignupMemberService {
         String rawPwd = signupDTO.password();
         String hashedPwd = passwordEncoder.encode(rawPwd);
 
-        ConsumptionType consumptionType = ConsumptionType.fromLabel(signupDTO.consumptionType());
-        ConsumeGoal consumptionGoal = ConsumeGoal.fromCategory(signupDTO.consumptionGoal());
+        try {
+            consumptionType = ConsumptionType.valueOf(signupDTO.consumptionType().toUpperCase());
+            consumeGoal = ConsumeGoal.valueOf(signupDTO.consumeGoal().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
+        }
 
         Member member = Member.builder()
                 .email(signupDTO.email())
@@ -42,8 +46,9 @@ public class SignupMemberService {
                 .sex(Sex.valueOf(signupDTO.sex().toUpperCase()))
                 .birthDate(signupDTO.birthDate())
                 .status(MemberStatus.ACTIVE)
-                .consumptionType(consumptionType)
-                .consumeGoal(consumptionGoal)
+                .consumptionType(consumptionType) // 수정됨
+                .consumeGoal(consumeGoal)         // 수정됨
+                .role(Role.MEMBER)
                 .build();
 
         Member saved = memberRepository.save(member);

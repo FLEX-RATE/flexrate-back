@@ -34,6 +34,6 @@ public record SignupRequestDTO(
         String consumptionType,
 
         @NotBlank(message = "소비 목표는 필수 항목입니다.")
-        @JsonProperty("consume_goal")  // 실제 컬럼 이름으로 매핑
-        String consumptionGoal
+        @JsonProperty("consume_goal")
+        String consumeGoal
 ) {}
