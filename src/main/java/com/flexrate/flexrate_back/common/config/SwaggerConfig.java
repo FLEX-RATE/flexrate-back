@@ -3,13 +3,11 @@ package com.flexrate.flexrate_back.common.config;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -30,25 +28,12 @@ public class SwaggerConfig {
         return openApi -> openApi.getPaths().values().forEach(pathItem ->
                 pathItem.readOperations().forEach(operation -> {
                     ApiResponses responses = operation.getResponses();
-
                     ApiResponse error400 = new ApiResponse()
-                            .description("잘못된 요청 - 필드 누락 또는 형식 오류")
-                            .content(new Content().addMediaType("application/json",
-                                    new io.swagger.v3.oas.models.media.MediaType()
-                                            .schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
-
+                            .description("잘못된 요청 - 필드 누락 또는 형식 오류");
                     ApiResponse error401 = new ApiResponse()
-                            .description("인증 실패 - 토큰 누락/만료")
-                            .content(new Content().addMediaType("application/json",
-                                    new io.swagger.v3.oas.models.media.MediaType()
-                                            .schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
-
+                            .description("인증 실패 - 토큰 누락/만료");
                     ApiResponse error500 = new ApiResponse()
-                            .description("서버 내부 오류")
-                            .content(new Content().addMediaType("application/json",
-                                    new io.swagger.v3.oas.models.media.MediaType()
-                                            .schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
-
+                            .description("서버 내부 오류");
                     responses.addApiResponse("400", error400);
                     responses.addApiResponse("401", error401);
                     responses.addApiResponse("500", error500);

@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-@Schema(description = "에러 응답 DTO")
+@Schema(description = "에러 응답")
 public class ErrorResponse {
 
     @Schema(description = "에러 코드", example = "U001")

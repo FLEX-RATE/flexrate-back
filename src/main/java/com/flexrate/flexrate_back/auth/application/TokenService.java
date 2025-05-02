@@ -13,12 +13,11 @@ import java.time.Duration;
 @Service
 public class TokenService {
     private final JwtTokenProvider tokenProvider;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
 
     /**
-     * 관리자 권한으로 회원 목록 조회
+     * 리프레쉬 토큰으로 액세스 토큰 재발급
      *
      * @param refreshToken 클라이언트로부터 전달받은 리프레시 토큰
      * @return 새로 발급된 액세스 토큰 문자열
