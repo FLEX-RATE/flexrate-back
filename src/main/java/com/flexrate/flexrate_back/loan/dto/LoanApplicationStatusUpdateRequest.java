@@ -6,7 +6,7 @@ import lombok.Builder;
 
 @Builder
 public record LoanApplicationStatusUpdateRequest(
-        @NotNull(message = "대출 상태는 필수입니다.(PENDING, APPROVED, REJECTED, EXECUTED)")
+        @NotNull(message = "대출 상태는 필수입니다.(PENDING, REJECTED, EXECUTED, COMPLETED)")
         LoanApplicationStatus status,
 
         String reason

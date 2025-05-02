@@ -60,13 +60,13 @@ public class LoanApplication {
 
     /**
      * 대출 상태 전환 유효성 체크
-     * 가능한 상태 전환: PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED
+     * 가능한 상태 전환: PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED
      * @param currentStatus 현재 대출 상태
      * @param newStatus 변경할 대출 상태
      * @return true: 유효한 상태 전환, false: 유효하지 않은 상태 전환
      */
     public boolean isTransitionValid(LoanApplicationStatus currentStatus, LoanApplicationStatus newStatus) {
         return (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
-                (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED);
+                (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED);
     }
 }
