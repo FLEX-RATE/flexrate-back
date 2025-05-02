@@ -22,6 +22,10 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
 
 
+    /*
+    * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
+    * */
+
     public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
         if (memberRepository.existsByEmail(signupDTO.email())) {
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
