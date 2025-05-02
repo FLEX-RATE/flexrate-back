@@ -9,6 +9,13 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 
+/*
+* 회원 가입 시 입력받는 사용자 검증 전달 DTO
+* @since 2025.05.02
+* @author 윤영찬
+* */
+
+
 @Builder
 public record SignupRequestDTO(
 

@@ -12,7 +12,7 @@ public class SignupControllerTest {
 
 
     /*
-    * 회원가입 성공 시, 요청 DTO에 대해 예상 응답 반환검증
+    * 회원가입 성공 시, 요청 DTO에 대해 예상 응답 반환검증 테스트
     * @since 2025-05-02
     * @author 윤영찬
     * */
