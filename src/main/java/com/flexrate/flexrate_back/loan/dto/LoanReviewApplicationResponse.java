@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class LoanPreApplicationResponse {
+public class LoanReviewApplicationResponse {
     private String name;
     private String screeningDate;
     private Integer loanLimit;

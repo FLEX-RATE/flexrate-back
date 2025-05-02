@@ -11,7 +11,7 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoanPreApplicationRequest {
+public class LoanReviewApplicationRequest {
 
     @NotBlank(message = "업종(businessType)은 필수 입력 항목입니다.")
     private String businessType;

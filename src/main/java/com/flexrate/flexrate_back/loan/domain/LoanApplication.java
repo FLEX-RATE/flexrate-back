@@ -31,7 +31,8 @@ public class LoanApplication {
     private LoanApplicationStatus status;
 
     private LocalDateTime executedAt;
-    private double amount;
+    private double totalAmount;
+    private int remainAmount;
     private double rate;
 
     @Column(length = 255)
@@ -40,5 +41,8 @@ public class LoanApplication {
     @OneToMany(mappedBy = "application")
     private List<LoanTransaction> loanTransactions;
 
-    private double creditScore;
+    private int creditScore;
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 }

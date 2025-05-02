@@ -1,8 +1,8 @@
 package com.flexrate.flexrate_back.loan.api;
 
-import com.flexrate.flexrate_back.loan.application.LoanPreApplicationService;
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationRequest;
-import com.flexrate.flexrate_back.loan.dto.LoanPreApplicationResponse;
+import com.flexrate.flexrate_back.loan.application.LoanReviewApplicationService;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/loans")
 @RequiredArgsConstructor
-public class LoanPreApplicationController {
+public class LoanReviewApplicationController {
 
-    private final LoanPreApplicationService preLoanApplicationService;
+    private final LoanReviewApplicationService preLoanApplicationService;
 
     /**
      * 대출 신청 사전 정보를 입력 받아 심사 결과를 반환하는 API
@@ -47,9 +47,9 @@ public class LoanPreApplicationController {
                                     examples = @ExampleObject(value = "{\"code\": \"A006\", \"message\": \"인증이 필요합니다.\"}")))
             }
     )
-    @PostMapping("/pre-applications")
-    public LoanPreApplicationResponse preApplyLoan(
-            @RequestBody @Valid LoanPreApplicationRequest request
+    @PostMapping("/loan-review-application")
+    public LoanReviewApplicationResponse preApplyLoan(
+            @RequestBody @Valid LoanReviewApplicationRequest request
     ) {
         return preLoanApplicationService.preApply(request);
     }
