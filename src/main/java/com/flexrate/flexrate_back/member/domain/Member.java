@@ -1,5 +1,9 @@
 package com.flexrate.flexrate_back.member.domain;
 
+import com.flexrate.flexrate_back.member.enums.LoginMethod;
+import com.flexrate.flexrate_back.member.enums.Role;
+import com.flexrate.flexrate_back.member.enums.Sex;
+import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.*;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.notification.domain.Notification;
@@ -40,6 +44,10 @@ public class Member {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Sex sex;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     private LocalDate birthDate;
 

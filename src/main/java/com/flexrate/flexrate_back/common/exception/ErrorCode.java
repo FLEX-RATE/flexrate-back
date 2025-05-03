@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_EMAIL_FORMAT("A005", "올바르지 않은 이메일 형식입니다.", HttpStatus.BAD_REQUEST),
     AUTHENTICATION_REQUIRED("A006", "인증이 필요합니다.", HttpStatus.UNAUTHORIZED),
     ADMIN_AUTH_REQUIRED("A007", "관리자 권한이 필요합니다.", HttpStatus.FORBIDDEN),
+    REFRESH_TOKEN_NOT_FOUND("A008", "리프레쉬 토큰이 누락되었습니다.", HttpStatus.BAD_REQUEST),
 
     // 상품
     PRODUCT_LOAD_ERROR("P001", "상품을 불러오는 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST),
