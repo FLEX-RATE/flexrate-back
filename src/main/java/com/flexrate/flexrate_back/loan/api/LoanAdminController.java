@@ -1,8 +1,11 @@
 package com.flexrate.flexrate_back.loan.api;
 
 import com.flexrate.flexrate_back.loan.application.LoanAdminService;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateRequest;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateResponse;
 import com.flexrate.flexrate_back.loan.dto.TransactionHistoryResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -48,5 +51,33 @@ public class LoanAdminController {
             @RequestParam(defaultValue = "date") String sortBy
     ) {
         return ResponseEntity.ok(loanAdminService.getTransactionHistory(memberId, page, size, sortBy));
+    }
+
+    /**
+     * 대출 상태 변경
+     * @param loanApplicationId 대출 신청 ID
+     * @param request 변경할 대출 상태(status), 변경 사유(reason)
+     * @return 성공 여부
+     * @since 2025.05.02
+     * @author 권민지
+     */
+    @Operation(
+            summary = "대출 상태 변경", description = "관리자가 대출 신청의 상태를 변경합니다.",
+            parameters = {
+                    @Parameter(name = "loanApplicationId", description = "대출 신청 ID", required = true),
+                    @Parameter(name = "request", description = "변경할 대출 상태 및 사유", required = true)
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "대출 상태 변경 성공"),
+                    @ApiResponse(responseCode = "404", description = "대출 신청을 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"L002\", \"message\": \"대출 정보를 찾을 수 없습니다.\"}"))),
+                    @ApiResponse(responseCode = "400", description = "대출 상태 변경 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"L005\", \"message\": \"변경을 요청한 상태가 제약 조건에 위배됩니다.\"}")))
+            })
+    @PatchMapping("/{loanApplicationId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LoanApplicationStatusUpdateResponse> patchLoanApplicationStatus(
+            @PathVariable("loanApplicationId") Long loanApplicationId,
+            @Valid @RequestBody LoanApplicationStatusUpdateRequest request
+    ) {
+        return ResponseEntity.ok(loanAdminService.patchLoanApplicationStatus(loanApplicationId, request));
     }
 }
