@@ -30,7 +30,7 @@ public class Member {
     @Column(nullable = false, length = 50)
     private String email;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false)
     private String passwordHash;
 
     private LocalDateTime passwordLastChangedAt;
