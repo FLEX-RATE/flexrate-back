@@ -63,5 +63,9 @@ public class MemberService {
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
                 .build();
+
+    public Member findById(Long memberId) {
+    return memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
     }
 }

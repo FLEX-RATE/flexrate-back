@@ -19,6 +19,7 @@ public enum ErrorCode {
     LOAN_NOT_FOUND("L002", "대출 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     APPROVAL_MISSING("L003", "승인 정보가 누락되었습니다.", HttpStatus.BAD_REQUEST),
     LOAN_ALREADY_APPROVED("L004", "이미 승인된 대출입니다.", HttpStatus.CONFLICT),
+    LOAN_STATUS_CONFLICT("L005", "변경을 요청한 상태가 제약 조건에 위배됩니다.", HttpStatus.BAD_REQUEST),
 
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
@@ -29,6 +30,7 @@ public enum ErrorCode {
     INVALID_EMAIL_FORMAT("A005", "올바르지 않은 이메일 형식입니다.", HttpStatus.BAD_REQUEST),
     AUTHENTICATION_REQUIRED("A006", "인증이 필요합니다.", HttpStatus.UNAUTHORIZED),
     ADMIN_AUTH_REQUIRED("A007", "관리자 권한이 필요합니다.", HttpStatus.FORBIDDEN),
+    REFRESH_TOKEN_NOT_FOUND("A008", "리프레쉬 토큰이 누락되었습니다.", HttpStatus.BAD_REQUEST),
 
     // 상품
     PRODUCT_LOAD_ERROR("P001", "상품을 불러오는 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST),

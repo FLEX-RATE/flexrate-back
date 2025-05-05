@@ -41,7 +41,7 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         (request.startDate() != null ? member.createdAt.goe(request.startDate().atStartOfDay()) : null),
                         (request.endDate() != null ? member.createdAt.loe(request.endDate().atTime(23, 59, 59)) : null),
                         request.hasLoan() != null && request.hasLoan()
-                                ? member.loanApplication.status.ne(LoanApplicationStatus.APPROVED) : null,
+                                ? member.loanApplication.status.ne(LoanApplicationStatus.EXECUTED) : null,
                         request.loanTransactionCount() != null
                                 ? request.loanTransactionCount() == 0
                                 ? member.loanApplication.isNull()

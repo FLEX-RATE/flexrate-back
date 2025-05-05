@@ -23,7 +23,7 @@ spring:
       leak-detection-threshold: 2000
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         show_sql: true
@@ -45,6 +45,8 @@ spring:
   sql:
     init:
       mode: always
+jwt:
+  secretKey: ${JWT_SECRET_KEY}
 logging:
   level:
     root: INFO
@@ -61,3 +63,6 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+security:
+  allowed-origins:
+    - http://localhost:3000
