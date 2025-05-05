@@ -26,6 +26,10 @@ public class LoanApplication {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @OneToOne
+    @JoinColumn(name ="product_id")
+    private LoanProduct product;
+
     private LocalDateTime appliedAt;
 
     @Enumerated(EnumType.STRING)
@@ -33,7 +37,7 @@ public class LoanApplication {
     private LoanApplicationStatus status;
 
     private LocalDateTime executedAt;
-    private double totalAmount;
+    private int totalAmount;
     private int remainAmount;
     private double rate;
 

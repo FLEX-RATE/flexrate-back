@@ -16,10 +16,6 @@ public class LoanProduct {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long productId;
 
-    @ManyToOne
-    @JoinColumn(name = "application_id", nullable = false)
-    private LoanApplication application;
-
     @Column(nullable = false, length = 20)
     private String name;
 
