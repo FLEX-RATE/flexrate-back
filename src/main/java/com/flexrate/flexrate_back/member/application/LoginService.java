@@ -1,64 +1,69 @@
 package com.flexrate.flexrate_back.member.application;
 
-import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
-import com.flexrate.flexrate_back.common.exception.ErrorCode;
-import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.auth.domain.FidoCredential;
+import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.LoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
 import com.flexrate.flexrate_back.member.domain.Member;
-import com.flexrate.flexrate_back.member.enums.LoginMethod;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.member.dto.PasskeyDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
+
+
+/*
+ * 이메일과 비밀번호로 로그인 인증
+ * @since 2025.05.06
+ * @author 윤영찬
+ * @param loginRequestDTO 로그인 요청 데이터
+ * @return 로그인 성공 시 사용자 정보 및 패스키 인증 여부
+ */
 
 @Service
 @RequiredArgsConstructor
 public class LoginService {
 
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final FidoCredentialRepository fidoCredentialRepository;
 
-    public LoginResponseDTO login(LoginRequestDTO request) {
-        if (request.email() == null || request.email().isBlank()) {
-            throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
-        }
+    public LoginResponseDTO loginWithEmailAndPassword(LoginRequestDTO loginRequestDTO) {
+        Member member = memberRepository.findByEmail(loginRequestDTO.email())
+                .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS));
 
-        Member member = memberRepository.findByEmail(request.email())
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-
-        if (request.passkeyId() != null && !request.passkeyId().isBlank()) {
-            // 패스키 로그인 (추후 구현 예정)
-            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
-        }
-
-        if (request.password() == null || request.password().isBlank()) {
-            throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
-        }
-
-        if (!passwordEncoder.matches(request.password(), member.getPasswordHash())) {
+        if (!member.getPasswordHash().equals(loginRequestDTO.password())) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-//        member.setLastLoginAt(LocalDateTime.now());
-//        member.setLastLoginMethod(LoginMethod.PASSWORD);
-        memberRepository.save(member); // 변경된 값 저장
+        boolean requirePasskeyAuth = isPasskeyRegistered(member.getMemberId());
 
-//        String accessToken = jwtTokenProvider.createAccessToken(member.getEmail());
-//        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+        if (requirePasskeyAuth) {
+            throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
 
-        List<String> passkeyList = Collections.emptyList();
+        List<PasskeyDTO> passkeyDTOs = fidoCredentialRepository.findByMember_MemberId(member.getMemberId())
+                .stream()
+                .map(c -> PasskeyDTO.builder()
+                        .build())
+                .toList();
 
-        return new LoginResponseDTO(
-                accessToken,
-                refreshToken,
-                member.getName(),
-                passkeyList
-        );
+        return LoginResponseDTO.builder()
+                .memberId(member.getMemberId())
+                .email(member.getEmail())
+                .requirePasskeyAuth(requirePasskeyAuth)
+                .build();
+    }
+
+    public Member getMemberByEmail(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_EMAIL_FORMAT));
+    }
+
+    private boolean isPasskeyRegistered(Long memberId) {
+        return fidoCredentialRepository.findByMember_MemberId(memberId)
+                .map(FidoCredential::isActive)
+                .orElse(false);
     }
 }

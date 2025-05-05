@@ -57,15 +57,17 @@ public class MemberService {
                 .role(Role.MEMBER)
                 .build();
 
+
         Member saved = memberRepository.save(member);
 
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
                 .build();
+        }
 
     public Member findById(Long memberId) {
-    return memberRepository.findById(memberId)
+        return memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
     }
 }
