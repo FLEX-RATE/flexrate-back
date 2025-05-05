@@ -31,8 +31,8 @@ public class LoanProduct {
     @Column(nullable = false)
     private double maxRate;
 
-    @Column(length = 255)
-    private String terms;
+    @Column(nullable = false)
+    private int terms;
 
     @OneToMany(mappedBy = "loanProduct")
     private List<Interest> Interests;
