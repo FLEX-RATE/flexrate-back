@@ -3,6 +3,8 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.common.dto.PaginationInfo;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository;
@@ -15,7 +17,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 
 @Service
 @RequiredArgsConstructor
@@ -114,6 +118,89 @@ public class MemberAdminService {
                 .birthDate(member.getBirthDate())
                 .memberStatus(member.getStatus())
                 .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 관리자 권한으로 회원 정보 상세 조회
+     * @param memberId 조회할 회원 Id
+     * @param adminToken 관리자 인증 토큰
+     * @return MemberDetailSearchResponse
+     * @throws FlexrateException ErrorCode ADMIN_AUTH_REQUIRED 관리자 인증 필요, USER_NOT_FOUND 사용자를 찾지 못함
+     * @since 2025.04.29
+     * @author 허연규
+     */
+
+    public MemberDetailResponse searchMemberDetail(Long memberId, String adminToken) {
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(adminToken)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
+        // U001 유저 존재 여부 체크
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
+        Long tsCount = memberQueryRepository.countLoanTransactions(memberId);
+        Double interestRate = memberQueryRepository.findLatestInterestRate(memberId);
+
+        // 남은 대출 기간 조회
+        LocalDate now = LocalDate.now();
+        LocalDate endDate = app.getEndDate().toLocalDate();
+
+        Period period = Period.between(now, endDate);
+        int leftMonths = period.getYears() * 12 + period.getMonths();
+
+        // 월 상환액
+        double monthlyInterestRate = interestRate / 12 / 100;
+        double principal = app.getRemainAmount();
+        double monthlyPaymentRaw = principal *
+                (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, leftMonths)) /
+                (Math.pow(1 + monthlyInterestRate, leftMonths) - 1);
+        int monthlyPayment = (int) Math.round(monthlyPaymentRaw);
+
+        // 남은 대출 기간 동안의 총 대출원리금
+        int totalPayment = monthlyPayment * leftMonths;
+
+        // 납입일
+        LocalDate startDate = app.getStartDate().toLocalDate();
+        int repaymentDay = startDate.getDayOfMonth();
+        int currentDay = now.getDayOfMonth();
+
+        LocalDate dueDate;
+
+        if (startDate.getYear() == now.getYear()
+                && startDate.getMonth() == now.getMonth()){
+            LocalDate nextMonth = now.plusMonths(1);
+            dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
+        } else{
+            if (currentDay <= repaymentDay) {
+                dueDate = LocalDate.of(now.getYear(), now.getMonth(), repaymentDay);
+            } else {
+                LocalDate nextMonth = now.plusMonths(1);
+                dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
+            }
+        }
+
+        String paymentDue = dueDate.toString();
+
+        return MemberDetailResponse.builder()
+                .memberId(member.getMemberId())
+                .name(member.getName())
+                .sex(member.getSex().name())
+                .status(member.getStatus().name())
+                .birthDate(member.getBirthDate().toString())
+                .createdAt(member.getCreatedAt().toString())
+                .hasLoan(LoanApplicationStatus.EXECUTED.equals(app.getStatus()))
+                .loanTransactionCount(tsCount != null ? tsCount.intValue() : 0)
+                .consumptionType(member.getConsumptionType().name())
+                .consumeGoal(member.getConsumeGoal().name())
+                .interestRate(interestRate)
+                .creditScore(app.getCreditScore())
+                .totalPayment(totalPayment)
+                .paymentDue(paymentDue)
+                .monthlyPayment(monthlyPayment)
                 .build();
     }
 }
