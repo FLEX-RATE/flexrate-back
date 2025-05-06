@@ -69,4 +69,36 @@ public class MemberAdminController {
                 memberAdminService.patchMember(memberId, request, adminToken)
         );
     }
+
+    /**
+     * 관리자 권한으로 회원 정보 상세 조회
+     * @param memberId 조회할 회원 Id
+     * @param adminToken 관리자 인증 토큰
+     * @return 회원 상세 정보 조회 결과
+     * @since 2025.04.29
+     * @author 허연규
+     */
+
+    @Operation(summary = "관리자 권한으로 회원 정보 상세 조회", description = "관리자가 회원 id를 통해 특정 회원의 정보를 상세 조회합니다.",
+            parameters = {
+                    @Parameter(name = "memberId", description = "조회할 memberId", required = true),
+                    @Parameter(name = "X-Admin-Token", description = "관리자 인증 토큰", required = true)},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "회원 정보 조회 결과 반환"),
+                    @ApiResponse(responseCode = "400", description = "관리자 인증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),
+                    @ApiResponse(responseCode = "400", description = "사용자가 존재하지 않음", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"U001\", \"message\": \"사용자를 찾을 수 없습니다.\"}"))),
+                    @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"S500\", \"message\": \"서버 내부 오류\"}"))),
+            }
+            //security = { @SecurityRequirement(name = "bearerAuth") }
+    )
+    @GetMapping("/{memberId}")
+    // @PreAuthorize("hasRole('ADMIN')") - 우선은 adminToken으로 테스트
+    public ResponseEntity<MemberDetailResponse> getMemberDetail(
+            @PathVariable Long memberId,
+            @RequestHeader("X-Admin-Token") String adminToken
+    ) {
+        return ResponseEntity.ok(
+                memberAdminService.searchMemberDetail(memberId, adminToken)
+        );
+    }
 }
