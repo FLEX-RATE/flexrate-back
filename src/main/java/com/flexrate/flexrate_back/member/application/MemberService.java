@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.application;
 
+import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -11,12 +12,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
 
     /*
@@ -60,9 +64,12 @@ public class MemberService {
 
         Member saved = memberRepository.save(member);
 
+        String accessToken = jwtTokenProvider.generateToken(saved, Duration.ofHours(1));
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
+                .accessToken(accessToken)
                 .build();
         }
 
