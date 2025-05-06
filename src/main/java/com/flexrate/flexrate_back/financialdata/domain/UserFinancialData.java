@@ -28,10 +28,8 @@ public class UserFinancialData {
     private UserFinancialDataType dataType;
 
     @Column(nullable = false, precision = 12)
-    private double value;
+    private int value;
 
     @Column(nullable = false)
     private LocalDateTime collectedAt;
-
-    private String source;
 }
