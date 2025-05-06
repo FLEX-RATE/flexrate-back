@@ -1,6 +1,6 @@
 package com.flexrate.flexrate_back.financialdata.api;
 
-import com.flexrate.flexrate_back.financialdata.application.UserFinantialDataService;
+import com.flexrate.flexrate_back.financialdata.application.UserFinancialDataService;
 import com.flexrate.flexrate_back.financialdata.dto.CreditScoreResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -19,7 +19,7 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class CreditScoreController {
 
-    private final UserFinantialDataService userFinantialDataService;
+    private final UserFinancialDataService userFinancialDataService;
     private final MemberService memberService;
 
     /**
@@ -29,12 +29,12 @@ public class CreditScoreController {
      */
     @Operation(
             summary = "신용점수 조회",
-            description = "회원의 금융 데이터를 기반으로 신용점수를 계산하여 반환합니다."
+            description = "회원의 신용점수를 반환합니다."
     )
     @GetMapping
     public ResponseEntity<Integer> getCreditScore(Principal principal) {
         Member member = memberService.findById(Long.parseLong(principal.getName()));
-        int creditScore = userFinantialDataService.evaluateCreditScore(member);
+        int creditScore = userFinancialDataService.evaluateCreditScore(member);
         return ResponseEntity.ok(creditScore);
     }
 
@@ -54,7 +54,7 @@ public class CreditScoreController {
     @GetMapping("/evaluate")
     public ResponseEntity<CreditScoreResponse> evaluateCreditScore(Principal principal) {
         Member member = memberService.findById(Long.parseLong(principal.getName()));
-        int creditScore = userFinantialDataService.evaluateCreditScore(member);
+        int creditScore = userFinancialDataService.evaluateCreditScore(member);
         return ResponseEntity.ok(new CreditScoreResponse(creditScore));
     }
 
