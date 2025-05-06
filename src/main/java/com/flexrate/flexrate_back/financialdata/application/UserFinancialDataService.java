@@ -1,6 +1,10 @@
 package com.flexrate.flexrate_back.financialdata.application;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
+import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,7 +13,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserFinantialDataService {
+public class UserFinancialDataService {
+    private final LoanApplicationRepository loanApplicationRepository;
+
     /**
      * 신용점수 평가
      * 임의로 만들었으며 추후 조정 필요
@@ -20,6 +26,11 @@ public class UserFinantialDataService {
      */
     public int evaluateCreditScore(Member member) {
         List<UserFinancialData> financialDataList = member.getFinancialData();
+
+        // 신용 점수 평가는 대출 상품 선정 이후여야함
+        LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+
 
         int income = 0;
         int expense = 0;
@@ -46,7 +57,12 @@ public class UserFinantialDataService {
         score -= Math.min(loanBalance / 500_000, 200); // 500만원당 -1점, 최대 -200점
 
         // 점수 제한 범위 조정 (0~1000)
-        return (int) Math.max(0, Math.min(score, 1000));
+        int finalScore = (int) Math.max(0, Math.min(score, 1000));
+
+        // 신용 점수 적용
+        loanApplication.patchCreditScore(finalScore);
+
+        return finalScore;
     }
 
 }
