@@ -40,7 +40,7 @@ public class LoanApplication {
     private LocalDateTime executedAt;
     private int totalAmount;
     private int remainAmount;
-    private double rate;
+    private float rate;
 
     @OneToMany(mappedBy = "application")
     private List<LoanTransaction> loanTransactions;

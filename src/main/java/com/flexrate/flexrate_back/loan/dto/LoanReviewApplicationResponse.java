@@ -7,7 +7,7 @@ public record LoanReviewApplicationResponse(
         String name,
         String screeningDate,
         int loanLimit,
-        double initialRate,
+        float initialRate,
         float rateRangeFrom,
         float rateRangeTo,
         int creditScore
