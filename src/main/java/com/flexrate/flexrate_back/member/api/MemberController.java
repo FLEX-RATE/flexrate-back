@@ -1,16 +1,15 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.MemberService;
+import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
+import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
@@ -51,5 +50,20 @@ public class MemberController {
     public ResponseEntity<MypageResponse> updateMyPage(MypageUpdateRequest request, Principal principal) {
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.updateMyPage(memberId, request));
+    }
+
+    /**
+     * 소비 유형별 소비 목표 반환
+     * @param consumptionType 소비 유형
+     * @return 소비 목표 list
+     * @since 2025.05.07
+     * @author 권민지
+     */
+    @Operation(summary = "소비 유형별 소비 목표 조회", description = "소비 유형에 따른 소비 목표를 조회합니다.",
+            responses = {@ApiResponse(responseCode = "200", description = "소비 목표 조회 결과 반환"),
+                         @ApiResponse(responseCode = "400", description = "잘못된 소비 유형입니다.")})
+    @GetMapping("/consume-goal/{consumptionType}")
+    public ResponseEntity<ConsumeGoalResponse> getConsumeGoal(@PathVariable("consumptionType") ConsumptionType consumptionType) {
+        return ResponseEntity.ok(memberService.getConsumeGoal(consumptionType));
     }
 }

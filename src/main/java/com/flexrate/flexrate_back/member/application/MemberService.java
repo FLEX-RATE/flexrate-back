@@ -4,10 +4,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.MypageResponse;
-import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
-import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -122,6 +119,20 @@ public class MemberService {
                 .consumeGoal(member.getConsumeGoal())
                 .consumptionType(member.getConsumptionType())
                 .build();
+    }
+
+    /**
+     * 소비 유형별 소비 목표 반환
+     * @param consumptionType 소비 유형
+     * @return 소비 목표 list
+     * @since 2025.05.07
+     * @author 권민지
+     */
+    public ConsumeGoalResponse getConsumeGoal(ConsumptionType consumptionType) {
+        return ConsumeGoalResponse.builder()
+                .consumeGoals(ConsumeGoal.getConsumeGoalsByType(consumptionType))
+                .build();
+
     }
 }
 
