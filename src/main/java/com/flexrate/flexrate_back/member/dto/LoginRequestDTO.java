@@ -13,14 +13,12 @@ import lombok.Builder;
  */
 @Builder
 public record LoginRequestDTO(
-        @Email(message = "유효한 이메일을 입력해주세요.")
         @NotBlank(message = "이메일은 필수 항목입니다.")
         String email,
 
-        @NotNull(message = "비밀번호를 입력하세요")
+        @NotBlank(message = "비밀번호는 필수 항목입니다.")
         String password,
 
-        LoginMethod method,
-
-        String passkeyData
+        String passkeyData, // 패스키 인증 데이터를 받을 수 있도록 함 (FIDO2)
+        String authMethod // 인증 방식(MFA or FIDO)
 ) {}

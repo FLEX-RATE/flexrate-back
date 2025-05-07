@@ -15,13 +15,9 @@ import java.util.List;
 
 @Builder
 public record LoginResponseDTO(
-        Long memberId,
+        Long userId,
+        String email,
         String accessToken,
         String refreshToken,
-        String email,
-        String name,
-        Sex sex,
-        ConsumptionType consumptionType,
-        ConsumeGoal consumeGoal,
-        List<String> passkeys
+        String passkeyList // 패스키 목록을 포함
 ) {}

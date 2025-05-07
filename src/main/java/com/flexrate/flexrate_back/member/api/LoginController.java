@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,11 +18,12 @@ public class LoginController {
 
     @Operation(
             summary = "로그인",
-            description = "이메일, 비밀번호 또는 패스키로 로그인"
+            description = "이메일/비밀번호 또는 패스키(FIDO2)를 이용한 로그인",
+            tags = { "Auth Controller" }
     )
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(
-            @RequestBody @Valid LoginRequestDTO requestDTO) {
-        return ResponseEntity.ok(loginService.login(requestDTO));
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequestDTO) {
+        LoginResponseDTO response = loginService.login(loginRequestDTO);
+        return ResponseEntity.ok(response);
     }
 }
