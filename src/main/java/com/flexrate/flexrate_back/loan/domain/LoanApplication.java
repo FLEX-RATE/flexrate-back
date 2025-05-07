@@ -2,6 +2,7 @@ package com.flexrate.flexrate_back.loan.domain;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -40,7 +41,7 @@ public class LoanApplication {
     private LocalDateTime executedAt;
     private int totalAmount;
     private int remainAmount;
-    private double rate;
+    private float rate;
 
     @OneToMany(mappedBy = "application")
     private List<LoanTransaction> loanTransactions;
@@ -94,4 +95,12 @@ public class LoanApplication {
         this.creditScore = score;
     }
 
+    // 대출 신청 정보 갱신
+    public void applyLoan(LoanApplicationRequest loanApplicationRequest) {
+        this.totalAmount = loanApplicationRequest.loanAmount();
+        this.remainAmount = loanApplicationRequest.loanAmount();
+        this.startDate = LocalDateTime.now();
+        this.endDate = LocalDateTime.now().plusMonths(loanApplicationRequest.repaymentMonth());
+        this.status = LoanApplicationStatus.PENDING;
+    }
 }
