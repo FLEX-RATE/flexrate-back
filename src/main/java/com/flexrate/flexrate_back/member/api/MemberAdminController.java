@@ -1,5 +1,8 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import com.flexrate.flexrate_back.member.application.MemberAdminService;
 import com.flexrate.flexrate_back.member.dto.*;
 import jakarta.validation.Valid;
@@ -17,11 +20,12 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 @RequestMapping("/api/admin/members")
 public class MemberAdminController {
     private final MemberAdminService memberAdminService;
+    private final AdminAuthChecker adminAuthChecker;
 
     /**
      * 관리자 권한으로 회원 목록 조회
+     * @param authHeader 인증 토큰
      * @param request 회원 검색 요청
-     * @param adminToken 관리자 인증 토큰
      * @return 회원 검색 결과
      * @since 2025.04.26
      * @author 권민지
@@ -33,16 +37,21 @@ public class MemberAdminController {
                          @ApiResponse(responseCode = "400", description = "관리자 인증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),})
     @GetMapping("/search")
     public ResponseEntity<MemberSearchResponse> searchMembers(
-            @Valid MemberSearchRequest request,
-            @RequestHeader("X-Admin-Token") String adminToken
+            @RequestHeader("Authorization") String authHeader,
+            @Valid MemberSearchRequest request
     ) {
-        return ResponseEntity.ok(memberAdminService.searchMembers(request, adminToken));
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(authHeader)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(memberAdminService.searchMembers(request));
     }
 
     /**
      * 관리자 권한으로 회원 정보 수정
+     * @param authHeader 인증 토큰
      * @param request 회원 정보 수정 요청
-     * @param adminToken 관리자 인증 토큰
      * @return 회원 정보 수정 결과
      * @since 2025.04.26
      * @author 허연규
@@ -61,19 +70,22 @@ public class MemberAdminController {
             })
     @PatchMapping("/{memberId}")
     public ResponseEntity<PatchMemberResponse> patchMember(
+            @RequestHeader("Authorization") String authHeader,
             @PathVariable Long memberId,
-            @Valid @RequestBody PatchMemberRequest request,
-            @RequestHeader("X-Admin-Token") String adminToken
+            @Valid @RequestBody PatchMemberRequest request
     ) {
-        return ResponseEntity.ok(
-                memberAdminService.patchMember(memberId, request, adminToken)
-        );
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(authHeader)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(memberAdminService.patchMember(memberId, request));
     }
 
     /**
      * 관리자 권한으로 회원 정보 상세 조회
+     * @param authHeader 인증 토큰
      * @param memberId 조회할 회원 Id
-     * @param adminToken 관리자 인증 토큰
      * @return 회원 상세 정보 조회 결과
      * @since 2025.04.29
      * @author 허연규
@@ -94,11 +106,14 @@ public class MemberAdminController {
     @GetMapping("/{memberId}")
     // @PreAuthorize("hasRole('ADMIN')") - 우선은 adminToken으로 테스트
     public ResponseEntity<MemberDetailResponse> getMemberDetail(
-            @PathVariable Long memberId,
-            @RequestHeader("X-Admin-Token") String adminToken
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long memberId
     ) {
-        return ResponseEntity.ok(
-                memberAdminService.searchMemberDetail(memberId, adminToken)
-        );
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(authHeader)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(memberAdminService.searchMemberDetail(memberId));
     }
 }

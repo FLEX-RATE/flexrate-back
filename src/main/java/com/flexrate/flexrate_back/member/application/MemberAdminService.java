@@ -28,23 +28,16 @@ public class MemberAdminService {
     private final MemberRepository memberRepository;
     private final MemberQueryRepository memberQueryRepository;
     private final MemberMapper memberMapper;
-    private final AdminAuthChecker adminAuthChecker;
 
     /**
      * 관리자 권한으로 회원 목록 조회
      * @param request 검색 조건
-     * @param adminToken 관리자 인증 토큰
      * @return MemberSearchResponse 회원 목록, 페이징 정보
      * @throws FlexrateException ErrorCode ADMIN_AUTH_REQUIRED 관리자 인증 필요
      * @since 2025.04.26
      * @author 권민지
      */
-    public MemberSearchResponse searchMembers(@Valid MemberSearchRequest request, String adminToken) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(adminToken)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
+    public MemberSearchResponse searchMembers(@Valid MemberSearchRequest request) {
         // 기본 정렬 createdAt 내림차순
         Sort sort = request.sortBy() != null
                 ? Sort.by(request.sortBy().name()).ascending()
@@ -74,7 +67,6 @@ public class MemberAdminService {
     /**
      * 관리자 권한으로 회원 정보 수정
      * @param request 수정할 회원 정보
-     * @param adminToken 관리자 인증 토큰
      * @return MemberSearchResponse 수정된 회원 정보
      * @throws FlexrateException ErrorCode ADMIN_AUTH_REQUIRED 관리자 인증 필요, USER_NOT_FOUND 사용자를 찾지 못함,
      * AUTH_REQUIRED_FIELD_MISSING 필수 입력값 누락
@@ -82,12 +74,7 @@ public class MemberAdminService {
      * @author 허연규
      */
     @Transactional
-    public PatchMemberResponse patchMember(Long memberId, @Valid PatchMemberRequest request, String adminToken) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(adminToken)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
+    public PatchMemberResponse patchMember(Long memberId, @Valid PatchMemberRequest request) {
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
@@ -124,19 +111,13 @@ public class MemberAdminService {
     /**
      * 관리자 권한으로 회원 정보 상세 조회
      * @param memberId 조회할 회원 Id
-     * @param adminToken 관리자 인증 토큰
      * @return MemberDetailSearchResponse
      * @throws FlexrateException ErrorCode ADMIN_AUTH_REQUIRED 관리자 인증 필요, USER_NOT_FOUND 사용자를 찾지 못함
      * @since 2025.04.29
      * @author 허연규
      */
 
-    public MemberDetailResponse searchMemberDetail(Long memberId, String adminToken) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(adminToken)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
+    public MemberDetailResponse searchMemberDetail(Long memberId) {
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
