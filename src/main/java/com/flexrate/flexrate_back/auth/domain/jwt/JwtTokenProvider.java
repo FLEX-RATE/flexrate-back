@@ -77,10 +77,4 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
-    // 토큰 기반으로 유저 role 반환
-    public String getRole(String token) {
-        Claims claims = getClaims(token);
-        return claims.get("role", String.class);
-    }
 }

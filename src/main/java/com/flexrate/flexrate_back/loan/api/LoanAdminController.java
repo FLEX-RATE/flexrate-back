@@ -18,6 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/admin/loans")
 @RequiredArgsConstructor
@@ -27,7 +29,6 @@ public class LoanAdminController {
 
     /**
      * 대출 거래 내역 목록 조회
-     * @param authHeader 인증 토큰
      * @param memberId 사용자 ID
      * @param page 페이지 번호
      * @param size 페이지 크기
@@ -38,7 +39,6 @@ public class LoanAdminController {
      */
     @Operation(summary = "대출 거래 내역 목록 조회", description = "관리자가 특정 사용자의 대출 거래 내역을 조회합니다.",
             parameters = {
-                @Parameter(name = "Authorization", description = "관리자 인증 토큰", required = true),
                 @Parameter(name = "memberId", description = "사용자 ID", required = true),
                 @Parameter(name = "page", description = "페이지 번호", required = false),
                 @Parameter(name = "size", description = "페이지 크기", required = false),
@@ -50,14 +50,14 @@ public class LoanAdminController {
             })
     @GetMapping("/members/{memberId}/transactions")
     public ResponseEntity<TransactionHistoryResponse> getTransactionHistory(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable("memberId") Long memberId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "date") String sortBy
+            @RequestParam(defaultValue = "date") String sortBy,
+            Principal principal
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(authHeader)) {
+        if (!adminAuthChecker.isAdmin(principal)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -75,7 +75,6 @@ public class LoanAdminController {
     @Operation(
             summary = "대출 상태 변경", description = "관리자가 대출 신청의 상태를 변경합니다.",
             parameters = {
-                    @Parameter(name = "Authorization", description = "관리자 인증 토큰", required = true),
                     @Parameter(name = "loanApplicationId", description = "대출 신청 ID", required = true),
                     @Parameter(name = "request", description = "변경할 대출 상태 및 사유", required = true)
             },
@@ -86,12 +85,12 @@ public class LoanAdminController {
             })
     @PatchMapping("/{loanApplicationId}/status")
     public ResponseEntity<LoanApplicationStatusUpdateResponse> patchLoanApplicationStatus(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable("loanApplicationId") Long loanApplicationId,
-            @Valid @RequestBody LoanApplicationStatusUpdateRequest request
+            @Valid @RequestBody LoanApplicationStatusUpdateRequest request,
+            Principal principal
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(authHeader)) {
+        if (!adminAuthChecker.isAdmin(principal)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 

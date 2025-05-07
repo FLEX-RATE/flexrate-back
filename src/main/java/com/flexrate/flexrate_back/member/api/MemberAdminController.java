@@ -15,6 +15,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
+import java.security.Principal;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/members")
@@ -24,24 +26,22 @@ public class MemberAdminController {
 
     /**
      * 관리자 권한으로 회원 목록 조회
-     * @param authHeader 인증 토큰
      * @param request 회원 검색 요청
      * @return 회원 검색 결과
      * @since 2025.04.26
      * @author 권민지
      */
     @Operation(summary = "관리자 권한으로 회원 목록 조회", description = "관리자가 회원 목록을 검색 조건에 따라 조회합니다.",
-            parameters = {@Parameter(name = "request", description = "회원 검색 요청(모든 인자 null 가능)", required = true),
-                          @Parameter(name = "X-Admin-Token", description = "관리자 인증 토큰", required = true)},
+            parameters = {@Parameter(name = "request", description = "회원 검색 요청(모든 인자 null 가능)", required = true)},
             responses = {@ApiResponse(responseCode = "200", description = "회원 검색 결과 반환"),
                          @ApiResponse(responseCode = "400", description = "관리자 인증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),})
     @GetMapping("/search")
     public ResponseEntity<MemberSearchResponse> searchMembers(
-            @RequestHeader("Authorization") String authHeader,
-            @Valid MemberSearchRequest request
+            @Valid MemberSearchRequest request,
+            Principal principal
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(authHeader)) {
+        if (!adminAuthChecker.isAdmin(principal)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -50,7 +50,6 @@ public class MemberAdminController {
 
     /**
      * 관리자 권한으로 회원 정보 수정
-     * @param authHeader 인증 토큰
      * @param request 회원 정보 수정 요청
      * @return 회원 정보 수정 결과
      * @since 2025.04.26
@@ -58,8 +57,7 @@ public class MemberAdminController {
      */
     @Operation(summary = "관리자 권한으로 회원 정보 수정", description = "관리자가 회원 id를 통해 특정 회원의 정보를 수정합니다.",
     parameters = {
-            @Parameter(name = "memberId", description = "수정할 memberId", required = true),
-            @Parameter(name = "X-Admin-Token", description = "관리자 인증 토큰", required = true)},
+            @Parameter(name = "memberId", description = "수정할 memberId", required = true)},
             responses = {
                     @ApiResponse(responseCode = "200", description = "회원 정보 수정 결과 반환"),
                     @ApiResponse(responseCode = "400", description = "관리자 인증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),
@@ -70,12 +68,12 @@ public class MemberAdminController {
             })
     @PatchMapping("/{memberId}")
     public ResponseEntity<PatchMemberResponse> patchMember(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable Long memberId,
-            @Valid @RequestBody PatchMemberRequest request
+            @Valid @RequestBody PatchMemberRequest request,
+            Principal principal
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(authHeader)) {
+        if (!adminAuthChecker.isAdmin(principal)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -84,7 +82,6 @@ public class MemberAdminController {
 
     /**
      * 관리자 권한으로 회원 정보 상세 조회
-     * @param authHeader 인증 토큰
      * @param memberId 조회할 회원 Id
      * @return 회원 상세 정보 조회 결과
      * @since 2025.04.29
@@ -93,8 +90,7 @@ public class MemberAdminController {
 
     @Operation(summary = "관리자 권한으로 회원 정보 상세 조회", description = "관리자가 회원 id를 통해 특정 회원의 정보를 상세 조회합니다.",
             parameters = {
-                    @Parameter(name = "memberId", description = "조회할 memberId", required = true),
-                    @Parameter(name = "X-Admin-Token", description = "관리자 인증 토큰", required = true)},
+                    @Parameter(name = "memberId", description = "조회할 memberId", required = true)},
             responses = {
                     @ApiResponse(responseCode = "200", description = "회원 정보 조회 결과 반환"),
                     @ApiResponse(responseCode = "400", description = "관리자 인증 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),
@@ -106,11 +102,11 @@ public class MemberAdminController {
     @GetMapping("/{memberId}")
     // @PreAuthorize("hasRole('ADMIN')") - 우선은 adminToken으로 테스트
     public ResponseEntity<MemberDetailResponse> getMemberDetail(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long memberId
+            @PathVariable Long memberId,
+            Principal principal
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(authHeader)) {
+        if (!adminAuthChecker.isAdmin(principal)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
