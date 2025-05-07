@@ -27,7 +27,7 @@ public class LoginService {
     private final WebAuthnService webAuthnService;
     private final TokenService tokenService;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final PasswordEncoder passwordEncoder; // 추가
+    private final PasswordEncoder passwordEncoder;
 
     public LoginResponseDTO login(LoginRequestDTO requestDTO) {
         Member member = memberRepository.findByEmail(requestDTO.email())

@@ -72,6 +72,7 @@ public class MemberService {
                 .accessToken(accessToken)
                 .build();
     }
+        }
 
     public Member findById(Long memberId) {
         return memberRepository.findById(memberId)
