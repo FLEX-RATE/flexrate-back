@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /*
  * 회원 가입 시 입력받는 사용자 검증 전달 DTO
@@ -43,5 +44,8 @@ public record SignupRequestDTO(
 
         @NotNull(message = "소비 목표는 필수 항목입니다.")
         @JsonProperty("consume_goal")
-        ConsumeGoal consumeGoal
+        ConsumeGoal consumeGoal,
+
+        @JsonProperty("passkeys")
+        List<PasskeyRequestDTO> passkeys
 ) {}
