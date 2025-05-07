@@ -71,7 +71,7 @@ public class MemberService {
                 .email(saved.getEmail())
                 .accessToken(accessToken)
                 .build();
-        }
+    }
 
     public Member findById(Long memberId) {
         return memberRepository.findById(memberId)

@@ -16,10 +16,6 @@ public class LoanProduct {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long productId;
 
-    @ManyToOne
-    @JoinColumn(name = "application_id", nullable = false)
-    private LoanApplication application;
-
     @Column(nullable = false, length = 20)
     private String name;
 
@@ -35,8 +31,8 @@ public class LoanProduct {
     @Column(nullable = false)
     private double maxRate;
 
-    @Column(length = 255)
-    private String terms;
+    @Column(nullable = false)
+    private int terms;
 
     @OneToMany(mappedBy = "loanProduct")
     private List<Interest> Interests;

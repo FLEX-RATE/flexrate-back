@@ -18,8 +18,8 @@ public class Interest {
     private Long interestId;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private LoanProduct loanProduct;
+    @JoinColumn(name = "application_id", nullable = false)
+    private LoanApplication loanApplication;
 
     @NotNull
     private double interestRate;

@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.domain.repository;
 
+import com.flexrate.flexrate_back.loan.domain.*;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.QMember;
@@ -58,5 +59,50 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                 .fetch();
 
         return new PageImpl<>(members, pageable, members.size());
+    }
+
+    /**
+     * Id로 특정한 회원 정보 상세 조회
+     * @param memberId 회원 ID
+     * @return 회원의 상세 정보 제공을 위한 필요 정보들
+     * @since 2025.04.29
+     * @author 허연규
+     */
+
+    @Override
+    public LoanApplication findLatestLoanApplication(Long memberId) {
+        QLoanApplication a = QLoanApplication.loanApplication;
+        return queryFactory
+                .selectFrom(a)
+                .where(a.member.memberId.eq(memberId))
+                .fetchFirst();
+    }
+
+    @Override
+    public Long countLoanTransactions(Long memberId) {
+        QLoanTransaction t = QLoanTransaction.loanTransaction;
+        return queryFactory
+                .select(t.count())
+                .from(t)
+                .where(t.member.memberId.eq(memberId))
+                .fetchOne();
+    }
+
+    @Override
+    public Double findLatestInterestRate(Long memberId) {
+        QInterest interest = QInterest.interest;
+        QLoanProduct loanProduct = QLoanProduct.loanProduct;
+        QLoanApplication loanApplication = QLoanApplication.loanApplication;
+        QMember member = QMember.member;
+
+        return queryFactory
+                .select(interest.interestRate)
+                .from(interest)
+                .join(interest.loanProduct, loanProduct)
+                .join(loanProduct.application, loanApplication)
+                .join(loanApplication.member, member)
+                .where(member.memberId.eq(memberId))
+                .orderBy(interest.interestDate.desc())
+                .fetchFirst();
     }
 }
