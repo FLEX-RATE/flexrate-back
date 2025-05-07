@@ -5,6 +5,8 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationResultResponse;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -80,8 +83,62 @@ public class LoanService {
                 .screeningDate(loanApplication.getAppliedAt().toLocalDate().toString())
                 .loanLimit(loanApplication.getTotalAmount())
                 .initialRate(loanApplication.getRate())
-                .rateRangeFrom(loanApplication.getProduct().getMaxRate())
-                .rateRangeTo(loanApplication.getProduct().getMinRate())
+                .rateRangeFrom(loanApplication.getProduct().getMinRate())
+                .rateRangeTo(loanApplication.getProduct().getMaxRate())
+                .terms(loanApplication.getProduct().getTerms())
                 .build();
     }
+
+    /**
+     * 대출 신청
+     * @param member 대출 신청자
+     * @since 2025.05.06
+     * @author 유승한
+     */
+    public void applyLoan(Member member, LoanApplicationRequest loanApplicationRequest) {
+        LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+
+        if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
+        }
+
+        // 한도를 초과한 대출금액 요청 시 예외 처리
+        if(loanApplication.getTotalAmount() < loanApplicationRequest.loanAmount()){
+            throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
+        }
+
+        // 최대 대출 기한을 초과한 기한 요청 시 예외 처리
+        if(loanApplication.getProduct().getTerms() < loanApplicationRequest.repaymentMonth()){
+            throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
+        }
+
+        // 신청 정보 반영
+        loanApplication.applyLoan(loanApplicationRequest);
+    }
+    /**
+     * 대출 결과 조회
+     * @param member 대출 신청자
+     * @since 2025.05.06
+     * @author 유승한
+     */
+    public LoanApplicationResultResponse getLoanApplicationResult(Member member) {
+        LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+
+        if(loanApplication.getStatus() == LoanApplicationStatus.PRE_APPLIED){
+            throw new FlexrateException(ErrorCode.LOAN_NOT_APPLIED);
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        return LoanApplicationResultResponse.builder()
+                .loanApplicationResult(loanApplication.getStatus().name())
+                .loanApplicationAmount(loanApplication.getTotalAmount())
+                .loanInterestRate(loanApplication.getRate())
+                .loanStartDate(loanApplication.getStartDate().format(formatter))
+                .loanEndDate(loanApplication.getEndDate().format(formatter))
+                .build();
+    }
+
 }
