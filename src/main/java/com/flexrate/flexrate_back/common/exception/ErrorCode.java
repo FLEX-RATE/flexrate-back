@@ -25,6 +25,7 @@ public enum ErrorCode {
     LOAN_PRODUCT_NOT_FOUND("L008", "대출 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     LOAN_REQUEST_CONFLICT("L009", "대출 신청 요청이 제약 조건에 위배됩니다.", HttpStatus.BAD_REQUEST),
     LOAN_NOT_APPLIED("L010", "신청을 하지 않은 대출입니다.", HttpStatus.BAD_REQUEST),
+    LOAN_CONSUMPTION_TYPE_MISMATCH("L011", "소비 유형이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
 
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
