@@ -70,9 +70,11 @@ public class Member {
     private LoginMethod lastLoginMethod;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 100)
     private ConsumeGoal consumeGoal;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private ConsumptionType consumptionType;
 
     @OneToOne(mappedBy = "member")

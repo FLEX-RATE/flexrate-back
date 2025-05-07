@@ -6,6 +6,7 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
@@ -67,6 +68,10 @@ public class MemberService {
             savePasskeys(saved, signupDTO.passkeys());
         }
 
+        if (signupDTO.consents() != null && !signupDTO.consents().isEmpty()) {
+            handleConsents(signupDTO.consents());
+        }
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
@@ -87,6 +92,17 @@ public class MemberService {
             fidoCredentialRepository.save(fidoCredential);
         }
     }
+
+    private void handleConsents(List<ConsentRequestDTO> consents) {
+        for (ConsentRequestDTO consent : consents) {
+            // 실제로 consents를 DB에 저장하거나 후속 작업을 수행할 수 있습니다.
+            // 이 예시에서는 단순히 출력만 합니다.
+            System.out.println("Consent type: " + consent.type() + ", Agreed: " + consent.agreed());
+        }
+    }
+
+
+
 
     // 회원 ID로 회원 조회
     public Member findById(Long memberId) {

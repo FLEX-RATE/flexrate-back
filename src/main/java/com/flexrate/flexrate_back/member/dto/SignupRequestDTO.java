@@ -47,5 +47,8 @@ public record SignupRequestDTO(
         ConsumeGoal consumeGoal,
 
         @JsonProperty("passkeys")
-        List<PasskeyRequestDTO> passkeys
+        List<PasskeyRequestDTO> passkeys,
+
+        @JsonProperty("consents")
+        List<ConsentRequestDTO> consents
 ) {}
