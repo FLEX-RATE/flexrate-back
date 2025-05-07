@@ -27,7 +27,7 @@ public class LoanApplication {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name ="product_id")
     private LoanProduct product;
 
