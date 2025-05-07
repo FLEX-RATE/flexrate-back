@@ -2,7 +2,6 @@ package com.flexrate.flexrate_back.loan.application;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
-import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
@@ -13,10 +12,10 @@ import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 /**
  * 대출 상품 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
@@ -26,6 +25,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class LoanService {
 
     private final RestTemplate restTemplate;
@@ -42,6 +42,7 @@ public class LoanService {
      * @since 2025.04.28
      * @author 서채연
      */
+    @Transactional
     public void preApply(LoanReviewApplicationRequest request, Member member) {
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
@@ -95,6 +96,7 @@ public class LoanService {
      * @since 2025.05.06
      * @author 유승한
      */
+    @Transactional
     public void applyLoan(Member member, LoanApplicationRequest loanApplicationRequest) {
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
@@ -104,7 +106,7 @@ public class LoanService {
         }
 
         // 한도를 초과한 대출금액 요청 시 예외 처리
-        if(loanApplication.getTotalAmount() < loanApplicationRequest.loanAmount()){
+        if(loanApplication.getProduct().getMaxAmount() < loanApplicationRequest.loanAmount()){
             throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
         }
 
