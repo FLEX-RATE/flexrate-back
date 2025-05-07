@@ -14,7 +14,7 @@ public record MemberDetailResponse(
         Integer loanTransactionCount,
         String consumptionType,
         String consumeGoal,
-        Double interestRate,
+        Float interestRate,
         Integer creditScore,
         Integer totalPayment,
         String paymentDue,

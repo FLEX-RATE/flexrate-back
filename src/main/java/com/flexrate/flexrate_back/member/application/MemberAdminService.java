@@ -143,7 +143,7 @@ public class MemberAdminService {
 
         LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
         Long tsCount = memberQueryRepository.countLoanTransactions(memberId);
-        Double interestRate = memberQueryRepository.findLatestInterestRate(memberId);
+        float interestRate = memberQueryRepository.findLatestInterestRate(memberId);
 
         // 남은 대출 기간 조회
         LocalDate now = LocalDate.now();
@@ -153,7 +153,7 @@ public class MemberAdminService {
         int leftMonths = period.getYears() * 12 + period.getMonths();
 
         // 월 상환액
-        double monthlyInterestRate = interestRate / 12 / 100;
+        float monthlyInterestRate = interestRate / 12 / 100;
         double principal = app.getRemainAmount();
         double monthlyPaymentRaw = principal *
                 (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, leftMonths)) /
