@@ -7,6 +7,7 @@ import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,10 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "사용자의 마이페이지 수정 결과 반환"),
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @PatchMapping("/mypage")
-    public ResponseEntity<MypageResponse> updateMyPage(MypageUpdateRequest request, Principal principal) {
+    public ResponseEntity<MypageResponse> updateMyPage(
+            @Valid @RequestBody MypageUpdateRequest request,
+            Principal principal
+    ) {
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.updateMyPage(memberId, request));
     }
