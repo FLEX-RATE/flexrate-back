@@ -45,15 +45,9 @@ public class LoanAdminService {
             int size,
             String sortBy
     ) {
-        // A007 관리자 인증 체크
-//        if (!adminAuthChecker.isAdmin(adminToken)) {
-//            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-//        }
-
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-
 
         // 기본 정렬 occurredAt 내림차순
         Sort sort = sortBy != null

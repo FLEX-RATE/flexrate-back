@@ -1,9 +1,12 @@
 package com.flexrate.flexrate_back.loan.api;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.LoanAdminService;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateResponse;
 import com.flexrate.flexrate_back.loan.dto.TransactionHistoryResponse;
+import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +23,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 @RequiredArgsConstructor
 public class LoanAdminController {
     private final LoanAdminService loanAdminService;
+    private final AdminAuthChecker adminAuthChecker;
 
     /**
      * 대출 거래 내역 목록 조회
+     * @param authHeader 인증 토큰
      * @param memberId 사용자 ID
      * @param page 페이지 번호
      * @param size 페이지 크기
@@ -33,6 +38,7 @@ public class LoanAdminController {
      */
     @Operation(summary = "대출 거래 내역 목록 조회", description = "관리자가 특정 사용자의 대출 거래 내역을 조회합니다.",
             parameters = {
+                @Parameter(name = "Authorization", description = "관리자 인증 토큰", required = true),
                 @Parameter(name = "memberId", description = "사용자 ID", required = true),
                 @Parameter(name = "page", description = "페이지 번호", required = false),
                 @Parameter(name = "size", description = "페이지 크기", required = false),
@@ -43,13 +49,18 @@ public class LoanAdminController {
                 @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"U001\", \"message\": \"사용자를 찾을 수 없습니다.\"}")))
             })
     @GetMapping("/members/{memberId}/transactions")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TransactionHistoryResponse> getTransactionHistory(
+            @RequestHeader("Authorization") String authHeader,
             @PathVariable("memberId") Long memberId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "date") String sortBy
     ) {
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(authHeader)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
         return ResponseEntity.ok(loanAdminService.getTransactionHistory(memberId, page, size, sortBy));
     }
 
@@ -64,6 +75,7 @@ public class LoanAdminController {
     @Operation(
             summary = "대출 상태 변경", description = "관리자가 대출 신청의 상태를 변경합니다.",
             parameters = {
+                    @Parameter(name = "Authorization", description = "관리자 인증 토큰", required = true),
                     @Parameter(name = "loanApplicationId", description = "대출 신청 ID", required = true),
                     @Parameter(name = "request", description = "변경할 대출 상태 및 사유", required = true)
             },
@@ -73,11 +85,16 @@ public class LoanAdminController {
                     @ApiResponse(responseCode = "400", description = "대출 상태 변경 실패", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"L005\", \"message\": \"변경을 요청한 상태가 제약 조건에 위배됩니다.\"}")))
             })
     @PatchMapping("/{loanApplicationId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LoanApplicationStatusUpdateResponse> patchLoanApplicationStatus(
+            @RequestHeader("Authorization") String authHeader,
             @PathVariable("loanApplicationId") Long loanApplicationId,
             @Valid @RequestBody LoanApplicationStatusUpdateRequest request
     ) {
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(authHeader)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
         return ResponseEntity.ok(loanAdminService.patchLoanApplicationStatus(loanApplicationId, request));
     }
 }
