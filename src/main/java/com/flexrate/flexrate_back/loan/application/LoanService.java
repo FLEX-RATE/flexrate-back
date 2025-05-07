@@ -84,4 +84,6 @@ public class LoanService {
                 .rateRangeTo(loanApplication.getProduct().getMinRate())
                 .build();
     }
+
+
 }
