@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.domain;
 
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.member.enums.LoginMethod;
 import com.flexrate.flexrate_back.member.enums.Role;
 import com.flexrate.flexrate_back.member.enums.Sex;
@@ -79,6 +80,10 @@ public class Member {
 
     @OneToMany(mappedBy = "member")
     private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "member")
+    private List<UserFinancialData> financialData;
+
 
     public void updateName(String name) {
         this.name = name;

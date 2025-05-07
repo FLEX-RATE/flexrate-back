@@ -2,6 +2,7 @@ package com.flexrate.flexrate_back.loan.domain;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
@@ -39,10 +40,7 @@ public class LoanApplication {
     private LocalDateTime executedAt;
     private int totalAmount;
     private int remainAmount;
-    private double rate;
-
-    @Column(length = 255)
-    private String reviewResult;
+    private float rate;
 
     @OneToMany(mappedBy = "application")
     private List<LoanTransaction> loanTransactions;
@@ -51,6 +49,10 @@ public class LoanApplication {
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+
+    @OneToMany(mappedBy = "loanApplication")
+    private List<Interest> interests;
+
 
     // 대출 상태 변경
     public void patchStatus(LoanApplicationStatus status) {
@@ -73,4 +75,23 @@ public class LoanApplication {
         return (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
                 (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED);
     }
+    /**
+     * 대출 심사 결과 반영
+     *
+     * @param response 대출심사결과
+     * @return true: 유효한 상태 전환인 경우, false: 유효하지 않은 경우
+     */
+    public void applyReviewResult(LoanReviewApplicationResponse response) {
+        this.totalAmount = response.loanLimit();
+        this.remainAmount = response.loanLimit();
+        this.rate = response.initialRate();
+        this.creditScore = response.creditScore();
+        this.appliedAt = LocalDateTime.now();
+    }
+
+    // 신용 점수 변경
+    public void patchCreditScore(int score) {
+        this.creditScore = score;
+    }
+
 }

@@ -23,17 +23,14 @@ public class LoanProduct {
     private String description;
 
     @Column(nullable = false)
-    private double maxAmount;
+    private int maxAmount;
 
     @Column(nullable = false)
-    private double minRate;
+    private float minRate;
 
     @Column(nullable = false)
-    private double maxRate;
+    private float maxRate;
 
     @Column(nullable = false)
     private int terms;
-
-    @OneToMany(mappedBy = "loanProduct")
-    private List<Interest> Interests;
 }
