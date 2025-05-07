@@ -4,6 +4,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import com.flexrate.flexrate_back.member.enums.*;
@@ -68,6 +69,25 @@ public class MemberService {
     public Member findById(Long memberId) {
     return memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 마이페이지 조회
+     * @param memberId 회원 ID
+     * @return 회원 정보(MypageResponse) - 이름, 이메일, 소비 목표, 소비 유형
+     * @since 2025.04.26
+     * @author 권민지
+     */
+    public MypageResponse getMyPage(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        return MypageResponse.builder()
+                .name(member.getName())
+                .email(member.getEmail())
+                .consumeGoal(member.getConsumeGoal())
+                .consumptionType(member.getConsumptionType())
+                .build();
     }
 }
 
