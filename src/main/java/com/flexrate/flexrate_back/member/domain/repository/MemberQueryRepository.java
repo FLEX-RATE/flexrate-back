@@ -15,5 +15,5 @@ public interface MemberQueryRepository {
 
     LoanApplication findLatestLoanApplication(Long memberId);
     Long countLoanTransactions(Long memberId);
-    Double findLatestInterestRate(Long memberId);
+    Float findLatestInterestRate(Long memberId);
 }
