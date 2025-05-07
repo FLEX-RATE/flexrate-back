@@ -88,4 +88,10 @@ public class LoanApplication {
         this.creditScore = response.creditScore();
         this.appliedAt = LocalDateTime.now();
     }
+
+    // 신용 점수 변경
+    public void patchCreditScore(int score) {
+        this.creditScore = score;
+    }
+
 }

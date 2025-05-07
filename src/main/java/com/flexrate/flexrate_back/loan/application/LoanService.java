@@ -2,6 +2,7 @@ package com.flexrate.flexrate_back.loan.application;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
@@ -11,6 +12,8 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 /**
  * 대출 상품 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
