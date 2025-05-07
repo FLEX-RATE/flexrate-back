@@ -89,17 +89,15 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
     }
 
     @Override
-    public Double findLatestInterestRate(Long memberId) {
+    public Float findLatestInterestRate(Long memberId) {
         QInterest interest = QInterest.interest;
-        QLoanProduct loanProduct = QLoanProduct.loanProduct;
         QLoanApplication loanApplication = QLoanApplication.loanApplication;
         QMember member = QMember.member;
 
         return queryFactory
                 .select(interest.interestRate)
                 .from(interest)
-                .join(interest.loanProduct, loanProduct)
-                .join(loanProduct.application, loanApplication)
+                .join(interest.loanApplication, loanApplication)
                 .join(loanApplication.member, member)
                 .where(member.memberId.eq(memberId))
                 .orderBy(interest.interestDate.desc())
