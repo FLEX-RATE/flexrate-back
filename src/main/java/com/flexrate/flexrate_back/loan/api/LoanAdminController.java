@@ -129,12 +129,12 @@ public class LoanAdminController {
     @GetMapping
     public ResponseEntity<LoanAdminSearchResponse> searchLoans(
             @Valid LoanAdminSearchRequest request
-            //, Principal principal
+            , Principal principal
     ) {
-//        // A007 관리자 인증 체크
-//        if (!adminAuthChecker.isAdmin(principal)) {
-//            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-//        }
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(principal)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
 
         return ResponseEntity.ok(loanAdminService.searchLoans(request));
     }
