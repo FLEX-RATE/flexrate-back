@@ -30,13 +30,18 @@ public class ConsumptionHabitReportController {
      * @since 2025.05.08
      * @author 서채연
      */
-    @Operation(summary = "소비 리포트 조회", description = "특정 월을 입력하면 해당 월 리포트를, 입력하지 않으면 전체 리포트를 반환합니다.")
+    @Operation(
+            summary = "소비 습관 개선 리포트 조회",
+            description = "특정 월을 입력하면 해당 월 리포트를, 입력하지 않으면 전체 리포트를 반환합니다.",
+            parameters = {
+                    @Parameter(name = "month", description = "조회할 연월 (yyyy-MM)", required = false, example = "2025-05")
+            }
+    )
     @GetMapping("/consumption-report")
     public List<ConsumptionHabitReportResponse> getMyReports(
-            Principal principal,
-            @Parameter(description = "조회할 연월 (yyyy-MM)", example = "2025-05")
-            @RequestParam(value = "조회할 연월 (yyyy-MM)", required = false)
-            @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
+            @RequestParam(value = "month", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+            Principal principal
     ) {
         Long memberId = Long.parseLong(principal.getName());
         Member member = memberService.findById(memberId);
@@ -52,5 +57,4 @@ public class ConsumptionHabitReportController {
                     .toList();
         }
     }
-
 }
