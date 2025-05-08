@@ -6,14 +6,11 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-<<<<<<< HEAD
 import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
-=======
 import com.flexrate.flexrate_back.member.dto.*;
->>>>>>> cadeee6ba46e06d63f681b4611b1408ab662b6d6
 import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -115,9 +112,6 @@ public class MemberService {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
     }
-<<<<<<< HEAD
-}
-=======
 
     /**
      * 마이페이지 조회
@@ -183,5 +177,3 @@ public class MemberService {
 
     }
 }
-
->>>>>>> cadeee6ba46e06d63f681b4611b1408ab662b6d6
