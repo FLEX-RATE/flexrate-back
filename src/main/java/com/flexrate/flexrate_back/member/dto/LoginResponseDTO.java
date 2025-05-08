@@ -18,6 +18,5 @@ public record LoginResponseDTO(
         Long userId,
         String email,
         String accessToken,
-        String refreshToken,
-        String passkeyList // 패스키 목록을 포함
+        String refreshToken
 ) {}
