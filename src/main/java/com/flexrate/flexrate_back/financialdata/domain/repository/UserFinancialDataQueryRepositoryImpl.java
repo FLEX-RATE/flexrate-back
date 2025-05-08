@@ -19,6 +19,15 @@ public class UserFinancialDataQueryRepositoryImpl implements UserFinancialDataQu
 
     private final JPAQueryFactory queryFactory;
 
+    /**
+     * 특정 회원의 특정 월 소비 데이터를 기준으로 카테고리별 소비 금액과 비율 계산
+     * @param member 조회 대상 회원
+     * @param month 조회할 월 (yyyy-MM)
+     * @return 카테고리별 소비 금액과 비율 리스트
+     * @throws IllegalArgumentException member 또는 month가 null일 경우
+     * @since 2025.05.08
+     * @author 서채연
+     */
     @Override
     public List<ConsumptionCategoryRatioResponse> findCategoryStatsWithRatio(Member member, YearMonth month) {
         QUserFinancialData u = QUserFinancialData.userFinancialData;

@@ -22,6 +22,14 @@ public class ConsumptionHabitReportController {
     private final ConsumptionHabitReportService reportService;
     private final MemberService memberService;
 
+    /**
+     * 사용자 본인의 소비 습관 리포트 조회 API
+     * @param principal 현재 로그인한 사용자 정보
+     * @param month 조회할 리포트 월 (yyyy-MM 형식, optional)
+     * @return 소비습관 리포트 목록 (단일 or 전체)
+     * @since 2025.05.08
+     * @author 서채연
+     */
     @Operation(summary = "소비 리포트 조회", description = "특정 월을 입력하면 해당 월 리포트를, 입력하지 않으면 전체 리포트를 반환합니다.")
     @GetMapping("/consumption-report")
     public List<ConsumptionHabitReportResponse> getMyReports(

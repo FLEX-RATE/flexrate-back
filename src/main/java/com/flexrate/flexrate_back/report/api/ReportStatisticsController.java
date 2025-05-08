@@ -21,6 +21,14 @@ public class ReportStatisticsController {
     private final ReportStatisticsService statisticsService;
     private final MemberService memberService;
 
+    /**
+     * 사용자 본인의 카테고리별 소비 통계 조회 API
+     * @param principal 현재 로그인한 사용자 정보
+     * @param month 통계를 조회할 연월 (yyyy-MM 형식)
+     * @return 카테고리별 소비 통계 응답 객체
+     * @since 2025.05.08
+     * @author 서채연
+     */
     @Operation(summary = "카테고리별 소비 통계 조회", description = "해당 월의 소비 통계를 카테고리 기준으로 집계하여 반환합니다.")
     @GetMapping("/consumption-statistic")
     public ConsumptionCategoryStatsResponse getMyStats(

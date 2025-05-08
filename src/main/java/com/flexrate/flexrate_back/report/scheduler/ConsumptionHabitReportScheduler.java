@@ -21,6 +21,11 @@ public class ConsumptionHabitReportScheduler {
     private final ConsumptionHabitReportService reportService;
     private final ConsumptionReportApiClient apiClient;
 
+    /**
+     * 매월 1일 자정에 실행되는 소비습관 리포트 자동 생성 스케줄러
+     * @since 2025.05.08
+     * @author 서채연
+     */
     @Scheduled(cron = "0 0 0 1 * ?")
     public void generateMonthlyReports() {
         YearMonth targetMonth = YearMonth.now().minusMonths(1);
