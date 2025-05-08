@@ -118,7 +118,7 @@ public class LoanAdminController {
                     @Parameter(name = "rateTo", description = "이자율 최대값", required = false),
                     @Parameter(name = "prevLoanCountFrom", description = "이전 대출 횟수 최소값", required = false),
                     @Parameter(name = "prevLoanCountTo", description = "이전 대출 횟수 최대값", required = false),
-                    @Parameter(name = "type", description = "대출 유형 (PERSONAL, BUSINESS 등)", required = false)
+                    @Parameter(name = "type", description = "대출 유형 (NEW, EXTENSION, REJOIN)", required = false)
             },
             responses = {
                     @ApiResponse(responseCode = "200", description = "대출 거래 내역 목록 조회 성공"),
