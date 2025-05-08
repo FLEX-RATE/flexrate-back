@@ -1,0 +1,67 @@
+package com.flexrate.flexrate_back.financialdata.domain.repository;
+
+import com.flexrate.flexrate_back.financialdata.domain.QUserFinancialData;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
+import com.flexrate.flexrate_back.member.domain.Member;
+import com.flexrate.flexrate_back.report.dto.ConsumptionCategoryRatioResponse;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.List;
+
+@Repository
+@RequiredArgsConstructor
+public class UserFinancialDataQueryRepositoryImpl implements UserFinancialDataQueryRepository {
+
+    private final JPAQueryFactory queryFactory;
+
+    @Override
+    public List<ConsumptionCategoryRatioResponse> findCategoryStatsWithRatio(Member member, YearMonth month) {
+        QUserFinancialData u = QUserFinancialData.userFinancialData;
+
+        if (member == null || month == null) {
+            throw new IllegalArgumentException("member 또는 month는 null일 수 없습니다.");
+        }
+
+        LocalDateTime start = month.atDay(1).atStartOfDay();
+        LocalDateTime end = month.plusMonths(1).atDay(1).atStartOfDay();
+
+        BooleanBuilder builder = new BooleanBuilder()
+                .and(u.member.memberId.eq(member.getMemberId()))
+                .and(u.dataType.eq(UserFinancialDataType.EXPENSE))
+                .and(u.collectedAt.goe(start))
+                .and(u.collectedAt.lt(end));
+
+        Integer totalAmount = queryFactory
+                .select(u.value.sum())
+                .from(u)
+                .where(builder)
+                .fetchOne();
+
+        if (totalAmount == null || totalAmount == 0) {
+            return List.of();
+        }
+
+        return queryFactory
+                .select(
+                        u.category.stringValue(),
+                        u.value.sum()
+                )
+                .from(u)
+                .where(builder)
+                .groupBy(u.category)
+                .fetch()
+                .stream()
+                .map(tuple -> {
+                    String category = tuple.get(0, String.class);
+                    Integer amount = tuple.get(1, Integer.class);
+                    double percentage = Math.round((amount * 1000.0 / totalAmount)) / 10.0;
+                    return new ConsumptionCategoryRatioResponse(category, amount, percentage);
+                })
+                .toList();
+    }
+}
