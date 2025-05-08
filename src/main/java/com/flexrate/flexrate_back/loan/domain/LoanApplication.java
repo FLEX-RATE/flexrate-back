@@ -2,6 +2,7 @@ package com.flexrate.flexrate_back.loan.domain;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -27,7 +28,7 @@ public class LoanApplication {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name ="product_id")
     private LoanProduct product;
 
@@ -89,9 +90,26 @@ public class LoanApplication {
         this.appliedAt = LocalDateTime.now();
     }
 
+    /**
+     * 대출 승인 시 갱신
+     *
+     */
+    public void patchExecutedAt() {
+        this.executedAt = LocalDateTime.now();
+    }
+
+
     // 신용 점수 변경
     public void patchCreditScore(int score) {
         this.creditScore = score;
     }
 
+    // 대출 신청 정보 갱신
+    public void applyLoan(LoanApplicationRequest loanApplicationRequest) {
+        this.totalAmount = loanApplicationRequest.loanAmount();
+        this.remainAmount = loanApplicationRequest.loanAmount();
+        this.startDate = LocalDateTime.now();
+        this.endDate = LocalDateTime.now().plusMonths(loanApplicationRequest.repaymentMonth());
+        this.status = LoanApplicationStatus.PENDING;
+    }
 }

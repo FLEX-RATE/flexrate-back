@@ -23,6 +23,13 @@ public enum ErrorCode {
     LOAN_SERVER_ERROR("L006", "대출 서버 응답이 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     LOAN_APPLICATION_ALREADY_EXISTS("L007", "이미 대출 중에 있습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     LOAN_PRODUCT_NOT_FOUND("L008", "대출 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    LOAN_REQUEST_CONFLICT("L009", "대출 신청 요청이 제약 조건에 위배됩니다.", HttpStatus.BAD_REQUEST),
+    LOAN_NOT_APPLIED("L010", "신청을 하지 않은 대출입니다.", HttpStatus.BAD_REQUEST),
+    LOAN_CONSUMPTION_TYPE_MISMATCH("L011", "소비 유형이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+
+    // 금리
+    NO_INTEREST("I001", "저장된 금리가 없습니다.", HttpStatus.NOT_FOUND),
+    
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
     EMAIL_ALREADY_REGISTERED("A001", "이미 가입된 이메일입니다.", HttpStatus.CONFLICT),

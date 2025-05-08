@@ -1,7 +1,12 @@
 package com.flexrate.flexrate_back.member.enums;
 
+import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse.ConsumeGoalSummary;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -28,4 +33,16 @@ public enum ConsumeGoal {
 
     private final String description;
     private final ConsumptionType type;
+
+    /**
+     * 특정 소비 유형에 해당하는 소비 목표 리스트 반환
+     * @param type 소비 유형
+     * @return 소비 목표 리스트(ConsumeGoal, description)
+     */
+    public static List<ConsumeGoalSummary> getConsumeGoalsByType(ConsumptionType type) {
+        return Arrays.stream(values())
+                .filter(goal -> goal.getType() == type)
+                .map(goal -> new ConsumeGoalSummary(goal, goal.getDescription()))
+                .collect(Collectors.toList());
+    }
 }
