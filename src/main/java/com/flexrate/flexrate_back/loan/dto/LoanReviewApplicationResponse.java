@@ -10,5 +10,6 @@ public record LoanReviewApplicationResponse(
         float initialRate,
         float rateRangeFrom,
         float rateRangeTo,
-        int creditScore
+        int creditScore,
+        int terms
 ) {}

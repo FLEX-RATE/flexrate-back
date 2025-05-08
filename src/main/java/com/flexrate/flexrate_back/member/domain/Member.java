@@ -89,6 +89,8 @@ public class Member {
         this.name = name;
     }
 
+    public void updateEmail(String email) {this.email = email;}
+
     public void updateSex(Sex sex) {
         this.sex = sex;
     }
@@ -100,4 +102,6 @@ public class Member {
     public void updateMemberStatus(MemberStatus memberStatus) {
         this.status = memberStatus;
     }
+
+    public void updateConsumeGoal(ConsumeGoal consumeGoal) {this.consumeGoal = consumeGoal;}
 }
