@@ -3,9 +3,8 @@ package com.flexrate.flexrate_back.loan.api;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.LoanAdminService;
-import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateRequest;
-import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateResponse;
-import com.flexrate.flexrate_back.loan.dto.TransactionHistoryResponse;
+import com.flexrate.flexrate_back.loan.dto.*;
+import com.flexrate.flexrate_back.loan.dto.LoanAdminSearchRequest;
 import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -95,5 +94,48 @@ public class LoanAdminController {
         }
 
         return ResponseEntity.ok(loanAdminService.patchLoanApplicationStatus(loanApplicationId, request));
+    }
+
+    /**
+     * 대출 현황 리스트 조회
+     * @param request 조회할 때 원하는 필터값
+     * @return 조회된 대출 목록
+     * @since 2025.05.02
+     * @author 허연규
+     */
+    @Operation(summary = "관리자 권한으로 대출 현황 목록 조회", description = "관리자가 대출 현황 목록을 검색 조건에 따라 조회합니다.",
+            parameters = {
+                    @Parameter(name = "page", description = "페이지 번호", required = false),
+                    @Parameter(name = "size", description = "페이지 크기", required = false),
+                    @Parameter(name = "status", description = "대출 상태 리스트", required = false),
+                    @Parameter(name = "applicant", description = "신청자 이름", required = false),
+                    @Parameter(name = "applicantId", description = "신청자 ID", required = false),
+                    @Parameter(name = "appliedFrom", description = "신청일 시작일 (yyyy-MM-dd)", required = false),
+                    @Parameter(name = "appliedTo", description = "신청일 종료일 (yyyy-MM-dd)", required = false),
+                    @Parameter(name = "limitFrom", description = "대출 한도 최소값", required = false),
+                    @Parameter(name = "limitTo", description = "대출 한도 최대값", required = false),
+                    @Parameter(name = "rateFrom", description = "이자율 최소값", required = false),
+                    @Parameter(name = "rateTo", description = "이자율 최대값", required = false),
+                    @Parameter(name = "prevLoanCountFrom", description = "이전 대출 횟수 최소값", required = false),
+                    @Parameter(name = "prevLoanCountTo", description = "이전 대출 횟수 최대값", required = false),
+                    @Parameter(name = "type", description = "대출 유형 (PERSONAL, BUSINESS 등)", required = false)
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "대출 거래 내역 목록 조회 성공"),
+                    @ApiResponse(responseCode = "404", description = "대출 정보를 찾을 수 없습니다", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"L002\", \"message\": \"대출 정보를 찾을 수 없습니다.\"}"))),
+                    @ApiResponse(responseCode = "403", description = "관리자 권한이 필요합니다", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"A007\", \"message\": \"관리자 권한이 필요합니다.\"}"))),
+                    @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"S500\", \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
+            })
+    @GetMapping
+    public ResponseEntity<LoanAdminSearchResponse> searchLoans(
+            @Valid LoanAdminSearchRequest request
+            //, Principal principal
+    ) {
+//        // A007 관리자 인증 체크
+//        if (!adminAuthChecker.isAdmin(principal)) {
+//            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+//        }
+
+        return ResponseEntity.ok(loanAdminService.searchLoans(request));
     }
 }

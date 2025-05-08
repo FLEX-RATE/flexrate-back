@@ -5,6 +5,7 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
+import com.flexrate.flexrate_back.loan.enums.LoanType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,6 +38,10 @@ public class LoanApplication {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private LoanApplicationStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LoanType loanType;
 
     private LocalDateTime executedAt;
     private int totalAmount;
