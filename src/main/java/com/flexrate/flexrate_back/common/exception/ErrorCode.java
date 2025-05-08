@@ -27,6 +27,9 @@ public enum ErrorCode {
     LOAN_NOT_APPLIED("L010", "신청을 하지 않은 대출입니다.", HttpStatus.BAD_REQUEST),
     LOAN_CONSUMPTION_TYPE_MISMATCH("L011", "소비 유형이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
 
+    // 금리
+    NO_INTEREST("I001", "저장된 금리가 없습니다.", HttpStatus.NOT_FOUND),
+    
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
     EMAIL_ALREADY_REGISTERED("A001", "이미 가입된 이메일입니다.", HttpStatus.CONFLICT),
