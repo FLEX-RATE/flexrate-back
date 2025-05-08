@@ -3,12 +3,15 @@ package com.flexrate.flexrate_back.loan.application;
 import com.flexrate.flexrate_back.common.dto.PaginationInfo;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.application.repository.InterestRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanTransactionQueryRepository;
+import com.flexrate.flexrate_back.loan.domain.Interest;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateResponse;
 import com.flexrate.flexrate_back.loan.dto.TransactionHistoryResponse;
+import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.mapper.LoanTransactionMapper;
 import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -19,6 +22,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,8 +32,7 @@ public class LoanAdminService {
     private final LoanApplicationRepository loanApplicationRepository;
     private final LoanTransactionMapper loanTransactionMapper;
     private final MemberRepository memberRepository;
-    private final AdminAuthChecker adminAuthChecker;
-
+    private final InterestRepository interestRepository;
     /**
      * 대출 거래 내역 목록 조회
      * @param memberId 사용자 ID
@@ -94,6 +98,18 @@ public class LoanAdminService {
 
         // L005 상태 전환 제약조건 체크 & 상태 변경
         loanApplication.patchStatus(request.status());
+
+        // 대출 승인 시 초기 금리 저장 및 loanApplication 상에 승인 반영
+        if(request.status() == LoanApplicationStatus.EXECUTED){
+            interestRepository.save(Interest.builder()
+                    .loanApplication(loanApplication)
+                    .interestDate(LocalDateTime.now())
+                    .interestRate(loanApplication.getRate())
+                    .build());
+
+            loanApplication.patchExecutedAt();
+        }
+
 
         return LoanApplicationStatusUpdateResponse.builder()
                 .loanApplicationId(loanApplication.getApplicationId())
