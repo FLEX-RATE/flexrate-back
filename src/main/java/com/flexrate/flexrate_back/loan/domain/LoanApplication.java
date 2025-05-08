@@ -28,7 +28,7 @@ public class LoanApplication {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name ="product_id")
     private LoanProduct product;
 
@@ -89,6 +89,15 @@ public class LoanApplication {
         this.creditScore = response.creditScore();
         this.appliedAt = LocalDateTime.now();
     }
+
+    /**
+     * 대출 승인 시 갱신
+     *
+     */
+    public void patchExecutedAt() {
+        this.executedAt = LocalDateTime.now();
+    }
+
 
     // 신용 점수 변경
     public void patchCreditScore(int score) {
