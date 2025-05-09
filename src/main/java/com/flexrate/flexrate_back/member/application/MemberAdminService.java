@@ -126,12 +126,15 @@ public class MemberAdminService {
         Long tsCount = memberQueryRepository.countLoanTransactions(memberId);
         float interestRate = memberQueryRepository.findLatestInterestRate(memberId);
 
-        // 남은 대출 기간 조회
+        // 남은 대출 기간 & 전체 대출 기간 조회
         LocalDate now = LocalDate.now();
+        LocalDate startDate = app.getStartDate().toLocalDate();
         LocalDate endDate = app.getEndDate().toLocalDate();
 
         Period period = Period.between(now, endDate);
         int leftMonths = period.getYears() * 12 + period.getMonths();
+        Period loanPeriod = Period.between(startDate, endDate);
+        int loanMonths = loanPeriod.getYears() * 12 + loanPeriod.getMonths();
 
         // 월 상환액
         float monthlyInterestRate = interestRate / 12 / 100;
@@ -141,30 +144,12 @@ public class MemberAdminService {
                 (Math.pow(1 + monthlyInterestRate, leftMonths) - 1);
         int monthlyPayment = (int) Math.round(monthlyPaymentRaw);
 
-        // 남은 대출 기간 동안의 총 대출원리금
-        int totalPayment = monthlyPayment * leftMonths;
+        // 총 상환 금액(월 납입금 * 전체 대출 기간)
+        // <- 현재 금리가 처음부터 끝까지 적용될 때 예상 금액
+        int totalPayment = monthlyPayment * loanMonths;
 
         // 납입일
-        LocalDate startDate = app.getStartDate().toLocalDate();
         int repaymentDay = startDate.getDayOfMonth();
-        int currentDay = now.getDayOfMonth();
-
-        LocalDate dueDate;
-
-        if (startDate.getYear() == now.getYear()
-                && startDate.getMonth() == now.getMonth()){
-            LocalDate nextMonth = now.plusMonths(1);
-            dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
-        } else{
-            if (currentDay <= repaymentDay) {
-                dueDate = LocalDate.of(now.getYear(), now.getMonth(), repaymentDay);
-            } else {
-                LocalDate nextMonth = now.plusMonths(1);
-                dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
-            }
-        }
-
-        String paymentDue = dueDate.toString();
 
         return MemberDetailResponse.builder()
                 .memberId(member.getMemberId())
@@ -179,8 +164,11 @@ public class MemberAdminService {
                 .consumeGoal(member.getConsumeGoal().name())
                 .interestRate(interestRate)
                 .creditScore(app.getCreditScore())
+                .loanStartDate(app.getStartDate().toString())
+                .loanEndDate(app.getEndDate().toString())
+                .loanAmount(app.getTotalAmount())
                 .totalPayment(totalPayment)
-                .paymentDue(paymentDue)
+                .repaymentDay(repaymentDay)
                 .monthlyPayment(monthlyPayment)
                 .build();
     }
