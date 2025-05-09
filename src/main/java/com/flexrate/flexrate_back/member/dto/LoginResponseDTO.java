@@ -1,8 +1,5 @@
 package com.flexrate.flexrate_back.member.dto;
 
-import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
-import com.flexrate.flexrate_back.member.enums.ConsumptionType;
-import com.flexrate.flexrate_back.member.enums.Sex;
 import lombok.Builder;
 
 import java.util.List;

@@ -27,6 +27,7 @@ public record LoginRequestDTO(
         AuthMethod authMethod,
         MfaType mfaType,
         String deviceInfo,
-        AuthResult mfaResult
+        AuthResult mfaResult,
+        String challenge
 
 ) {}
