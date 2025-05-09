@@ -4,19 +4,22 @@ import com.flexrate.flexrate_back.common.dto.PaginationInfo;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.repository.InterestRepository;
+import com.flexrate.flexrate_back.loan.application.repository.LoanAdminQueryRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanTransactionQueryRepository;
 import com.flexrate.flexrate_back.loan.domain.Interest;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
-import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateRequest;
-import com.flexrate.flexrate_back.loan.dto.LoanApplicationStatusUpdateResponse;
-import com.flexrate.flexrate_back.loan.dto.TransactionHistoryResponse;
+import com.flexrate.flexrate_back.loan.dto.*;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
+import com.flexrate.flexrate_back.loan.mapper.LoanApplicationMapper;
 import com.flexrate.flexrate_back.loan.mapper.LoanTransactionMapper;
 import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,8 @@ public class LoanAdminService {
     private final LoanTransactionMapper loanTransactionMapper;
     private final MemberRepository memberRepository;
     private final InterestRepository interestRepository;
+    private final LoanAdminQueryRepository loanAdminQueryRepository;
+    private final LoanApplicationMapper loanApplicationMapper;
     /**
      * 대출 거래 내역 목록 조회
      * @param memberId 사용자 ID
@@ -118,4 +123,40 @@ public class LoanAdminService {
                 .build();
     }
 
+    /**
+     * 대출 현황 목록 조회
+     * @param request 조회할 때 원하는 필터값
+     * @return 조회된 대출 목록
+     * @since 2025.05.02
+     * @author 허연규
+     */
+
+    public LoanAdminSearchResponse searchLoans(@Valid LoanAdminSearchRequest request) {
+
+        Sort sort = Sort.by("appliedAt").descending();
+
+        Pageable pageable = PageRequest.of(
+                request.page() != null ? request.page() : 0,
+                request.size() != null ? request.size() : 20,
+                sort
+        );
+
+        Page<LoanApplication> loans = loanAdminQueryRepository.searchLoans(request, pageable);
+
+        if (loans.isEmpty()) {
+            throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+        }
+
+        return LoanAdminSearchResponse.builder()
+                .paginationInfo(new PaginationInfo(
+                        loans.getNumber(),
+                        loans.getContent().size(),
+                        loans.getTotalPages(),
+                        loans.getTotalElements()
+                ))
+                .loans(loans.getContent().stream()
+                        .map(loanApplicationMapper::toSummaryDto)
+                        .toList())
+                .build();
+    }
 }
