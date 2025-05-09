@@ -26,4 +26,37 @@ public class LoginController {
         LoginResponseDTO response = loginService.login(loginRequestDTO);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(
+            summary = "로그아웃",
+            description = "로그인된 사용자의 로그아웃을 처리하며, refreshToken을 삭제합니다.",
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestParam Long memberId) {
+        loginService.logout(memberId);
+        return ResponseEntity.ok("로그아웃 성공");
+    }
+
+    @Operation(
+            summary = "refreshToken 재발급",
+            description = "유효한 refreshToken을 통해 새로운 accessToken을 재발급합니다.",
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/refresh")
+    public ResponseEntity<String> refreshAccessToken(@RequestParam Long memberId) {
+        String newAccessToken = loginService.refreshAccessToken(memberId);
+        return ResponseEntity.ok(newAccessToken);
+    }
+
+    @Operation(
+            summary = "refreshToken 블랙리스트 처리",
+            description = "refreshToken을 블랙리스트에 추가하여 무효화합니다.",
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/blacklist")
+    public ResponseEntity<String> blacklistRefreshToken(@RequestParam Long memberId) {
+        loginService.blacklistRefreshToken(memberId);
+        return ResponseEntity.ok("refreshToken이 블랙리스트에 추가되었습니다.");
+    }
 }

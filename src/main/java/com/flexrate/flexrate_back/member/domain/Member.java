@@ -73,7 +73,6 @@ public class Member {
     private ConsumeGoal consumeGoal;
 
     @Enumerated(EnumType.STRING)
-
     private ConsumptionType consumptionType;
 
     @OneToOne(mappedBy = "member")
