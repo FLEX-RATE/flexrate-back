@@ -115,9 +115,9 @@ values
 -- CONSUMPTION_HABIT_REPORT
 insert into consumption_habit_report (created_at, report_month, member_id, summary)
 values
-    (date_add(now(), interval -7 day), '2024-05', 1, '지출이 꾸준히 감소했습니다.'),
-    (date_add(now(), interval -37 day), '2024-04', 2, '소비 패턴이 안정적입니다.'),
-    (date_add(now(), interval -67 day), '2024-03', 3, '저축 비율이 높아졌습니다.');
+    (date_sub(now(), interval 7 day), '2024-05', 1, '지출이 꾸준히 감소했습니다.'),
+    (date_sub(now(), interval 37 day), '2024-04', 2, '소비 패턴이 안정적입니다.'),
+    (date_sub(now(), interval 67 day), '2024-03', 3, '저축 비율이 높아졌습니다.');
 
 -- AUDIT_LOG
 insert into audit_log (auth_method, event_type, member_id, occurred_at, ip_address, device_info, action, detail)
