@@ -150,7 +150,7 @@ public class LoanAdminService {
         return LoanAdminSearchResponse.builder()
                 .paginationInfo(new PaginationInfo(
                         loans.getNumber(),
-                        loans.getSize(),
+                        loans.getContent().size(),
                         loans.getTotalPages(),
                         loans.getTotalElements()
                 ))
