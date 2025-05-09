@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.report.application;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.report.client.ConsumptionReportApiClient;
 import com.flexrate.flexrate_back.report.domain.ConsumptionHabitReport;
@@ -23,14 +25,14 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      * @param member 리포트를 생성할 대상 회원
      * @param reportMonth 생성할 리포트의 대상 월 (yyyy-MM)
      * @param summary 소비 요약 내용 (null이면 외부 API 요청)
-     * @throws IllegalStateException 중복된 리포트가 이미 존재하는 경우
+     * @throws FlexrateException REPORT_ALREADY_EXISTS 중복된 리포트가 이미 존재하는 경우
      * @since 2025.05.08
      * @author 서채연
      */
     @Override
     public void createReport(Member member, YearMonth reportMonth, String summary) {
         if (reportRepository.findByMemberAndReportMonth(member, reportMonth).isPresent()) {
-            throw new IllegalStateException("이미 존재");
+            throw new FlexrateException(ErrorCode.REPORT_ALREADY_EXISTS);
         }
 
         if (summary == null || summary.isBlank()) {

@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.financialdata.domain.repository;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.QUserFinancialData;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
@@ -24,7 +26,7 @@ public class UserFinancialDataQueryRepositoryImpl implements UserFinancialDataQu
      * @param member 조회 대상 회원
      * @param month 조회할 월 (yyyy-MM)
      * @return 카테고리별 소비 금액과 비율 리스트
-     * @throws IllegalArgumentException member 또는 month가 null일 경우
+     * @throws FlexrateException REPORT_MEMBER_OR_MONTH_NULL member 또는 month가 null일 경우
      * @since 2025.05.08
      * @author 서채연
      */
@@ -33,7 +35,7 @@ public class UserFinancialDataQueryRepositoryImpl implements UserFinancialDataQu
         QUserFinancialData u = QUserFinancialData.userFinancialData;
 
         if (member == null || month == null) {
-            throw new IllegalArgumentException("member 또는 month는 null일 수 없습니다.");
+            throw new FlexrateException(ErrorCode.REPORT_MEMBER_OR_MONTH_NULL);
         }
 
         LocalDateTime start = month.atDay(1).atStartOfDay();

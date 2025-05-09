@@ -6,7 +6,6 @@ import com.flexrate.flexrate_back.report.application.ReportStatisticsService;
 import com.flexrate.flexrate_back.report.dto.ConsumptionCategoryStatsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
