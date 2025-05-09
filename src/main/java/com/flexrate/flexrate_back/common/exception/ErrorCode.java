@@ -27,6 +27,10 @@ public enum ErrorCode {
     LOAN_NOT_APPLIED("L010", "신청을 하지 않은 대출입니다.", HttpStatus.BAD_REQUEST),
     LOAN_CONSUMPTION_TYPE_MISMATCH("L011", "소비 유형이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
 
+    // 리포트
+    REPORT_MEMBER_OR_MONTH_NULL("R001", "member 또는 month는 null일 수 없습니다.", HttpStatus.BAD_REQUEST),
+    REPORT_ALREADY_EXISTS("R002", "해당 월의 소비습관 리포트가 이미 존재합니다.", HttpStatus.CONFLICT),
+
     // 금리
     NO_INTEREST("I001", "저장된 금리가 없습니다.", HttpStatus.NOT_FOUND),
     
