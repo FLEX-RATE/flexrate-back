@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.financialdata.domain;
 
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialCategory;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
@@ -26,6 +27,10 @@ public class UserFinancialData {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserFinancialDataType dataType;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private UserFinancialCategory category;
 
     @Column(nullable = false, precision = 12)
     private int value;

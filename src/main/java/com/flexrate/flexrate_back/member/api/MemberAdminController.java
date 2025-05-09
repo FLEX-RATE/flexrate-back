@@ -97,10 +97,8 @@ public class MemberAdminController {
                     @ApiResponse(responseCode = "400", description = "사용자가 존재하지 않음", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"U001\", \"message\": \"사용자를 찾을 수 없습니다.\"}"))),
                     @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"S500\", \"message\": \"서버 내부 오류\"}"))),
             }
-            //security = { @SecurityRequirement(name = "bearerAuth") }
     )
     @GetMapping("/{memberId}")
-    // @PreAuthorize("hasRole('ADMIN')") - 우선은 adminToken으로 테스트
     public ResponseEntity<MemberDetailResponse> getMemberDetail(
             @PathVariable Long memberId,
             Principal principal
