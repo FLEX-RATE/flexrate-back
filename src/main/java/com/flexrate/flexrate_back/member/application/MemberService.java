@@ -4,6 +4,7 @@ import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialCategory;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
@@ -130,9 +131,9 @@ public class MemberService {
             UserFinancialData data = UserFinancialData.builder()
                     .member(member)
                     .dataType(dataType)
-                    .category(category)  // 해당 유형에 맞는 카테고리 사용
-                    .value((int) (Math.random() * 100000) + 1000)  // 1,000에서 100,000 사이의 랜덤 값
-                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))  // 랜덤 날짜 생성
+                    .category(category)
+                    .value((int) (Math.random() * 100000) + 1000)
+                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))
                     .build();
 
             dummyDataList.add(data);
