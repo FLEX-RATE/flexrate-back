@@ -3,9 +3,12 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.domain.repository.UserFinancialDataRepository;
 import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
@@ -18,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +34,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final FidoCredentialRepository fidoCredentialRepository;
+    private final UserFinancialDataRepository financialDataRepository;
 
     /*
      * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
@@ -75,6 +82,9 @@ public class MemberService {
             handleConsents(signupDTO.consents());
         }
 
+        // 더미 데이터를 생성하는 코드 호출
+        generateDummyFinancialData(saved);
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
@@ -98,10 +108,68 @@ public class MemberService {
 
     private void handleConsents(List<ConsentRequestDTO> consents) {
         for (ConsentRequestDTO consent : consents) {
-            // 실제로 consents를 DB에 저장하거나 후속 작업을 수행할 수 있습니다.
-            // 이 예시에서는 단순히 출력만 합니다.
             System.out.println("Consent type: " + consent.type() + ", Agreed: " + consent.agreed());
         }
+    }
+
+    private void generateDummyFinancialData(Member member) {
+        List<UserFinancialData> dummyDataList = new ArrayList<>();
+
+        for (int i = 0; i < 100; i++) {
+            // UserFinancialDataType에 따라 카테고리 설정
+            UserFinancialDataType dataType = i % 3 == 0
+                    ? UserFinancialDataType.INCOME
+                    : i % 3 == 1
+                    ? UserFinancialDataType.EXPENSE
+                    : UserFinancialDataType.LOAN_BALANCE;
+
+            // 해당 유형에 맞는 카테고리 랜덤 선택
+            UserFinancialCategory category = getRandomCategoryForType(dataType);
+
+            // 더미 데이터 생성
+            UserFinancialData data = UserFinancialData.builder()
+                    .member(member)
+                    .dataType(dataType)
+                    .category(category)  // 해당 유형에 맞는 카테고리 사용
+                    .value((int) (Math.random() * 100000) + 1000)  // 1,000에서 100,000 사이의 랜덤 값
+                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))  // 랜덤 날짜 생성
+                    .build();
+
+            dummyDataList.add(data);
+        }
+
+        // 더미 데이터 저장
+        financialDataRepository.saveAll(dummyDataList);
+    }
+
+    private UserFinancialCategory getRandomCategoryForType(UserFinancialDataType type) {
+        switch (type) {
+            case INCOME:
+                return getRandomCategoryForIncome();
+            case EXPENSE:
+                return getRandomCategoryForExpense();
+            case LOAN_BALANCE:
+                return getRandomCategoryForLoanBalance();
+            default:
+                throw new FlexrateException(ErrorCode.VALIDATION_ERROR);  // 잘못된 타입에 대해 예외 처리
+        }
+    }
+
+    private UserFinancialCategory getRandomCategoryForIncome() {
+        return getRandomCategoryFromList(UserFinancialCategory.FOOD, UserFinancialCategory.HEALTH, UserFinancialCategory.EDUCATION);
+    }
+
+    private UserFinancialCategory getRandomCategoryForExpense() {
+        return getRandomCategoryFromList(UserFinancialCategory.LIVING, UserFinancialCategory.TRANSPORT, UserFinancialCategory.LEISURE);
+    }
+
+    private UserFinancialCategory getRandomCategoryForLoanBalance() {
+        return getRandomCategoryFromList(UserFinancialCategory.COMMUNICATION, UserFinancialCategory.ETC);
+    }
+
+    private UserFinancialCategory getRandomCategoryFromList(UserFinancialCategory... categories) {
+        List<UserFinancialCategory> categoryList = Arrays.asList(categories);
+        return categoryList.get(new Random().nextInt(categoryList.size()));
     }
 
 
