@@ -3,13 +3,12 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -74,6 +73,9 @@ public class MemberService {
             handleConsents(signupDTO.consents());
         }
 
+        // 더미 데이터를 생성하는 코드 호출
+        generateDummyFinancialData(saved);
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
@@ -101,12 +103,94 @@ public class MemberService {
         }
     }
 
+    private void generateDummyFinancialData(Member member) {
+        // 100개의 더미 소비 데이터 생성
+        for (int i = 0; i < 100; i++) {
+            UserFinancialDataType dataType = i % 3 == 0 ? UserFinancialDataType.INCOME :
+                    i % 3 == 1 ? UserFinancialDataType.EXPENSE : UserFinancialDataType.LOAN_BALANCE;
+            String source = dataType == UserFinancialDataType.INCOME ? "Salary" :
+                    dataType == UserFinancialDataType.EXPENSE ? "Shopping" : "Loan Payment";
 
+            UserFinancialData financialData = UserFinancialData.builder()
+                    .member(member)
+                    .dataType(dataType)
+                    .value((int) (Math.random() * 10000))  // 예시로 0~10000 범위의 임의 값
+                    .collectedAt(LocalDateTime.now())
+//                    .source(source)
+                    .build();
 
+            // 여기서 실제 DB에 저장하는 코드를 추가
+            // financialDataRepository.save(financialData);  // 저장하는 repository 호출
+        }
+    }
 
-    // 회원 ID로 회원 조회
     public Member findById(Long memberId) {
-        return memberRepository.findById(memberId)
+    return memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
     }
+
+    /**
+     * 마이페이지 조회
+     * @param memberId 회원 ID
+     * @return 회원 정보(MypageResponse) - 이름, 이메일, 소비 목표, 소비 유형
+     * @since 2025.05.07
+     * @author 권민지
+     */
+    public MypageResponse getMyPage(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        return MypageResponse.builder()
+                .name(member.getName())
+                .email(member.getEmail())
+                .consumeGoal(member.getConsumeGoal())
+                .consumptionType(member.getConsumptionType())
+                .build();
+    }
+
+    /**
+     * 마이페이지 정보 수정
+     * @param memberId 회원 ID
+     * @param request MypageUpdateRequest 요청 DTO (이메일, 소비 목표)
+     * @return 수정된 회원 정보(MypageResponse) - 이름, 이메일, 소비 목표, 소비 유형
+     * @since 2025.05.07
+     * @author 권민지
+     */
+    @Transactional
+    public MypageResponse updateMyPage(Long memberId, MypageUpdateRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        if (request.email() != null) member.updateEmail(request.email());
+        if (request.consumeGoal() != null) {
+            // L011 - 소비 목표가 소비 타입과 다르다면, 소비 목표를 변경할 수 없음
+            if (request.consumeGoal().getType() != member.getConsumptionType()) {
+                throw new FlexrateException(ErrorCode.LOAN_CONSUMPTION_TYPE_MISMATCH);
+            }
+
+            member.updateConsumeGoal(request.consumeGoal());
+        }
+
+        return MypageResponse.builder()
+                .name(member.getName())
+                .email(member.getEmail())
+                .consumeGoal(member.getConsumeGoal())
+                .consumptionType(member.getConsumptionType())
+                .build();
+    }
+
+    /**
+     * 소비 유형별 소비 목표 반환
+     * @param consumptionType 소비 유형
+     * @return 소비 목표 list
+     * @since 2025.05.07
+     * @author 권민지
+     */
+    public ConsumeGoalResponse getConsumeGoal(ConsumptionType consumptionType) {
+        return ConsumeGoalResponse.builder()
+                .consumeGoals(ConsumeGoal.getConsumeGoalsByType(consumptionType))
+                .build();
+
+    }
 }
+

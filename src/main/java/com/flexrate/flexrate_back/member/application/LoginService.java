@@ -47,15 +47,16 @@ public class LoginService {
                 createMfaLog(request, member);
             }
             case FIDO -> {
-                if (request.passkeyData() == null || request.passkeyData().isEmpty()) {
+                if (request.passkeyData() == null || request.passkeyData().isEmpty() || request.challenge() == null) {
                     throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
                 }
 
                 // Challenge 발급
-                String challenge = webAuthnService.generateChallenge(member.getMemberId());
-                // 클라이언트에게 challenge 전송 후 패스키 응답 검증
-                webAuthnService.authenticatePasskey(member.getMemberId(), request.passkeyData(), challenge)
-                        .orElseThrow(() -> new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED));
+                webAuthnService.authenticatePasskey(
+                        member.getMemberId(),
+                        request.passkeyData(),
+                        request.challenge()
+                ).orElseThrow(() -> new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED));
             }
             default -> throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
         }
