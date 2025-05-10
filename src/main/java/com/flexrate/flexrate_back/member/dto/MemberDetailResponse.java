@@ -19,7 +19,6 @@ public record MemberDetailResponse(
         String loanStartDate,
         String loanEndDate,
         Integer loanAmount,
-        Integer totalPayment,
-        Integer repaymentDay,
+        Integer paymentDue,
         Integer monthlyPayment
 ) {}
