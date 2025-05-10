@@ -108,7 +108,7 @@ public class MemberAdminService {
                 .build();
     }
 
-    /**
+/**
      * 관리자 권한으로 회원 정보 상세 조회
      * @param memberId 조회할 회원 Id
      * @return MemberDetailSearchResponse
@@ -128,6 +128,7 @@ public class MemberAdminService {
 
         // 남은 대출 기간 조회
         LocalDate now = LocalDate.now();
+        LocalDate startDate = app.getStartDate().toLocalDate();
         LocalDate endDate = app.getEndDate().toLocalDate();
 
         Period period = Period.between(now, endDate);
@@ -141,47 +142,36 @@ public class MemberAdminService {
                 (Math.pow(1 + monthlyInterestRate, leftMonths) - 1);
         int monthlyPayment = (int) Math.round(monthlyPaymentRaw);
 
-        // 남은 대출 기간 동안의 총 대출원리금
-        int totalPayment = monthlyPayment * leftMonths;
-
         // 납입일
-        LocalDate startDate = app.getStartDate().toLocalDate();
         int repaymentDay = startDate.getDayOfMonth();
-        int currentDay = now.getDayOfMonth();
 
-        LocalDate dueDate;
+        // hasLoan 확인
+        Boolean hasLoan = LoanApplicationStatus.EXECUTED.equals(app.getStatus());
 
-        if (startDate.getYear() == now.getYear()
-                && startDate.getMonth() == now.getMonth()){
-            LocalDate nextMonth = now.plusMonths(1);
-            dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
-        } else{
-            if (currentDay <= repaymentDay) {
-                dueDate = LocalDate.of(now.getYear(), now.getMonth(), repaymentDay);
-            } else {
-                LocalDate nextMonth = now.plusMonths(1);
-                dueDate = LocalDate.of(nextMonth.getYear(), nextMonth.getMonth(), repaymentDay);
-            }
-        }
-
-        String paymentDue = dueDate.toString();
-
-        return MemberDetailResponse.builder()
+        MemberDetailResponse.MemberDetailResponseBuilder responseBuilder = MemberDetailResponse.builder()
                 .memberId(member.getMemberId())
                 .name(member.getName())
                 .sex(member.getSex().name())
                 .status(member.getStatus().name())
                 .birthDate(member.getBirthDate().toString())
                 .createdAt(member.getCreatedAt().toString())
-                .hasLoan(LoanApplicationStatus.EXECUTED.equals(app.getStatus()))
+                .hasLoan(hasLoan)
                 .loanTransactionCount(tsCount != null ? tsCount.intValue() : 0)
                 .consumptionType(member.getConsumptionType().name())
-                .consumeGoal(member.getConsumeGoal().name())
-                .interestRate(interestRate)
-                .creditScore(app.getCreditScore())
-                .totalPayment(totalPayment)
-                .paymentDue(paymentDue)
-                .monthlyPayment(monthlyPayment)
-                .build();
+                .consumeGoal(member.getConsumeGoal().name());
+        
+        // hasLoan이 true일 경우에만 대출 관련 필드 추가
+        if (hasLoan) {
+            responseBuilder
+                    .interestRate(interestRate)
+                    .creditScore(app.getCreditScore())
+                    .loanStartDate(app.getStartDate().toString())
+                    .loanEndDate(app.getEndDate().toString())
+                    .loanAmount(app.getTotalAmount())
+                    .paymentDue(repaymentDay)
+                    .monthlyPayment(monthlyPayment);
+        }
+        
+        return responseBuilder.build();
     }
 }

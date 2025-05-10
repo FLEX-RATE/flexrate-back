@@ -16,7 +16,9 @@ public record MemberDetailResponse(
         String consumeGoal,
         Float interestRate,
         Integer creditScore,
-        Integer totalPayment,
-        String paymentDue,
+        String loanStartDate,
+        String loanEndDate,
+        Integer loanAmount,
+        Integer paymentDue,
         Integer monthlyPayment
 ) {}
