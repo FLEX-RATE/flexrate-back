@@ -176,7 +176,8 @@ fabric.properties
 
 # Log file
 *.log
-logs/
+logs/*.json
+logs/*.gz
 
 # BlueJ files
 *.ctxt
