@@ -15,4 +15,7 @@ import java.util.Optional;
 @Repository
 public interface FidoCredentialRepository extends JpaRepository<FidoCredential, Long> {
     Optional<FidoCredential> findByMember_MemberId(Long memberId);
+    boolean existsByPublicKey(String publicKey);
+
+    boolean existsByCredentialId(Long credential);
 }

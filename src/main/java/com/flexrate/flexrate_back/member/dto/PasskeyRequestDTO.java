@@ -9,7 +9,7 @@ import lombok.Builder;
  */
 @Builder
 public record PasskeyRequestDTO(
-        String credentialId,
+        Long credentialId,
         String publicKey,
         int signCount,
         String deviceInfo,

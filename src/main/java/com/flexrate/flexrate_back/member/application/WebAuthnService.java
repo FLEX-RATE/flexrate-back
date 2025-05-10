@@ -6,7 +6,10 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -26,23 +29,49 @@ public class WebAuthnService {
     private final MemberRepository memberRepository;
     private final FidoCredentialRepository fidoCredentialRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(WebAuthnService.class);  // 추가
 
-    // 챌린지 생성 메소드
+    // 챌린지 생성 메소드 등록과 인증 공용
     public String generateChallenge(Long userId) {
-        Member member = memberRepository.findById(userId)
+        memberRepository.findById(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        // 챌린지 생성
+        // 테스트용 챌린지 10분
         String challenge = UUID.randomUUID().toString();
         String redisKey = "fido:challenge:" + userId;
-        redisTemplate.opsForValue().set(redisKey, challenge, 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(redisKey, challenge, 10, TimeUnit.MINUTES);
+
+        logger.info("Generated challenge for user {}: {}", userId, challenge);
 
         return challenge;
     }
 
-    // 패스키 인증 메소드
+    // 패스키 등록
+    public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
+        // 중복된 공개키와 Credential ID 체크
+        if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey()) ||
+                fidoCredentialRepository.existsByCredentialId(passkeyDTO.credentialId())) {
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+        }
+
+        // 공개키와 초기 서명 카운트 등록
+        FidoCredential fidoCredential = FidoCredential.builder()
+                .member(member)
+                .publicKey(passkeyDTO.publicKey())
+                .credentialId(passkeyDTO.credentialId())
+                .signCount(passkeyDTO.signCount())
+                .deviceInfo(passkeyDTO.deviceInfo())
+                .isActive(true)
+                .lastUsedDate(java.time.LocalDateTime.now())
+                .build();
+
+        fidoCredentialRepository.save(fidoCredential);
+    }
+
+    // 패스키 인증
     public Optional<FidoCredential> authenticatePasskey(Long userId, String passkeyData, String challengeFromClient) {
-        Member member = memberRepository.findById(userId)
+        // 회원 정보 조회
+        memberRepository.findById(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
         // Redis에서 저장된 챌린지 조회
@@ -51,13 +80,16 @@ public class WebAuthnService {
 
         // 챌린지 유효성 검사
         if (savedChallenge == null || !savedChallenge.equals(challengeFromClient)) {
-            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);  // 잘못된 챌린지
         }
 
-        // 패스키 인증을 위한 자격 증명 조회
+        // 챌린지 유효하면 즉시 삭제
+        redisTemplate.delete(redisKey);
+
+        // 자격 증명 조회
         FidoCredential credential = fidoCredentialRepository.findByMember_MemberId(userId)
                 .filter(FidoCredential::isActive)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED));
+                .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS)); // A002 사용
 
         try {
             // 서명 검증
@@ -68,22 +100,34 @@ public class WebAuthnService {
             );
 
             if (!isVerified) {
-                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+                throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS); // A002 사용
             }
         } catch (Exception e) {
-            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS, e); // A002 사용
         }
 
         return Optional.of(credential);
     }
 
     // 서명 검증 로직
+    public boolean verifySignatureForRegistration(String pemPublicKey, String challenge, Long credentialId) {
+        try {
+            // credentialId를 String으로 변환한 후, Base64로 인코딩한 후 디코딩
+            String credentialIdBase64 = Base64.getEncoder().encodeToString(credentialId.toString().getBytes());
+
+            // 서명 검증
+            return verifySignature(pemPublicKey, challenge.getBytes(), Base64.getDecoder().decode(credentialIdBase64));
+        } catch (Exception e) {
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
+        }
+    }
+
     private boolean verifySignature(String pemPublicKey, byte[] data, byte[] signature) throws Exception {
-        // PEM 형식의 공개키 처리
         String publicKeyPEM = pemPublicKey
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
+                .replaceAll("\\s+", "")  // 모든 개행 제거
+                .strip();
 
         // 공개키 생성
         byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyPEM);

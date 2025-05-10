@@ -1,31 +1,17 @@
 package com.flexrate.flexrate_back.member.application;
 
-import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
-import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
-import com.flexrate.flexrate_back.financialdata.enums.UserFinancialCategory;
-import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
-import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.domain.repository.UserFinancialDataRepository;
-import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+
 
 @Service
 @RequiredArgsConstructor
@@ -33,148 +19,6 @@ import java.util.Random;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final FidoCredentialRepository fidoCredentialRepository;
-    private final UserFinancialDataRepository financialDataRepository;
-
-    /*
-     * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
-     * @since 2025.05.03
-     * @author 윤영찬
-     * */
-    public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
-        if (memberRepository.existsByEmail(signupDTO.email())) {
-            throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
-        }
-
-        String rawPwd = signupDTO.password();
-        String hashedPwd = passwordEncoder.encode(rawPwd);
-
-        ConsumptionType consumptionType;
-        ConsumeGoal consumeGoal;
-        Sex sex = Sex.valueOf(signupDTO.sex());
-
-        try {
-            consumptionType = signupDTO.consumptionType();
-            consumeGoal = signupDTO.consumeGoal();
-        } catch (IllegalArgumentException e) {
-            throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
-        }
-
-        Member member = Member.builder()
-                .email(signupDTO.email())
-                .passwordHash(hashedPwd)
-                .name(signupDTO.name())
-                .sex(sex)
-                .birthDate(signupDTO.birthDate())
-                .status(MemberStatus.ACTIVE)
-                .consumptionType(consumptionType)
-                .consumeGoal(consumeGoal)
-                .role(Role.MEMBER)
-                .build();
-
-        Member saved = memberRepository.save(member);
-
-        if (signupDTO.passkeys() != null && !signupDTO.passkeys().isEmpty()) {
-            savePasskeys(saved, signupDTO.passkeys());
-        }
-
-        if (signupDTO.consents() != null && !signupDTO.consents().isEmpty()) {
-            handleConsents(signupDTO.consents());
-        }
-
-        // 더미 데이터를 생성하는 코드 호출
-        generateDummyFinancialData(saved);
-
-        return SignupResponseDTO.builder()
-                .userId(saved.getMemberId())
-                .email(saved.getEmail())
-                .build();
-    }
-
-    private void savePasskeys(Member member, List<PasskeyRequestDTO> passkeys) {
-        for (PasskeyRequestDTO passkey : passkeys) {
-            FidoCredential fidoCredential = FidoCredential.builder()
-                    .member(member)
-                    .publicKey(passkey.publicKey())
-                    .signCount(passkey.signCount())
-                    .deviceInfo(passkey.deviceInfo())
-                    .isActive(passkey.isActive())
-                    .lastUsedDate(LocalDateTime.now())
-                    .build();
-
-            fidoCredentialRepository.save(fidoCredential);
-        }
-    }
-
-    private void handleConsents(List<ConsentRequestDTO> consents) {
-        for (ConsentRequestDTO consent : consents) {
-            System.out.println("Consent type: " + consent.type() + ", Agreed: " + consent.agreed());
-        }
-    }
-
-    private void generateDummyFinancialData(Member member) {
-        List<UserFinancialData> dummyDataList = new ArrayList<>();
-
-        for (int i = 0; i < 100; i++) {
-            // UserFinancialDataType에 따라 카테고리 설정
-            UserFinancialDataType dataType = i % 3 == 0
-                    ? UserFinancialDataType.INCOME
-                    : i % 3 == 1
-                    ? UserFinancialDataType.EXPENSE
-                    : UserFinancialDataType.LOAN_BALANCE;
-
-            // 해당 유형에 맞는 카테고리 랜덤 선택
-            UserFinancialCategory category = getRandomCategoryForType(dataType);
-
-            // 더미 데이터 생성
-            UserFinancialData data = UserFinancialData.builder()
-                    .member(member)
-                    .dataType(dataType)
-                    .category(category)
-                    .value((int) (Math.random() * 100000) + 1000)
-                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))
-                    .build();
-
-            dummyDataList.add(data);
-        }
-
-        // 더미 데이터 저장
-        financialDataRepository.saveAll(dummyDataList);
-    }
-
-    private UserFinancialCategory getRandomCategoryForType(UserFinancialDataType type) {
-        switch (type) {
-            case INCOME:
-                return getRandomCategoryForIncome();
-            case EXPENSE:
-                return getRandomCategoryForExpense();
-            case LOAN_BALANCE:
-                return getRandomCategoryForLoanBalance();
-            default:
-                throw new FlexrateException(ErrorCode.VALIDATION_ERROR);  // 잘못된 타입에 대해 예외 처리
-        }
-    }
-
-    private UserFinancialCategory getRandomCategoryForIncome() {
-        return getRandomCategoryFromList(UserFinancialCategory.FOOD, UserFinancialCategory.HEALTH, UserFinancialCategory.EDUCATION);
-    }
-
-    private UserFinancialCategory getRandomCategoryForExpense() {
-        return getRandomCategoryFromList(UserFinancialCategory.LIVING, UserFinancialCategory.TRANSPORT, UserFinancialCategory.LEISURE);
-    }
-
-    private UserFinancialCategory getRandomCategoryForLoanBalance() {
-        return getRandomCategoryFromList(UserFinancialCategory.COMMUNICATION, UserFinancialCategory.ETC);
-    }
-
-    private UserFinancialCategory getRandomCategoryFromList(UserFinancialCategory... categories) {
-        List<UserFinancialCategory> categoryList = Arrays.asList(categories);
-        return categoryList.get(new Random().nextInt(categoryList.size()));
-    }
-
-
-
 
     // 회원 ID로 회원 조회
     public Member findById(Long memberId) {
