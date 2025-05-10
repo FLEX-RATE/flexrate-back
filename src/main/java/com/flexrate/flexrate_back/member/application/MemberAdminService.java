@@ -168,7 +168,7 @@ public class MemberAdminService {
                     .loanStartDate(app.getStartDate().toString())
                     .loanEndDate(app.getEndDate().toString())
                     .loanAmount(app.getTotalAmount())
-                    .repaymentDay(repaymentDay)
+                    .paymentDue(repaymentDay)
                     .monthlyPayment(monthlyPayment);
         }
         
