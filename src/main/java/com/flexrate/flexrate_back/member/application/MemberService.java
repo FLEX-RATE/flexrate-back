@@ -10,6 +10,10 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.UserFinancialDataRepository;
+import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
+import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.*;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +36,6 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final FidoCredentialRepository fidoCredentialRepository;
     private final UserFinancialDataRepository financialDataRepository;
-
 
     /*
      * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
@@ -128,9 +131,9 @@ public class MemberService {
             UserFinancialData data = UserFinancialData.builder()
                     .member(member)
                     .dataType(dataType)
-                    .category(category)  // 해당 유형에 맞는 카테고리 사용
-                    .value((int) (Math.random() * 100000) + 1000)  // 1,000에서 100,000 사이의 랜덤 값
-                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))  // 랜덤 날짜 생성
+                    .category(category)
+                    .value((int) (Math.random() * 100000) + 1000)
+                    .collectedAt(LocalDateTime.now().minusDays(new Random().nextInt(365)))
                     .build();
 
             dummyDataList.add(data);
@@ -171,8 +174,11 @@ public class MemberService {
     }
 
 
+
+
+    // 회원 ID로 회원 조회
     public Member findById(Long memberId) {
-    return memberRepository.findById(memberId)
+        return memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -240,4 +246,3 @@ public class MemberService {
 
     }
 }
-
