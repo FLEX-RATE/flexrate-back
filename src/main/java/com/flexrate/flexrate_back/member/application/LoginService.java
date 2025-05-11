@@ -11,6 +11,7 @@ import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.LoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
+import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,8 @@ public class LoginService {
         }
 
         // Challenge 서명 검증
-        boolean isValid = webAuthnService.authenticatePasskey(member.getMemberId(), request.passkeyData(), clientChallenge).isPresent();
+        PasskeyAuthenticationDTO passkeyDTO = request.passkeyData();
+        boolean isValid = webAuthnService.authenticatePasskey(member.getMemberId(), passkeyDTO, clientChallenge).isPresent();
         if (!isValid) {
             logger.warn("Invalid passkey authentication for user {}", member.getEmail());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
