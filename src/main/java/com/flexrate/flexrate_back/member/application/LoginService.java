@@ -40,35 +40,35 @@ public class LoginService {
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        String challenge = switch (request.loginMethod()) {
-            case PASSWORD -> authenticateWithPassword(request, member);
-            case PASSKEY -> authenticateWithPasskey(request, member);
+        String challenge = null;
+
+        switch (request.loginMethod()) {
+            case PASSWORD -> {
+                authenticateWithPassword(request, member);
+                // 패스워드 인증에서 챌린지가 필요하지 않으니 null
+                challenge = "";
+            }
+            case PASSKEY -> challenge = authenticateWithPasskey(request, member);
             default -> throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
-        };
+        }
 
         // 인증 방식에 따른 추가 인증 처리
         switch (request.authMethod()) {
-            case MFA:
-                authenticateWithMfa(request, member);
-                break;
-            case FIDO:
-                challenge = authenticateWithFido(request, member); // FIDO 인증
-                break;
-            default:
-                throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
+            case MFA -> authenticateWithMfa(request, member);
+            case FIDO -> challenge = authenticateWithFido(request, member);
+            default -> throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
         }
 
         // 토큰 생성 및 반환
         return generateTokens(member, challenge);
     }
 
-    private String authenticateWithPassword(LoginRequestDTO request, Member member) {
+    private void authenticateWithPassword(LoginRequestDTO request, Member member) {
         // 비밀번호 확인
         if (!passwordEncoder.matches(request.password(), member.getPasswordHash())) {
             logger.warn("Invalid credentials for user {}", member.getEmail());
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
-        return null; // 추가 인증 필요 시 challenge 반환
     }
 
     private String authenticateWithPasskey(LoginRequestDTO request, Member member) {
@@ -89,25 +89,34 @@ public class LoginService {
     }
 
     private String authenticateWithFido(LoginRequestDTO request, Member member) {
-        // FIDO 인증 처리
-        if (request.passkeyData() == null || request.passkeyData().isEmpty()) {
-            // Challenge 발급
+        // 클라이언트가 보내온 챌린지
+        String clientChallenge = request.challenge();
+        if (clientChallenge == null || clientChallenge.isEmpty()) {
+            // 클라이언트가 초기 인증을 요청한 경우, 새로운 챌린지 발급
             return webAuthnService.generateChallenge(member.getMemberId());
         }
 
-        if (request.challenge() == null || !request.challenge().equals(request.challenge())) {
+        // Redis에서 저장된 챌린지 조회
+        String redisKey = "fido:challenge:" + member.getMemberId();
+        String savedChallenge = redisTemplate.opsForValue().get(redisKey);
+
+        if (savedChallenge == null || !savedChallenge.equals(clientChallenge)) {
             logger.warn("Challenge mismatch during FIDO authentication for user {}", member.getEmail());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
         // Challenge 서명 검증
-        boolean isValid = webAuthnService.authenticatePasskey(member.getMemberId(), request.passkeyData(), request.challenge()).isPresent();
+        boolean isValid = webAuthnService.authenticatePasskey(member.getMemberId(), request.passkeyData(), clientChallenge).isPresent();
         if (!isValid) {
             logger.warn("Invalid passkey authentication for user {}", member.getEmail());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
-        return request.challenge(); // 인증 성공 시, 받은 challenge를 반환
+        // 챌린지 삭제 (보안 강화)
+        redisTemplate.delete(redisKey);
+
+        // 인증 성공 시, 받은 challenge를 반환
+        return clientChallenge;
     }
 
     private LoginResponseDTO generateTokens(Member member, String challenge) {

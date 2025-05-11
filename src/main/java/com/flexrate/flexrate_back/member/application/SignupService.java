@@ -50,7 +50,7 @@ public class SignupService {
         // 회원의 소비 유형 및 목표 검증
         ConsumptionType consumptionType;
         ConsumeGoal consumeGoal;
-        Sex sex = Sex.valueOf(signupDTO.sex());
+        Sex sex = signupDTO.sex();
 
         try {
             consumptionType = signupDTO.consumptionType();
@@ -103,15 +103,19 @@ public class SignupService {
                 String challenge = webAuthnService.generateChallenge(member.getMemberId());
 
                 // 서명 검증 로직 호출 (가입 시에도 서명 검증)
-                if (!webAuthnService.verifySignatureForRegistration(passkey.publicKey(), challenge, passkey.credentialId())) {
+                if (!webAuthnService.verifySignatureForRegistration(
+                        passkey.publicKey(), challenge, passkey.credentialId())) {
                     throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
                 }
 
                 // 패스키 등록 처리
                 webAuthnService.registerPasskey(member, passkey);
 
+            } catch (FlexrateException e) {
+                logger.error("패스키 등록 중 오류 (회원ID: {}): {}", member.getMemberId(), e.getMessage());
+                throw e;
             } catch (Exception e) {
-                logger.error("Failed to save passkey or generate challenge for member {}", member.getMemberId(), e);
+                logger.error("패스키 등록 중 예상치 못한 오류 (회원ID: {})", member.getMemberId(), e);
                 throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
             }
         }
