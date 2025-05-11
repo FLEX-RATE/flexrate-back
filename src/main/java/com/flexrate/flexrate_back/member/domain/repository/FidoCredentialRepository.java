@@ -17,5 +17,5 @@ public interface FidoCredentialRepository extends JpaRepository<FidoCredential, 
     Optional<FidoCredential> findByMember_MemberId(Long memberId);
     boolean existsByPublicKey(String publicKey);
 
-    boolean existsByCredentialId(String credential);
+    boolean existsByCredentialId(Long credential);
 }

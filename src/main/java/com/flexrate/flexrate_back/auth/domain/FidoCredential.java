@@ -16,7 +16,7 @@ public class FidoCredential {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String credentialId;
+    private Long credentialId;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id", nullable = false)

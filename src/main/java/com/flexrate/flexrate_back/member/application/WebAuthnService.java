@@ -110,7 +110,7 @@ public class WebAuthnService {
     }
 
     // 서명 검증 로직
-    public boolean verifySignatureForRegistration(String pemPublicKey, String challenge, String credentialId) {
+    public boolean verifySignatureForRegistration(String pemPublicKey, String challenge, Long credentialId) {
         try {
             // credentialId를 String으로 변환한 후, Base64로 인코딩한 후 디코딩
             String credentialIdBase64 = Base64.getEncoder().encodeToString(credentialId.toString().getBytes());

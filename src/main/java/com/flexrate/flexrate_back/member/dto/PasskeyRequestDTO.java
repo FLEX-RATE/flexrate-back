@@ -12,7 +12,7 @@ import lombok.Builder;
 @Builder
 public record PasskeyRequestDTO(
         @NotBlank(message = "Credential ID는 필수 항목입니다.")
-        String credentialId,
+        Long credentialId,
 
         @NotBlank(message = "Public Key는 필수 항목입니다.")
         String publicKey,
