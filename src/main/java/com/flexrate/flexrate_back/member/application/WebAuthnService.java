@@ -9,8 +9,7 @@ import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -27,12 +26,12 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j  // @Slf4j 어노테이션을 사용하여 Logger 자동 생성
 public class WebAuthnService {
 
     private final MemberRepository memberRepository;
     private final FidoCredentialRepository fidoCredentialRepository;
     private final RedisTemplate<String, String> redisTemplate;
-    private static final Logger logger = LoggerFactory.getLogger(WebAuthnService.class);
 
     // 챌린지 생성 메소드 등록과 인증 공용
     public String generateChallenge(Long userId) {
@@ -44,7 +43,7 @@ public class WebAuthnService {
         String redisKey = "fido:challenge:" + userId;
         redisTemplate.opsForValue().set(redisKey, challenge, 10, TimeUnit.MINUTES);
 
-        logger.info("Generated challenge for user {}: {}", userId, challenge);
+        log.info("Generated challenge for user {}: {}", userId, challenge);  // log.info() 사용
 
         return challenge;
     }

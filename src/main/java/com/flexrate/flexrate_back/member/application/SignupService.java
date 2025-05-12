@@ -14,8 +14,7 @@ import com.flexrate.flexrate_back.member.enums.Sex;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +22,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j  // @Slf4j 어노테이션 사용
 public class SignupService {
-
-    private static final Logger logger = LoggerFactory.getLogger(SignupService.class);
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,8 +33,7 @@ public class SignupService {
     /*
      * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
      * @since 2025.05.03
-     * @author 윤영찬
-     * */
+     */
     public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
         // 이메일 중복 체크
         if (memberRepository.existsByEmail(signupDTO.email())) {
@@ -112,10 +109,10 @@ public class SignupService {
                 webAuthnService.registerPasskey(member, passkey);
 
             } catch (FlexrateException e) {
-                logger.error("패스키 등록 중 오류 (회원ID: {}): {}", member.getMemberId(), e.getMessage());
+                log.error("패스키 등록 중 오류 (회원ID: {}): {}", member.getMemberId(), e.getMessage());
                 throw e;
             } catch (Exception e) {
-                logger.error("패스키 등록 중 예상치 못한 오류 (회원ID: {})", member.getMemberId(), e);
+                log.error("패스키 등록 중 예상치 못한 오류 (회원ID: {})", member.getMemberId(), e);
                 throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
             }
         }
@@ -125,7 +122,7 @@ public class SignupService {
     private void handleConsents(List<ConsentRequestDTO> consents) {
         for (ConsentRequestDTO consent : consents) {
             // 동의 사항의 타입과 동의 여부 로깅
-            logger.info("Consent type: {} , Agreed: {}", consent.type(), consent.agreed());
+            log.info("Consent type: {} , Agreed: {}", consent.type(), consent.agreed());
         }
     }
 }

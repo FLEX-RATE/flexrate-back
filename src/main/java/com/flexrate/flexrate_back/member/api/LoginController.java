@@ -35,28 +35,17 @@ public class LoginController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestParam Long memberId) {
         loginService.logout(memberId);
-        return ResponseEntity.ok("로그아웃 성공");
+        return ResponseEntity.ok("로그아웃");
     }
 
-    @Operation(
-            summary = "refreshToken 재발급",
-            description = "유효한 refreshToken을 통해 새로운 accessToken을 재발급합니다.",
-            tags = { "Auth Controller" }
-    )
-    @PostMapping("/refresh")
-    public ResponseEntity<String> refreshAccessToken(@RequestParam Long memberId) {
-        String newAccessToken = loginService.refreshAccessToken(memberId);
-        return ResponseEntity.ok(newAccessToken);
-    }
-
-    @Operation(
-            summary = "refreshToken 블랙리스트 처리",
-            description = "refreshToken을 블랙리스트에 추가하여 무효화합니다.",
-            tags = { "Auth Controller" }
-    )
-    @PostMapping("/blacklist")
-    public ResponseEntity<String> blacklistRefreshToken(@RequestParam Long memberId) {
-        loginService.blacklistRefreshToken(memberId);
-        return ResponseEntity.ok("refreshToken이 블랙리스트에 추가되었습니다.");
-    }
+//    @Operation(
+//            summary = "refreshToken 블랙리스트 처리",
+//            description = "refreshToken을 블랙리스트에 추가하여 무효화합니다.",
+//            tags = { "Auth Controller" }
+//    )
+//    @PostMapping("/blacklist")
+//    public ResponseEntity<String> blacklistRefreshToken(@RequestParam Long memberId) {
+//        loginService.blacklistRefreshToken(memberId);
+//        return ResponseEntity.ok("refreshToken이 블랙리스트에 추가되었습니다.");
+//    }
 }

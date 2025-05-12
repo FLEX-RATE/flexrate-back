@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.application;
 
+import com.flexrate.flexrate_back.auth.application.TokenService;
 import com.flexrate.flexrate_back.auth.domain.MfaLog;
 import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
 import com.flexrate.flexrate_back.auth.enums.AuthResult;
@@ -13,35 +14,31 @@ import com.flexrate.flexrate_back.member.dto.LoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j  // @Slf4j 어노테이션을 사용하여 Logger 자동 생성
 public class LoginService {
-
-    private static final Logger logger = LoggerFactory.getLogger(LoginService.class);
 
     private final MemberRepository memberRepository;
     private final MfaLogRepository mfaLogRepository;
-    private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final WebAuthnService webAuthnService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final TokenService tokenService;
 
     // 로그인 방식에 따른 인증 처리
     public LoginResponseDTO login(LoginRequestDTO request) {
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        String challenge = null;
+        String challenge;
 
         switch (request.loginMethod()) {
             case PASSWORD -> {
@@ -60,14 +57,14 @@ public class LoginService {
             default -> throw new FlexrateException(ErrorCode.AUTHENTICATION_REQUIRED);
         }
 
-        // 토큰 생성 및 반환
+        // 토큰 생성 및 반환 (여기서 TokenService 사용)
         return generateTokens(member, challenge);
     }
 
     private void authenticateWithPassword(LoginRequestDTO request, Member member) {
         // 비밀번호 확인
         if (!passwordEncoder.matches(request.password(), member.getPasswordHash())) {
-            logger.warn("Invalid credentials for user {}", member.getEmail());
+            log.warn("Invalid credentials for user {}", member.getEmail());  // log.warn() 사용
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
@@ -80,7 +77,7 @@ public class LoginService {
     private void authenticateWithMfa(LoginRequestDTO request, Member member) {
         // MFA 인증 처리
         if (!passwordEncoder.matches(request.password(), member.getPasswordHash())) {
-            logger.warn("Invalid credentials for MFA for user {}", member.getEmail());
+            log.warn("Invalid credentials for MFA for user {}", member.getEmail());  // log.warn() 사용
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
@@ -102,7 +99,7 @@ public class LoginService {
         String savedChallenge = redisTemplate.opsForValue().get(redisKey);
 
         if (savedChallenge == null || !savedChallenge.equals(clientChallenge)) {
-            logger.warn("Challenge mismatch during FIDO authentication for user {}", member.getEmail());
+            log.warn("Challenge mismatch during FIDO authentication for user {}", member.getEmail());  // log.warn() 사용
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
@@ -110,7 +107,7 @@ public class LoginService {
         PasskeyAuthenticationDTO passkeyDTO = request.passkeyData();
         boolean isValid = webAuthnService.authenticatePasskey(member.getMemberId(), passkeyDTO, clientChallenge).isPresent();
         if (!isValid) {
-            logger.warn("Invalid passkey authentication for user {}", member.getEmail());
+            log.warn("Invalid passkey authentication for user {}", member.getEmail());  // log.warn() 사용
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
@@ -122,13 +119,11 @@ public class LoginService {
     }
 
     private LoginResponseDTO generateTokens(Member member, String challenge) {
-        // 토큰 생성
-        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
-        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(14));
+        // 기존에 로그인 서비스 내에서 액세스 토큰을 생성하던 부분을 TokenService로 위임
+        String accessToken = tokenService.createNewAccessToken(redisTemplate.opsForValue().get("refreshToken:" + member.getMemberId()));
 
-        // refreshToken Redis에 저장
-        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
-        valueOperations.set("refreshToken:" + member.getMemberId(), refreshToken, Duration.ofDays(14));
+        // 리프레시 토큰 생성은 이미 팀원들이 만든 코드에서 처리되므로, 추가 작업은 필요 없음
+        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + member.getMemberId());
 
         // 로그인 응답 반환
         return LoginResponseDTO.builder()
@@ -157,32 +152,5 @@ public class LoginService {
     public void logout(Long memberId) {
         redisTemplate.delete("refreshToken:" + memberId); // Redis에서 refreshToken 삭제
     }
-
-    // 리프레시 토큰을 사용하여 새로운 액세스 토큰 발급
-    public String refreshAccessToken(Long memberId) {
-        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + memberId);
-
-        if (refreshToken == null) {
-            logger.warn("Invalid refresh token request for memberId {}", memberId);
-            throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-
-        return jwtTokenProvider.generateToken(member, Duration.ofHours(2));
-    }
-
-    // 리프레시 토큰 블랙리스트에 추가
-    public void blacklistRefreshToken(Long memberId) {
-        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + memberId);
-
-        if (refreshToken != null) {
-            redisTemplate.opsForValue().set("blacklist:refreshToken:" + memberId, refreshToken, Duration.ofDays(14));
-            redisTemplate.delete("refreshToken:" + memberId);
-        } else {
-            logger.warn("Refresh token not found for blacklist for memberId {}", memberId);
-            throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
-    }
 }
+

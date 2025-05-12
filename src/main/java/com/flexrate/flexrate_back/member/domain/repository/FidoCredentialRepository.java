@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /*
-* 패스키 등록 여부를 확인
-* @since 2025.05.06
-* @author 윤영찬
+ * FIDO 자격 증명을 저장, 조회하는 JPA 레포지토리.
+ * @param <FidoCredential> FIDO 자격 증명 엔터티
+ * @param <Long> 자격 증명의 기본 키 타입
+ * @return 저장된 FIDO 자격 증명 및 관련 조회 결과
+ * @since 2025.05.06
+ * @author 윤영찬
 * */
 
 @Repository
