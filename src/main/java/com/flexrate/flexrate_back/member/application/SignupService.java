@@ -22,7 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j  // @Slf4j 어노테이션 사용
+@Slf4j
 public class SignupService {
 
     private final MemberRepository memberRepository;

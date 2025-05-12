@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j  // @Slf4j 어노테이션을 사용하여 Logger 자동 생성
+@Slf4j
 public class WebAuthnService {
 
     private final MemberRepository memberRepository;
