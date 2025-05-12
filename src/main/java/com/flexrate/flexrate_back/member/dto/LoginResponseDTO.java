@@ -3,7 +3,7 @@ package com.flexrate.flexrate_back.member.dto;
 import lombok.Builder;
 
 /*
- * 로그인 응답 PASSKEY 방식일 경우 반환
+ * 로그인 응답 엑세스토큰과 리프레시토큰 반환
  * @since 2025.05.05
  * @author 윤영찬
  */

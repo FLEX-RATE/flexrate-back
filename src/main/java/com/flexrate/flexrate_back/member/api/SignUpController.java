@@ -1,12 +1,12 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.SignupService;
-import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupPasskeyDTO;
+import com.flexrate.flexrate_back.member.dto.SignupPasswordRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /*
@@ -29,16 +29,26 @@ public class SignUpController {
      * @since 2025.04.28
      */
     @Operation(
-            summary = "회원가입",
             description = "사용자로부터 이메일, 비밀번호, 이름 등의 정보를 입력받아 회원을 등록합니다. " +
                     "이메일 중복 여부와 입력값의 유효성을 검사합니다.",
             tags = { "Auth Controller" }
     )
-    @PostMapping("/signup")
-    public ResponseEntity<SignupResponseDTO> signup(
-            @RequestBody @Valid SignupRequestDTO dto) {
+    @PostMapping("/signup/password")
+    public SignupResponseDTO signupByPassword(@RequestBody @Valid SignupPasswordRequestDTO dto) {
+        return signupService.registerByPassword(dto);
+    }
 
-        return ResponseEntity.status(201)
-                .body(signupService.registerMember(dto));
+    @Operation(
+            description = """
+                - FIDO2 Passkey(공개키 기반 인증)로 회원가입을 요청.
+                - 이메일, 이름, 생년월일, 성별, 소비 성향 등의 기본 정보와 함께 Passkey 등록 정보를 받습니다.
+                - 공개키 서명 검증합니다.
+                - 서명이 유효하지 않거나 이메일이 중복된 경우 오류가 발생합니다.
+                """,
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/signup/passkey")
+    public SignupResponseDTO signupByPasskey(@RequestBody @Valid SignupPasskeyDTO dto) {
+        return signupService.registerByPasskey(dto);
     }
 }

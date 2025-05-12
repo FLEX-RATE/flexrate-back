@@ -1,8 +1,10 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.LoginService;
-import com.flexrate.flexrate_back.member.dto.LoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
+import com.flexrate.flexrate_back.member.dto.MfaLoginRequestDTO;
+import com.flexrate.flexrate_back.member.dto.PasskeyLoginRequestDTO;
+import com.flexrate.flexrate_back.member.dto.PasswordLoginRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +19,35 @@ public class LoginController {
     private final LoginService loginService;
 
     @Operation(
-            summary = "로그인",
-            description = "이메일/비밀번호 또는 패스키(FIDO2)를 이용한 로그인",
+            summary = "패스워드 로그인",
+            description = "이메일과 비밀번호를 사용하여 로그인합니다.",
             tags = { "Auth Controller" }
     )
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequestDTO) {
-        LoginResponseDTO response = loginService.login(loginRequestDTO);
+    @PostMapping("/login/password")
+    public ResponseEntity<LoginResponseDTO> loginWithPassword(@RequestBody @Valid PasswordLoginRequestDTO request) {
+        LoginResponseDTO response = loginService.loginWithPassword(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Passkey 로그인",
+            description = "Passkey를 사용하여 로그인합니다.",
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/login/passkey")
+    public ResponseEntity<LoginResponseDTO> loginWithPasskey(@RequestBody @Valid PasskeyLoginRequestDTO request) {
+        LoginResponseDTO response = loginService.loginWithPasskey(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "MFA 로그인",
+            description = "다중 인증(MFA)을 사용하여 로그인합니다.",
+            tags = { "Auth Controller" }
+    )
+    @PostMapping("/login/mfa")
+    public ResponseEntity<LoginResponseDTO> loginWithMfa(@RequestBody @Valid MfaLoginRequestDTO request) {
+        LoginResponseDTO response = loginService.loginWithMfa(request);
         return ResponseEntity.ok(response);
     }
 
@@ -37,15 +61,4 @@ public class LoginController {
         loginService.logout(memberId);
         return ResponseEntity.ok("로그아웃");
     }
-
-//    @Operation(
-//            summary = "refreshToken 블랙리스트 처리",
-//            description = "refreshToken을 블랙리스트에 추가하여 무효화합니다.",
-//            tags = { "Auth Controller" }
-//    )
-//    @PostMapping("/blacklist")
-//    public ResponseEntity<String> blacklistRefreshToken(@RequestParam Long memberId) {
-//        loginService.blacklistRefreshToken(memberId);
-//        return ResponseEntity.ok("refreshToken이 블랙리스트에 추가되었습니다.");
-//    }
 }

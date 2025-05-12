@@ -14,13 +14,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 /*
- * 회원 가입 시 입력받는 사용자 검증 전달 DTO
+ * 비밀번호 방식 회원 가입 DTO
  * @since 2025.05.02
  * @author 윤영찬
  * */
 
 @Builder
-public record SignupRequestDTO(
+public record SignupPasswordRequestDTO(
 
         @Email(message = "유효한 이메일을 입력해 주세요.")
         @NotBlank(message = "이메일은 필수 항목입니다.")
@@ -46,9 +46,6 @@ public record SignupRequestDTO(
         @NotNull(message = "소비 목표는 필수 항목입니다.")
         @JsonProperty("consume_goal")
         ConsumeGoal consumeGoal,
-
-        @JsonProperty("passkeys")
-        List<PasskeyRequestDTO> passkeys,
 
         @JsonProperty("consents")
         List<ConsentRequestDTO> consents

@@ -4,10 +4,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.ConsentRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
 import com.flexrate.flexrate_back.member.enums.Sex;
@@ -21,8 +18,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class SignupService {
 
     private final MemberRepository memberRepository;
@@ -30,98 +27,85 @@ public class SignupService {
     private final WebAuthnService webAuthnService;
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
 
-    /*
-     * 회원가입 중복 이메일을 체크하고, 회원을 등록한 후, 생성된 회원 정보를 응답
-     * @since 2025.05.03
-     */
-    public SignupResponseDTO registerMember(SignupRequestDTO signupDTO) {
-        // 이메일 중복 체크
-        if (memberRepository.existsByEmail(signupDTO.email())) {
+    // 1. 비밀번호 기반 회원가입
+    public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
+        if (memberRepository.existsByEmail(dto.email())) {
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
-        // 비밀번호 암호화
-        String rawPwd = signupDTO.password();
-        String hashedPwd = passwordEncoder.encode(rawPwd);
+        String hashedPwd = passwordEncoder.encode(dto.password());
 
-        // 회원의 소비 유형 및 목표 검증
-        ConsumptionType consumptionType;
-        ConsumeGoal consumeGoal;
-        Sex sex = signupDTO.sex();
-
-        try {
-            consumptionType = signupDTO.consumptionType();
-            consumeGoal = signupDTO.consumeGoal();
-        } catch (IllegalArgumentException e) {
-            throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
-        }
-
-        // 회원 정보 생성
         Member member = Member.builder()
-                .email(signupDTO.email())
+                .email(dto.email())
                 .passwordHash(hashedPwd)
-                .name(signupDTO.name())
-                .sex(sex)
-                .birthDate(signupDTO.birthDate())
+                .name(dto.name())
+                .sex(dto.sex())
+                .birthDate(dto.birthDate())
+                .consumptionType(dto.consumptionType())
+                .consumeGoal(dto.consumeGoal())
                 .status(MemberStatus.ACTIVE)
-                .consumptionType(consumptionType)
-                .consumeGoal(consumeGoal)
                 .role(Role.MEMBER)
                 .build();
 
-        // 회원 저장
         Member saved = memberRepository.save(member);
-
-        // 패스키 등록 처리 (패스키가 있는 경우에만)
-        if (signupDTO.passkeys() != null && !signupDTO.passkeys().isEmpty()) {
-            registerPasskeys(saved, signupDTO.passkeys());
-        }
-
-        // 동의 사항 처리 (있는 경우에만)
-        if (signupDTO.consents() != null && !signupDTO.consents().isEmpty()) {
-            handleConsents(signupDTO.consents());
-        }
-
-        // 더미 금융 데이터 생성
+        handleConsents(dto.consents());
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
 
-        // 응답 객체 반환
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
                 .build();
     }
 
-    // 패스키 등록 및 challenge 생성
+    // 2. 패스키 기반 회원가입
+    public SignupResponseDTO registerByPasskey(SignupPasskeyDTO dto) {
+        if (memberRepository.existsByEmail(dto.email())) {
+            throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
+        }
+
+        Member member = Member.builder()
+                .email(dto.email())
+                .passwordHash(null) // 패스워드 없음
+                .name(dto.name())
+                .sex(dto.sex())
+                .birthDate(dto.birthDate())
+                .consumptionType(dto.consumptionType())
+                .consumeGoal(dto.consumeGoal())
+                .status(MemberStatus.ACTIVE)
+                .role(Role.MEMBER)
+                .build();
+
+        Member saved = memberRepository.save(member);
+
+        if (dto.passkeys() != null && !dto.passkeys().isEmpty()) {
+            registerPasskeys(saved, dto.passkeys());
+        }
+
+        handleConsents(dto.consents());
+        dummyFinancialDataGenerator.generateDummyFinancialData(saved);
+
+        return SignupResponseDTO.builder()
+                .userId(saved.getMemberId())
+                .email(saved.getEmail())
+                .build();
+    }
+
     private void registerPasskeys(Member member, List<PasskeyRequestDTO> passkeys) {
         for (PasskeyRequestDTO passkey : passkeys) {
-            try {
-                // WebAuthn 인증 challenge 생성
-                String challenge = webAuthnService.generateChallenge(member.getMemberId());
+            String challenge = webAuthnService.generateChallenge(member.getMemberId());
 
-                // 서명 검증 로직 호출 (가입 시에도 서명 검증)
-                if (!webAuthnService.verifySignatureForRegistration(
-                        passkey.publicKey(), challenge, passkey.credentialId())) {
-                    throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
-                }
-
-                // 패스키 등록 처리
-                webAuthnService.registerPasskey(member, passkey);
-
-            } catch (FlexrateException e) {
-                log.error("패스키 등록 중 오류 (회원ID: {}): {}", member.getMemberId(), e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                log.error("패스키 등록 중 예상치 못한 오류 (회원ID: {})", member.getMemberId(), e);
-                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
+            if (!webAuthnService.verifySignatureForRegistration(
+                    passkey.publicKey(), challenge, passkey.credentialId())) {
+                throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
             }
+
+            webAuthnService.registerPasskey(member, passkey);
         }
     }
 
-    // 동의 사항 처리
     private void handleConsents(List<ConsentRequestDTO> consents) {
+        if (consents == null) return;
         for (ConsentRequestDTO consent : consents) {
-            // 동의 사항의 타입과 동의 여부 로깅
             log.info("Consent type: {} , Agreed: {}", consent.type(), consent.agreed());
         }
     }
