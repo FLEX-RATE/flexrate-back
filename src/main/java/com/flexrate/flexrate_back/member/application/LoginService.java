@@ -97,8 +97,14 @@ public class LoginService {
 
     private String authenticateWithPasskey(PasskeyLoginRequestDTO request, Member member) {
         log.info("이메일: {} 의 Passkey challenge 생성 중", member.getEmail());
+
+        // 필요에 따라 request의 다른 필드를 활용할 수 있음
+        String deviceInfo = request.deviceInfo();
+        log.debug("Device Info: {}", deviceInfo);
+
         String challenge = webAuthnService.generateChallenge(member.getMemberId());
         log.debug("Passkey challenge 생성 완료: 이메일: {}, challenge: {}", member.getEmail(), challenge);
+
         return challenge;
     }
 
