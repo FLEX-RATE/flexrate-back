@@ -46,9 +46,13 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
         if (request.sex() != null) {
             builder.and(member.sex.eq(request.sex()));
         }
-        if (request.birthDate() != null) {
-            builder.and(member.birthDate.eq(request.birthDate()));
+        if (request.birthDateStart() != null) {
+            builder.and(member.birthDate.goe(request.birthDateStart()));
         }
+        if (request.birthDateEnd() != null) {
+            builder.and(member.birthDate.loe(request.birthDateEnd()));
+        }
+
         if (request.memberStatus() != null) {
             builder.and(member.status.eq(request.memberStatus()));
         }
@@ -72,16 +76,14 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
             }
         }
 
-        // loanTransactionCount 조건
-        if (request.loanTransactionCount() != null) {
-            if (request.loanTransactionCount() == 0) {
-                builder.and(member.loanApplication.isNull());
-            } else {
-                builder.and(
-                        member.loanApplication.isNotNull()
-                                .and(member.loanApplication.loanTransactions.size().eq(request.loanTransactionCount()))
-                );
-            }
+        // loanTransactionCount(거래 횟수) 조건
+        if (request.transactionCountMin() != null) {
+            builder.and(member.loanApplication.isNotNull()
+                    .and(member.loanApplication.loanTransactions.size().goe(request.transactionCountMin())));
+        }
+        if (request.transactionCountMax() != null) {
+            builder.and(member.loanApplication.isNotNull()
+                    .and(member.loanApplication.loanTransactions.size().loe(request.transactionCountMax())));
         }
 
         List<Member> members = queryFactory.selectFrom(member)

@@ -16,14 +16,18 @@ public record MemberSearchRequest(
         String email,
 
         Sex sex,
-        LocalDate birthDate,
+        LocalDate birthDateStart,
+        LocalDate birthDateEnd,
+
         MemberStatus memberStatus,
         LocalDate startDate,
         LocalDate endDate,
+
         Boolean hasLoan,
 
         @Min(value = 0, message = "거래 내역 횟수는 0 이상이어야 합니다.")
-        Integer loanTransactionCount,
+        Integer transactionCountMin,
+        Integer transactionCountMax,
 
         @Min(value = 0, message = "페이지는 0 이상이어야 합니다.")
         Integer page,
