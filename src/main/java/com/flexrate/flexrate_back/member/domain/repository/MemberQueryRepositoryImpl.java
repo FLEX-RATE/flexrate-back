@@ -5,6 +5,7 @@ import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.QMember;
 import com.flexrate.flexrate_back.member.dto.MemberSearchRequest;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.RequiredArgsConstructor;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -31,24 +32,61 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
     @Override
     public Page<Member> searchMembers(MemberSearchRequest request, Pageable pageable) {
         QMember member = QMember.member;
+        QLoanApplication loanApplication = QLoanApplication.loanApplication;
+
+        BooleanBuilder builder = new BooleanBuilder();
+
+        // 기본 조건
+        if (request.name() != null && !request.name().isEmpty()) {
+            builder.and(member.name.containsIgnoreCase(request.name()));
+        }
+        if (request.email() != null && !request.email().isEmpty()) {
+            builder.and(member.email.containsIgnoreCase(request.email()));
+        }
+        if (request.sex() != null) {
+            builder.and(member.sex.eq(request.sex()));
+        }
+        if (request.birthDate() != null) {
+            builder.and(member.birthDate.eq(request.birthDate()));
+        }
+        if (request.memberStatus() != null) {
+            builder.and(member.status.eq(request.memberStatus()));
+        }
+        if (request.startDate() != null) {
+            builder.and(member.createdAt.goe(request.startDate().atStartOfDay()));
+        }
+        if (request.endDate() != null) {
+            builder.and(member.createdAt.loe(request.endDate().atTime(23, 59, 59)));
+        }
+
+        // hasLoan(대출 중 여부) 조건
+        if (request.hasLoan() != null) {
+            if (request.hasLoan()) {
+                // 대출이 존재하고, 상태가 EXECUTED인 회원만
+                builder.and(member.loanApplication.isNotNull()
+                        .and(member.loanApplication.status.eq(LoanApplicationStatus.EXECUTED)));
+            } else {
+                // 대출이 없거나, 상태가 EXECUTED가 아닌 회원만
+                builder.and(member.loanApplication.isNull()
+                        .or(member.loanApplication.status.ne(LoanApplicationStatus.EXECUTED)));
+            }
+        }
+
+        // loanTransactionCount 조건
+        if (request.loanTransactionCount() != null) {
+            if (request.loanTransactionCount() == 0) {
+                builder.and(member.loanApplication.isNull());
+            } else {
+                builder.and(
+                        member.loanApplication.isNotNull()
+                                .and(member.loanApplication.loanTransactions.size().eq(request.loanTransactionCount()))
+                );
+            }
+        }
 
         List<Member> members = queryFactory.selectFrom(member)
-                .where(
-                        member.name.containsIgnoreCase(request.name() != null ? request.name() : ""),
-                        member.email.containsIgnoreCase(request.email() != null ? request.email() : ""),
-                        request.sex() != null ? member.sex.eq(request.sex()) : null,
-                        request.birthDate() != null ? member.birthDate.eq(request.birthDate()) : null,
-                        request.memberStatus() != null ? member.status.eq(request.memberStatus()) : null,
-                        (request.startDate() != null ? member.createdAt.goe(request.startDate().atStartOfDay()) : null),
-                        (request.endDate() != null ? member.createdAt.loe(request.endDate().atTime(23, 59, 59)) : null),
-                        request.hasLoan() != null && request.hasLoan()
-                                ? member.loanApplication.status.ne(LoanApplicationStatus.EXECUTED) : null,
-                        request.loanTransactionCount() != null
-                                ? request.loanTransactionCount() == 0
-                                ? member.loanApplication.isNull()
-                                : member.loanApplication.isNotNull().and(member.loanApplication.loanTransactions.size().eq(request.loanTransactionCount()))
-                                : null
-                )
+                .leftJoin(member.loanApplication, loanApplication).fetchJoin()
+                .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(pageable.getSort().stream()
@@ -58,7 +96,14 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         .toArray(com.querydsl.core.types.OrderSpecifier[]::new))
                 .fetch();
 
-        return new PageImpl<>(members, pageable, members.size());
+        // 전체 건수 (페이징 total)
+        long total = queryFactory
+                .selectFrom(member)
+                .leftJoin(member.loanApplication, loanApplication)
+                .where(builder)
+                .fetchCount();
+
+        return new PageImpl<>(members, pageable, total);
     }
 
     /**
