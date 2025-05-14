@@ -27,6 +27,7 @@ public record MemberSearchRequest(
 
         @Min(value = 0, message = "거래 내역 횟수는 0 이상이어야 합니다.")
         Integer transactionCountMin,
+        @Min(value = 0, message = "거래 내역 횟수는 0 이상이어야 합니다.")
         Integer transactionCountMax,
 
         @Min(value = 0, message = "페이지는 0 이상이어야 합니다.")
