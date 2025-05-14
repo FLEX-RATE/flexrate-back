@@ -90,6 +90,7 @@ public class WebAuthnService {
                 .filter(FidoCredential::isActive)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS));
 
+
         try {
             // 1. clientDataJSON → SHA-256 해시
             byte[] clientDataHash = MessageDigest.getInstance("SHA-256")

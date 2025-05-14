@@ -3,7 +3,6 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.auth.application.TokenService;
 import com.flexrate.flexrate_back.auth.domain.MfaLog;
 import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
-import com.flexrate.flexrate_back.auth.domain.jwt.RefreshToken;
 import com.flexrate.flexrate_back.auth.domain.repository.RefreshTokenRepository;
 import com.flexrate.flexrate_back.auth.enums.AuthResult;
 import com.flexrate.flexrate_back.auth.enums.MfaType;
@@ -51,7 +50,22 @@ public class LoginService {
         authenticateWithPassword(request, member);
         log.info("이메일: {} 의 패스워드 로그인 성공", request.email());
 
-        return generateTokens(member, "");
+        // JwtTokenProvider의 generateToken 호출
+        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(1));  // 1시간 만료
+        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
+
+        // Redis에 refreshToken 저장 (7일 만료)
+        String redisKey = "refreshToken:" + member.getMemberId();
+        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(7));
+        log.info("리프레시 토큰 저장 완료: {}", refreshToken);
+
+        return LoginResponseDTO.builder()
+                .userId(member.getMemberId())
+                .email(member.getEmail())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .challenge("")
+                .build();
     }
 
     public LoginResponseDTO loginWithPasskey(PasskeyLoginRequestDTO request) {
@@ -66,7 +80,16 @@ public class LoginService {
         String challenge = authenticateWithPasskey(request, member);
         log.info("이메일: {} 의 Passkey 로그인 성공", request.email());
 
-        return generateTokens(member, challenge);
+        // JwtTokenProvider의 generateToken 호출
+        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(1));  // 1시간 만료
+        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
+
+        // Redis에 refreshToken 저장 (7일 만료)
+        String redisKey = "refreshToken:" + member.getMemberId();
+        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(7));
+        log.info("리프레시 토큰 저장 완료: {}", refreshToken);
+
+        return new LoginResponseDTO(member.getMemberId(), member.getEmail(), accessToken, refreshToken, challenge);
     }
 
     public LoginResponseDTO loginWithMfa(MfaLoginRequestDTO request) {
@@ -81,7 +104,22 @@ public class LoginService {
         authenticateWithMfa(request, member);
         log.info("이메일: {} 의 MFA 로그인 성공", request.email());
 
-        return generateTokens(member, "");
+        // JwtTokenProvider의 generateToken 호출
+        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(1));  // 1시간 만료
+        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
+
+        // Redis에 refreshToken 저장 (7일 만료)
+        String redisKey = "refreshToken:" + member.getMemberId();
+        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(7));
+        log.info("리프레시 토큰 저장 완료: {}", refreshToken);
+
+        return LoginResponseDTO.builder()
+                .userId(member.getMemberId())
+                .email(member.getEmail())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .challenge("") // MFA 로그인에는 challenge가 필요 없으므로 빈 문자열
+                .build();
     }
 
     private void authenticateWithPassword(PasswordLoginRequestDTO request, Member member) {
@@ -98,62 +136,25 @@ public class LoginService {
     private String authenticateWithPasskey(PasskeyLoginRequestDTO request, Member member) {
         log.info("이메일: {} 의 Passkey challenge 생성 중", member.getEmail());
 
-        // 필요에 따라 request의 다른 필드를 활용할 수 있음
-        String deviceInfo = request.deviceInfo();
-        log.debug("Device Info: {}", deviceInfo);
-
         String challenge = webAuthnService.generateChallenge(member.getMemberId());
         log.debug("Passkey challenge 생성 완료: 이메일: {}, challenge: {}", member.getEmail(), challenge);
 
+        // 패스키 인증 시 challenge를 클라이언트로 전달
         return challenge;
     }
 
     private void authenticateWithMfa(MfaLoginRequestDTO request, Member member) {
         MfaType mfaType = request.mfaType();
         log.info("이메일: {} 의 MFA 타입: {}", member.getEmail(), mfaType);
-        createMfaLog(request, member, mfaType);
-    }
 
-    // DB에 리프레시 토큰 저장
-    private void saveRefreshTokenToDb(Long memberId, String refreshToken) {
-        RefreshToken token = new RefreshToken(memberId, refreshToken);
-        refreshTokenRepository.save(token);  // DB에 리프레시 토큰 저장
-        log.info("DB에 리프레시 토큰 저장 완료: {}", refreshToken);
-    }
-
-    // generateTokens 메서드에서 리프레시 토큰 저장
-    private LoginResponseDTO generateTokens(Member member, String challenge) {
-        // Refresh Token 발급
-        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
-
-        // Redis에 refreshToken 저장 (7일 만료)
-        String redisKey = "refreshToken:" + member.getMemberId();
-        redisTemplate.opsForValue().set(redisKey, refreshToken, Duration.ofDays(7));
-        log.info("리프레시 토큰 저장 완료: refreshToken: {}", refreshToken);
-
-        // DB에 리프레시 토큰도 저장
-        saveRefreshTokenToDb(member.getMemberId(), refreshToken);
-
-        // Redis에서 저장된 refreshToken 조회
-        String storedRefreshToken = redisTemplate.opsForValue().get(redisKey);
-
-        if (storedRefreshToken == null) {
-            throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
+        switch (mfaType) {
+            case PASS -> log.info("Pass 인증 처리");
+            case EMAIL -> log.info("Email 인증 처리");
+            case SMS -> log.info("SMS 인증 처리");
+            default -> throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
         }
 
-        log.info("저장된 리프레시 토큰 조회: {}", storedRefreshToken);
-
-        // Access Token 발급
-        String accessToken = tokenService.createNewAccessToken(storedRefreshToken);
-        log.info("엑세스 토큰 발급 완료: {}", accessToken);
-
-        return LoginResponseDTO.builder()
-                .userId(member.getMemberId())
-                .email(member.getEmail())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .challenge(challenge)
-                .build();
+        createMfaLog(request, member, mfaType);
     }
 
     private void createMfaLog(MfaLoginRequestDTO request, Member member, MfaType mfaType) {
@@ -173,7 +174,11 @@ public class LoginService {
 
     public void logout(Long memberId) {
         log.info("회원 ID: {} 의 로그아웃 처리 시작", memberId);
-        redisTemplate.delete("refreshToken:" + memberId);
+
+        // Redis에서 리프레시 토큰 삭제
+        String redisKey = "refreshToken:" + memberId;
+        redisTemplate.delete(redisKey);
+
         log.info("회원 ID: {} 의 로그아웃 처리 완료", memberId);
     }
 }
