@@ -6,6 +6,7 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.QMember;
 import com.flexrate.flexrate_back.member.dto.MemberSearchRequest;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.RequiredArgsConstructor;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -78,12 +79,22 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
 
         // loanTransactionCount(거래 횟수) 조건
         if (request.transactionCountMin() != null) {
-            builder.and(member.loanApplication.isNotNull()
-                    .and(member.loanApplication.loanTransactions.size().goe(request.transactionCountMin())));
+            builder.and(
+                    new CaseBuilder()
+                            .when(member.loanApplication.isNull())
+                            .then(0)
+                            .otherwise(member.loanApplication.loanTransactions.size())
+                            .goe(request.transactionCountMin())
+            );
         }
         if (request.transactionCountMax() != null) {
-            builder.and(member.loanApplication.isNotNull()
-                    .and(member.loanApplication.loanTransactions.size().loe(request.transactionCountMax())));
+            builder.and(
+                    new CaseBuilder()
+                            .when(member.loanApplication.isNull())
+                            .then(0)
+                            .otherwise(member.loanApplication.loanTransactions.size())
+                            .loe(request.transactionCountMax())
+            );
         }
 
         List<Member> members = queryFactory.selectFrom(member)
