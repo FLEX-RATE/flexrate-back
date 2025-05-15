@@ -46,7 +46,6 @@ spring:
     init:
       mode: always
 
-  # <-- mail 설정을 spring.mail 아래로 이동 -->
   mail:
     host: smtp.gmail.com
     port: 587
@@ -54,6 +53,7 @@ spring:
     password: ${SPRING_MAIL_PASSWORD}
     protocol: smtp
     properties:
+      timeout: 5000
       mail:
         smtp:
           auth: true
