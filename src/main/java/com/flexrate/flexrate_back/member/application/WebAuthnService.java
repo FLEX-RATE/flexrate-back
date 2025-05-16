@@ -1,17 +1,21 @@
 package com.flexrate.flexrate_back.member.application;
 
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
+import com.flexrate.flexrate_back.auth.domain.MfaLog;
+import com.flexrate.flexrate_back.auth.enums.AuthResult;
+import com.flexrate.flexrate_back.auth.enums.MfaType;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.common.util.StringRedisUtil;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.security.KeyFactory;
@@ -19,36 +23,39 @@ import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
+@Transactional(readOnly = true)
 public class WebAuthnService {
 
     private final MemberRepository memberRepository;
     private final FidoCredentialRepository fidoCredentialRepository;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final MfaLogRepository mfaLogRepository;
+    private final StringRedisUtil redisUtil;
+
+    private static final String CHALLENGE_KEY_PREFIX = "fido:challenge:";
+    private static final Duration CHALLENGE_TTL = Duration.ofMinutes(5);
 
     // 챌린지 생성 메소드 등록과 인증 공용
     public String generateChallenge(Long userId) {
         memberRepository.findById(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        // 테스트용 챌린지 10분
+        // 테스트용 챌린지 5분
         String challenge = UUID.randomUUID().toString();
-        String redisKey = "fido:challenge:" + userId;
-        redisTemplate.opsForValue().set(redisKey, challenge, 10, TimeUnit.MINUTES);
-
-        log.info("Generated challenge for user {}: {}", userId, challenge);  // log.info() 사용
-
+        String redisKey = CHALLENGE_KEY_PREFIX + userId;
+        redisUtil.set(redisKey, challenge, CHALLENGE_TTL);
         return challenge;
     }
 
     // 패스키 등록
+    @Transactional
     public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
         // 중복된 공개키와 Credential ID 체크
         if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey()) ||
@@ -76,14 +83,14 @@ public class WebAuthnService {
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
         // Redis에서 저장된 챌린지 조회
-        String redisKey = "fido:challenge:" + userId;
-        String savedChallenge = redisTemplate.opsForValue().get(redisKey);
+        String redisKey = CHALLENGE_KEY_PREFIX + userId;
+        String savedChallenge = redisUtil.get(redisKey);
 
         if (savedChallenge == null || !savedChallenge.equals(challengeFromClient)) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        redisTemplate.delete(redisKey);
+        redisUtil.delete(redisKey); // 인증 후 삭제
 
         // FIDO 자격 증명 조회
         FidoCredential credential = fidoCredentialRepository.findByMember_MemberId(userId)
@@ -132,6 +139,16 @@ public class WebAuthnService {
         } catch (Exception e) {
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
+    }
+
+    private MfaLog saveMfaLog(Member member, String deviceInfo, AuthResult result) {
+        MfaLog mfaLog = MfaLog.builder()
+                .mfaType(MfaType.FIDO2)
+                .result(result)
+                .authenticatedAt(LocalDateTime.now())
+                .deviceInfo(deviceInfo)
+                .build();
+        return mfaLogRepository.save(mfaLog);
     }
 
     private boolean verifySignature(String pemPublicKey, byte[] authenticatorData, byte[] clientDataJSON, byte[] signature) throws FlexrateException {

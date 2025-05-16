@@ -47,7 +47,7 @@ public class LoginController {
     )
     @PostMapping("/login/mfa")
     public ResponseEntity<LoginResponseDTO> loginWithMfa(@RequestBody @Valid MfaLoginRequestDTO request) {
-        LoginResponseDTO response = loginService.loginWithMfa(request);
+        LoginResponseDTO response = loginService.loginWithMFA(request);
         return ResponseEntity.ok(response);
     }
 
@@ -57,8 +57,8 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestParam Long memberId) {
-        loginService.logout(memberId);
+    public ResponseEntity<String> logout(@RequestParam String refreshToken) {
+        loginService.logout(refreshToken);
         return ResponseEntity.ok("로그아웃");
     }
 }

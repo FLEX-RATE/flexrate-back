@@ -15,8 +15,6 @@ public record PasskeyLoginRequestDTO(
 
         PasskeyAuthenticationDTO passkeyData,
 
-        LoginMethod loginMethod,
-
         AuthMethod authMethod,
 
         String deviceInfo,

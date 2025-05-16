@@ -11,17 +11,11 @@ import lombok.Builder;
  */
 @Builder
 public record PasskeyRequestDTO(
-        @NotBlank(message = "Credential ID는 필수 항목입니다.")
-        Long credentialId,
-
-        @NotBlank(message = "Public Key는 필수 항목입니다.")
-        String publicKey,
-
-        @NotNull(message = "Sign Count는 필수 항목입니다.")
-        int signCount,
-
-        @NotBlank(message = "Device Info는 필수 항목입니다.")
-        String deviceInfo,
-
-        boolean isActive
-) {}
+        Long credentialId,   // Base64url 인코딩된 credential ID
+        String publicKey,      // PEM 형식의 공개키 (추출 필요)
+        long signCount,        // 장치의 서명 카운터
+        String deviceInfo      // 사용자의 브라우저 또는 장치 정보 (예: Chrome on Windows)
+) {
+        @Builder
+        public PasskeyRequestDTO {}
+}

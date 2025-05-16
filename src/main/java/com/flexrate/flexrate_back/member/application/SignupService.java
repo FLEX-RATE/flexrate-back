@@ -16,9 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class SignupService {
 
@@ -27,7 +27,7 @@ public class SignupService {
     private final WebAuthnService webAuthnService;
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
 
-    // 1. 비밀번호 기반 회원가입
+    // 비밀번호 기반 회원가입
     public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
         if (memberRepository.existsByEmail(dto.email())) {
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
@@ -48,7 +48,6 @@ public class SignupService {
                 .build();
 
         Member saved = memberRepository.save(member);
-        handleConsents(dto.consents());
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
 
         return SignupResponseDTO.builder()
@@ -57,56 +56,26 @@ public class SignupService {
                 .build();
     }
 
-    // 2. 패스키 기반 회원가입
-    public SignupResponseDTO registerByPasskey(SignupPasskeyDTO dto) {
-        if (memberRepository.existsByEmail(dto.email())) {
-            throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
-        }
+    public void addFidoCredential(Long memberId, PasskeyRequestDTO dto) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        Member member = Member.builder()
-                .email(dto.email())
-                .passwordHash(null) // 패스워드 없음
-                .name(dto.name())
-                .sex(dto.sex())
-                .birthDate(dto.birthDate())
-                .consumptionType(dto.consumptionType())
-                .consumeGoal(dto.consumeGoal())
-                .status(MemberStatus.ACTIVE)
-                .role(Role.MEMBER)
-                .build();
+        webAuthnService.registerPasskey(member, dto);
+    }
 
-        Member saved = memberRepository.save(member);
+    public String generateFidoChallenge(Long memberId) {
+        return webAuthnService.generateChallenge(memberId);
+    }
 
-        if (dto.passkeys() != null && !dto.passkeys().isEmpty()) {
-            registerPasskeys(saved, dto.passkeys());
-        }
+    // 임시 소비성향 도출 메서드
+    public AnalyzeConsumptionTypeResponse analyzeConsumptionType() {
+        ConsumptionType[] types = ConsumptionType.values();
+        int randomIndex = ThreadLocalRandom.current().nextInt(types.length);
+        ConsumptionType randomType = types[randomIndex];
 
-        handleConsents(dto.consents());
-        dummyFinancialDataGenerator.generateDummyFinancialData(saved);
-
-        return SignupResponseDTO.builder()
-                .userId(saved.getMemberId())
-                .email(saved.getEmail())
+        return AnalyzeConsumptionTypeResponse.builder()
+                .consumptionType(randomType)
                 .build();
     }
 
-    private void registerPasskeys(Member member, List<PasskeyRequestDTO> passkeys) {
-        for (PasskeyRequestDTO passkey : passkeys) {
-            String challenge = webAuthnService.generateChallenge(member.getMemberId());
-
-            if (!webAuthnService.verifySignatureForRegistration(
-                    passkey.publicKey(), challenge, passkey.credentialId())) {
-                throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
-            }
-
-            webAuthnService.registerPasskey(member, passkey);
-        }
-    }
-
-    private void handleConsents(List<ConsentRequestDTO> consents) {
-        if (consents == null) return;
-        for (ConsentRequestDTO consent : consents) {
-            log.info("Consent type: {} , Agreed: {}", consent.type(), consent.agreed());
-        }
-    }
 }

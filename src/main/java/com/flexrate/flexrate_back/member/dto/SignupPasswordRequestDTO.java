@@ -40,13 +40,8 @@ public record SignupPasswordRequestDTO(
         LocalDate birthDate,
 
         @NotNull(message = "소비성향은 필수 항목입니다.")
-        @JsonProperty("consumption_type")
         ConsumptionType consumptionType,
 
         @NotNull(message = "소비 목표는 필수 항목입니다.")
-        @JsonProperty("consume_goal")
-        ConsumeGoal consumeGoal,
-
-        @JsonProperty("consents")
-        List<ConsentRequestDTO> consents
+        ConsumeGoal consumeGoal
 ) {}
