@@ -8,10 +8,10 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.common.util.ProfileUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,13 +28,13 @@ class LoanTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private LoanService loanService;
 
-    @MockBean
+    @Mock
     private MemberService memberService;
 
-    @MockBean
+    @Mock
     private ProfileUtil profileUtil;
 
     private final Principal principal = () -> "1";
@@ -53,7 +53,7 @@ class LoanTest {
                 .name("홍길동")
                 .screeningDate("2025-05-05")
                 .loanLimit(30000000)
-                .initialRate(3.5)
+                .initialRate(3)
                 .rateRangeFrom(2.5f)
                 .rateRangeTo(4.5f)
                 .creditScore(750)

@@ -19,7 +19,7 @@ public class Authentication {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long authId;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 

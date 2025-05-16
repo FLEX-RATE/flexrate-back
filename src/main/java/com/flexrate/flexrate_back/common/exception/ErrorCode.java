@@ -11,8 +11,12 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
+    REDIS_NOT_FOUND("C001", "요청한 데이터가 존재하지 않거나 만료되었습니다.", HttpStatus.BAD_REQUEST),
+
     // 사용자 에러
-    USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+    USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    DUPLICATED_EMAIL("U002", "이미 가입된 이메일입니다.", HttpStatus.CONFLICT),
+
 
     // 대출
     INVALID_APPLICATION("L001", "신청 정보가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
@@ -33,7 +37,12 @@ public enum ErrorCode {
 
     // 금리
     NO_INTEREST("I001", "저장된 금리가 없습니다.", HttpStatus.NOT_FOUND),
-    
+
+    // 이메일 인증
+    MESSAGING_EXCEPTION("M001", "이메일 오류가 발생하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ALREADY_USING("M002", "이메일 오류가 발생하였습니다.", HttpStatus.BAD_REQUEST),
+    WRONG_AUTH_CODE("M003", "제공된 인증코드가 불일치합니다.", HttpStatus.BAD_REQUEST),
+
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
     EMAIL_ALREADY_REGISTERED("A001", "이미 가입된 이메일입니다.", HttpStatus.CONFLICT),

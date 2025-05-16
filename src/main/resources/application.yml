@@ -45,8 +45,24 @@ spring:
   sql:
     init:
       mode: always
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    protocol: smtp
+    properties:
+      timeout: 5000
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 jwt:
   secretKey: ${JWT_SECRET_KEY}
+
 logging:
   level:
     root: INFO
@@ -59,10 +75,12 @@ logging:
     rollingpolicy:
       max-history: 30
       max-file-size: 10MB
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+
 security:
   allowed-origins:
     - http://localhost:3000

@@ -22,11 +22,11 @@ public class FidoCredential {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 1000)
     private String publicKey;
 
     @Column(nullable = false)
-    private int signCount;
+    private long signCount;
 
     @Column
     private LocalDateTime lastUsedDate;
