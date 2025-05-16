@@ -20,12 +20,6 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
 
-    // 회원 ID로 회원 조회
-    public Member findById(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-    }
-
     /**
      * 마이페이지 조회
      * @param memberId 회원 ID
@@ -89,4 +83,11 @@ public class MemberService {
                 .build();
 
     }
+
+    // 회원 ID로 회원 조회
+    public Member findById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+    }
+
 }
