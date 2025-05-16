@@ -20,7 +20,7 @@ import java.util.Random;
 public class DummyFinancialDataGenerator {
 
     private final UserFinancialDataRepository financialDataRepository;
-    private final Random random = new Random(); // Random 객체 재사용
+    private final Random random = new Random();
 
     public void generateDummyFinancialData(Member member) {
         List<UserFinancialData> dummyDataList = new ArrayList<>();
@@ -41,8 +41,8 @@ public class DummyFinancialDataGenerator {
                     .member(member)
                     .dataType(dataType)
                     .category(category)
-                    .value(random.nextInt(100000) + 1000)  // 1000 ~ 100000 사이의 값 생성
-                    .collectedAt(LocalDateTime.now().minusDays(random.nextInt(365)))  // 지난 1년 내 날짜 랜덤 생성
+                    .value(random.nextInt(500000) + 1000)  // 1000 ~ 100000 사이의 값 생성
+                    .collectedAt(LocalDateTime.now().minusDays(random.nextInt(60)))  // 지난 60일 내 날짜 랜덤 생성
                     .build();
 
             dummyDataList.add(data);
@@ -79,6 +79,6 @@ public class DummyFinancialDataGenerator {
 
     private UserFinancialCategory getRandomCategoryFromList(UserFinancialCategory... categories) {
         List<UserFinancialCategory> categoryList = List.of(categories);
-        return categoryList.get(random.nextInt(categoryList.size()));  // random 객체 사용
+        return categoryList.get(random.nextInt(categoryList.size()));
     }
 }
