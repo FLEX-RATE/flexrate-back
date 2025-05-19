@@ -8,6 +8,7 @@ import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.domain.LoanProduct;
 import com.flexrate.flexrate_back.loan.dto.LoanProductSummaryDto;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
+import com.flexrate.flexrate_back.loan.enums.LoanType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,6 +64,7 @@ public class LoanProductService {
             LoanApplication app = existing.get();
             if (LoanApplicationStatus.PRE_APPLIED == app.getStatus()) {
                 loanApplicationRepository.delete(app);
+                loanApplicationRepository.flush();
             } else {
                 throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
             }
@@ -75,6 +77,7 @@ public class LoanProductService {
                 .member(member)
                 .product(product)
                 .status(LoanApplicationStatus.PRE_APPLIED)
+                .loanType(LoanType.NEW)
                 .build();
 
         loanApplicationRepository.save(application);

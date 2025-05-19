@@ -36,6 +36,7 @@ public class SignupService {
         String hashedPwd = passwordEncoder.encode(dto.password());
 
         Member member = Member.builder()
+                .age(dto.age())
                 .email(dto.email())
                 .passwordHash(hashedPwd)
                 .name(dto.name())

@@ -30,6 +30,8 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long memberId;
 
+    private Integer age;
+
     @Column(nullable = false, length = 50)
     private String email;
 
@@ -104,4 +106,6 @@ public class Member {
     }
 
     public void updateConsumeGoal(ConsumeGoal consumeGoal) {this.consumeGoal = consumeGoal;}
+
+    public int getSexCode() {return this.sex == Sex.MALE ? 1 : 2;}
 }
