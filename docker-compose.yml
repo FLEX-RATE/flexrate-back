@@ -1,6 +1,15 @@
 version: "3.8"
 
 services:
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: flexrate-fastapi
+    ports:
+      - "8000:8000"
+    restart: always
+
   mysql:
     image: mysql:8.0
     container_name: flexrate-mysql
@@ -32,6 +41,7 @@ services:
     depends_on:
       - mysql
       - redis
+      - fastapi
     environment:
       SPRING_PROFILES_ACTIVE: prod
       MYSQL_URL: ${MYSQL_URL_PROD}
