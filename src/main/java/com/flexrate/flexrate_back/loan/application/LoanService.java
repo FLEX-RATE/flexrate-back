@@ -2,8 +2,11 @@ package com.flexrate.flexrate_back.loan.application;
 
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.domain.LoanProduct;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationResultResponse;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
@@ -15,7 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 대출 상품 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
@@ -47,21 +54,46 @@ public class LoanService {
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
 
-        if (loanApplication.getStatus() !=  LoanApplicationStatus.PRE_APPLIED){ // 추후에 분기 조건 조정 필요
-            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS); // 이미 대출 중인 경우 예외처리
+        if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
-        // 외부 대출 심사 서버 호출
-        LoanReviewApplicationResponse externalResponse = restTemplate.postForObject(
-                SCREENING_SERVER_URL,
-                request,
-                LoanReviewApplicationResponse.class
+        LoanProduct product = member.getLoanApplication().getProduct();
+
+        // FastAPI로 보낼 요청 JSON 생성
+        Map<String, Object> fastApiRequest = new HashMap<>();
+        fastApiRequest.put("AGE", member.getAge());
+        fastApiRequest.put("SEX_CD", member.getSexCode()); // 1: 남성, 2: 여성
+        fastApiRequest.put("TOTAL_SPEND", (float) calculateMonthlyTotalSpend(member)); // 소비 총액
+        fastApiRequest.put("min_rate", product.getMinRate());
+        fastApiRequest.put("max_rate", product.getMaxRate());
+        fastApiRequest.put("credit_score", member.getLoanApplication().getCreditScore());
+
+        // FastAPI 호출: 금리 예측
+        Map<String, Object> rateResponse = restTemplate.postForObject(
+                "http://localhost:8000/predict-initial-rate",
+                fastApiRequest,
+                Map.class
         );
 
-        if (externalResponse == null) {
+        if (rateResponse == null || rateResponse.get("initialRate") == null) {
             throw new FlexrateException(ErrorCode.LOAN_SERVER_ERROR);
         }
-        // 기존 loanApplication에 심사결과 적용
+
+        float initialRate = ((Number) rateResponse.get("initialRate")).floatValue();
+
+        // 금리 범위 포함한 응답 생성
+        LoanReviewApplicationResponse externalResponse = LoanReviewApplicationResponse.builder()
+                .name(member.getName())
+                .screeningDate(LocalDate.now().toString())
+                .loanLimit(product.getMaxAmount())  // 예시
+                .initialRate(initialRate)
+                .rateRangeFrom(product.getMinRate())
+                .rateRangeTo(product.getMaxRate())
+                .creditScore(member.getLoanApplication().getCreditScore())
+                .terms(product.getTerms())
+                .build();
+
         loanApplication.applyReviewResult(externalResponse);
     }
     /**
@@ -142,5 +174,16 @@ public class LoanService {
                 .loanEndDate(loanApplication.getEndDate().format(formatter))
                 .build();
     }
+
+    private int calculateMonthlyTotalSpend(Member member) {
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+
+        return member.getFinancialData().stream()
+                .filter(data -> data.getDataType() == UserFinancialDataType.EXPENSE)
+                .filter(data -> data.getCollectedAt().isAfter(oneMonthAgo))
+                .mapToInt(UserFinancialData::getValue)
+                .sum();
+    }
+
 
 }

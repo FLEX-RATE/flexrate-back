@@ -4,13 +4,14 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.*;
-import com.flexrate.flexrate_back.member.enums.*;
+import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
+import com.flexrate.flexrate_back.member.dto.MypageResponse;
+import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
+import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
+import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 
 @Service
