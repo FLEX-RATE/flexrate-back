@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 @Entity
 @Table(
@@ -42,4 +43,7 @@ public class ConsumptionHabitReport {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDate createdAt;
+
+    @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConsumptionHabitCategory> categories;
 }
