@@ -86,5 +86,5 @@ security:
     - http://localhost:3000
 
 fastapi:
-  host: ${FASTAPI_HOST}
-  port: ${FASTAPI_PORT}
+  host: ${FASTAPI_HOST:localhost}
+  port: ${FASTAPI_PORT:8000}
