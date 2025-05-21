@@ -5,8 +5,10 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
+import com.flexrate.flexrate_back.loan.application.repository.LoanReviewHistoryRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.domain.LoanProduct;
+import com.flexrate.flexrate_back.loan.domain.LoanReviewHistory;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationResultResponse;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
@@ -48,6 +50,7 @@ public class LoanService {
     // 심사 서버 URL (추후 변경 예정)
     private static final String SCREENING_SERVER_URL = "http://external-server/api";
     private final LoanApplicationRepository loanApplicationRepository;
+    private final LoanReviewHistoryRepository loanReviewHistoryRepository;
 
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
@@ -108,7 +111,18 @@ public class LoanService {
                 .terms(product.getTerms())
                 .build();
 
-        loanApplication.applyReviewResult(externalResponse);
+        // 대출 신청 사전 정보 저장
+        LoanReviewHistory loanReviewHistory = LoanReviewHistory.builder()
+                .employmentType(request.employmentType())
+                .annualIncome(request.annualIncome())
+                .residenceType(request.residenceType())
+                .isBankrupt(request.isBankrupt())
+                .loanPurpose(request.loanPurpose())
+                .application(loanApplication)
+                .build();
+
+        loanReviewHistoryRepository.save(loanReviewHistory);
+        loanApplication.applyReviewResult(externalResponse, loanReviewHistory);
     }
 
     /**
