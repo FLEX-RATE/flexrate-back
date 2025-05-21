@@ -1,22 +1,46 @@
 -- MEMBER (회원)
 create table member
 (
-    birth_date               date null,
-    created_at               datetime(6) null,
-    last_login_at            datetime(6) null,
+    age                      int                                                                                                                                                                                                                                                                                                                                                                         null,
+    birth_date               date                                                                                                                                                                                                                                                                                                                                                                        null,
+    created_at               datetime(6)                                                                                                                                                                                                                                                                                                                                                                 null,
+    last_login_at            datetime(6)                                                                                                                                                                                                                                                                                                                                                                 null,
     member_id                bigint auto_increment primary key,
-    password_last_changed_at datetime(6) null,
-    updated_at               datetime(6) null,
-    name                     varchar(20) not null,
-    phone                    varchar(20) null,
-    email                    varchar(50) not null,
-    password_hash            varchar(255) not null,
+    password_last_changed_at datetime(6)                                                                                                                                                                                                                                                                                                                                                                 null,
+    updated_at               datetime(6)                                                                                                                                                                                                                                                                                                                                                                 null,
+    name                     varchar(20)                                                                                                                                                                                                                                                                                                                                                                 not null,
+    phone                    varchar(20)                                                                                                                                                                                                                                                                                                                                                                 null,
+    email                    varchar(50)                                                                                                                                                                                                                                                                                                                                                                 not null,
+    password_hash            varchar(255)                                                                                                                                                                                                                                                                                                                                                                not null,
     consume_goal             enum ('CLOTHING_UNDER_100K', 'COMPARE_BEFORE_BUYING', 'HAS_HOUSING_SAVING', 'INCOME_OVER_EXPENSE', 'LIMIT_DAILY_MEAL', 'MEAL_UNDER_20K', 'NO_EXPENSIVE_DESSERT', 'NO_OVER_50K_PER_DAY', 'NO_SPENDING_TODAY', 'NO_USELESS_ELECTRONICS', 'ONE_CATEGORY_SPEND', 'ONLY_PUBLIC_TRANSPORT', 'OVER_10_PERCENT', 'SAVE_70_PERCENT', 'SMALL_MONTHLY_SAVE', 'SUBSCRIPTION_UNDER_50K') null,
-    consumption_type         enum ('BALANCED', 'CONSERVATIVE', 'CONSUMPTION_ORIENTED', 'PRACTICAL') null,
-    last_login_method        enum ('PASSKEY', 'PASSWORD', 'SOCIAL') null,
-    role                     enum ('ADMIN', 'MEMBER') not null,
-    sex                      enum ('FEMALE', 'MALE') not null,
-    status                   enum ('ACTIVE', 'SUSPENDED', 'WITHDRAWN') not null
+    consumption_type         enum ('BALANCED', 'CONSERVATIVE', 'CONSUMPTION_ORIENTED', 'PRACTICAL')                                                                                                                                                                                                                                                                                                      null,
+    last_login_method        enum ('PASSKEY', 'PASSWORD', 'SOCIAL')                                                                                                                                                                                                                                                                                                                                      null,
+    role                     enum ('ADMIN', 'MEMBER')                                                                                                                                                                                                                                                                                                                                                    not null,
+    sex                      enum ('FEMALE', 'MALE')                                                                                                                                                                                                                                                                                                                                                     not null,
+    status                   enum ('ACTIVE', 'SUSPENDED', 'WITHDRAWN')                                                                                                                                                                                                                                                                                                                                   not null
+);
+
+-- MEMBER_CREDIT_SUMMARY (회원 신용정보 산정 이력)
+create table member_credit_summary
+(
+    id                         bigint auto_increment primary key,
+    member_id                  bigint       not null,
+    calculated_at              datetime(6)  not null default current_timestamp, -- 평가 시점
+    total_loan_count           int          not null default 0,                -- 보유 대출 건수
+    active_loan_count          int          not null default 0,                -- 현재 상환 중인 대출 건수
+    total_loan_balance         int          not null default 0,                -- 전체 대출 잔액
+    total_loan_overdue_30d     int          not null default 0,                -- 30일 이상 연체 건수
+    total_loan_overdue_90d     int          not null default 0,                -- 90일 이상 연체 건수
+    has_current_overdue        boolean      not null default false,            -- 현재 연체 여부
+    last_overdue_date          date         null,                              -- 최근 연체 발생일
+    comm_overdue_count         int          not null default 0,                -- 통신비 연체 건수
+    comm_overdue_max_days      int          not null default 0,                -- 통신비 최장 연체일수
+    utility_overdue_count      int          not null default 0,                -- 공과금 연체 건수
+    utility_overdue_max_days   int          not null default 0,                -- 공과금 최장 연체일수
+    credit_score               int          null,                              -- 신용점수(산정 결과)
+    interest_rate              float        null,                              -- 금리(산정 결과)
+    remark                     varchar(255) null,                              -- 비고
+    constraint FK_member_credit_summary_member foreign key (member_id) references member (member_id)
 );
 
 -- LOAN_PRODUCT (대출 상품)
@@ -55,13 +79,13 @@ create table loan_application
 -- FIDO_CREDENTIAL (패스키)
 create table fido_credential
 (
-    is_active      bit         not null,
-    sign_count     int         not null,
+    is_active      bit           not null,
+    sign_count     bigint        not null,
     credential_id  bigint auto_increment primary key,
-    last_used_date datetime(6) null,
-    member_id      bigint      not null,
-    device_info    varchar(20) not null,
-    public_key     varchar(50) not null,
+    last_used_date datetime(6)   null,
+    member_id      bigint        not null,
+    device_info    varchar(20)   not null,
+    public_key     varchar(1000) not null,
     constraint UKmsct6biuq32sdb2e8icuu4t68 unique (member_id),
     constraint FKs3bknrmcmske2xkvd96ga2myj foreign key (member_id) references member (member_id)
 );
@@ -83,16 +107,16 @@ create table loan_transaction
 -- MFA_LOG (다중 인증 로그)
 create table mfa_log
 (
-    authenticated_at datetime(6)                   not null,
+    authenticated_at datetime(6)                            not null,
     mfa_log_id       bigint auto_increment primary key,
-    transaction_id   bigint                        null,
-    device_info      varchar(20)                   null,
-    mfa_type         enum ('EMAIL', 'PASS', 'SMS') not null,
-    result           enum ('FAILURE', 'SUCCESS')   not null,
+    transaction_id   bigint                                 null,
+    device_info      varchar(20)                            null,
+    mfa_type         enum ('EMAIL', 'FIDO2', 'PASS', 'SMS') not null,
+    result           enum ('FAILURE', 'SUCCESS')            not null,
     constraint FKkytl8f2c6q4ry0eihdyvwn3k1 foreign key (transaction_id) references loan_transaction (transaction_id)
 );
 
--- INTEREST (대출 이자)
+-- INTEREST (변동 금리)
 create table interest
 (
     interest_rate  float       not null,
@@ -131,7 +155,7 @@ create table user_financial_data
     data_id      bigint auto_increment primary key,
     user_id      bigint                                                                                         not null,
     category     enum ('COMMUNICATION', 'EDUCATION', 'ETC', 'FOOD', 'HEALTH', 'LEISURE', 'LIVING', 'TRANSPORT') null,
-    data_type    enum ('EXPENSE', 'INCOME', 'LOAN_BALANCE')                                                     not null,
+    data_type    enum ('EXPENSE', 'INCOME')                                                     not null,
     constraint FKqk7w04q7gt20twv8xi8y17865 foreign key (user_id) references member (member_id)
 );
 
@@ -145,6 +169,17 @@ create table consumption_habit_report
     summary      varchar(500) null,
     constraint UK1n794ss5uofb3j16hsnj3l21e unique (member_id, report_month),
     constraint FKmq81atoh4ght2iogu5ouictrn foreign key (member_id) references member (member_id)
+);
+
+-- CONSUMPTION_HABIT_CATEGORY (소비 습관 카테고리)
+create table consumption_habit_category
+(
+    category_id   bigint auto_increment primary key,
+    report_id     bigint       not null,
+    category      enum ('COMMUNICATION', 'EDUCATION', 'ETC', 'FOOD', 'HEALTH', 'LEISURE', 'LIVING', 'TRANSPORT') not null,
+    amount        bigint       not null,
+    ratio         decimal(5,2) not null,
+    constraint FK_report_category foreign key (report_id) references consumption_habit_report (report_id) on delete cascade
 );
 
 -- AUDIT_LOG (감사 로그)
@@ -177,7 +212,6 @@ create table authentication
     auth_method      enum ('FIDO', 'MFA') null,
     constraint UK3hebrkl6ex5u6xv8wrj0m13mf unique (credential_id),
     constraint UKd3jsewxyq9sxygyaau5q46jcv unique (mfa_log_id),
-    constraint UKnrnmxpttm9vs0jaowf9m5jr5g unique (member_id),
     constraint FK2q7688loi42jwjgvh8q5s1te3 foreign key (credential_id) references fido_credential (credential_id),
     constraint FK8u5ywo54pknmfyi542m7ou80 foreign key (mfa_log_id) references mfa_log (mfa_log_id),
     constraint FKt8w1awoivi0ilqtrwqrjwq2s2 foreign key (member_id) references member (member_id)
