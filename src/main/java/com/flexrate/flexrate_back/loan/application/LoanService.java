@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -65,7 +66,13 @@ public class LoanService {
 
         LoanProduct product = member.getLoanApplication().getProduct();
 
-        String fastApiUrl = String.format("http://%s:%s/predict-initial-rate", fastApiHost, fastApiPort);
+        String fastApiUrl = UriComponentsBuilder.newInstance()
+                .scheme("http")
+                .host(fastApiHost)
+                .port(fastApiPort)
+                .path("/predict-initial-rate")
+                .build()
+                .toUriString();
 
         // FastAPI로 보낼 요청 JSON 생성
         Map<String, Object> fastApiRequest = new HashMap<>();
