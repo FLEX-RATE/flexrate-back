@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,11 +38,15 @@ public class LoanService {
 
     private final RestTemplate restTemplate;
 
+    @Value("${fastapi.host}")
+    private String fastApiHost;
+
+    @Value("${fastapi.port}")
+    private String fastApiPort;
+
     // 심사 서버 URL (추후 변경 예정)
     private static final String SCREENING_SERVER_URL = "http://external-server/api";
     private final LoanApplicationRepository loanApplicationRepository;
-
-
 
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
@@ -60,6 +65,8 @@ public class LoanService {
 
         LoanProduct product = member.getLoanApplication().getProduct();
 
+        String fastApiUrl = String.format("http://%s:%s/predict-initial-rate", fastApiHost, fastApiPort);
+
         // FastAPI로 보낼 요청 JSON 생성
         Map<String, Object> fastApiRequest = new HashMap<>();
         fastApiRequest.put("AGE", member.getAge());
@@ -71,7 +78,7 @@ public class LoanService {
 
         // FastAPI 호출: 금리 예측
         Map<String, Object> rateResponse = restTemplate.postForObject(
-                "http://localhost:8000/predict-initial-rate",
+                fastApiUrl,
                 fastApiRequest,
                 Map.class
         );
@@ -96,6 +103,7 @@ public class LoanService {
 
         loanApplication.applyReviewResult(externalResponse);
     }
+
     /**
      * 대출 심사 결과 조회
      * @param member 대출 신청자

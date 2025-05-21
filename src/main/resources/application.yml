@@ -84,3 +84,7 @@ springdoc:
 security:
   allowed-origins:
     - http://localhost:3000
+
+fastapi:
+  host: ${FASTAPI_HOST}
+  port: ${FASTAPI_PORT}
