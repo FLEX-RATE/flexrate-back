@@ -13,12 +13,6 @@ import lombok.Builder;
 import java.time.LocalDate;
 import java.util.List;
 
-/*
- * 비밀번호 방식 회원 가입 DTO
- * @since 2025.05.02
- * @author 윤영찬
- * */
-
 @Builder
 public record SignupPasswordRequestDTO(
         @NotNull(message = "나이는 필수 항목입니다.")
