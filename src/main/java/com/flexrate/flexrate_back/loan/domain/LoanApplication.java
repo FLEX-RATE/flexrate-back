@@ -10,7 +10,9 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -48,16 +50,16 @@ public class LoanApplication {
     private int remainAmount;
     private float rate;
 
-    @OneToMany(mappedBy = "application")
-    private List<LoanTransaction> loanTransactions;
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
     private int creditScore;
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    @OneToMany(mappedBy = "loanApplication")
-    private List<Interest> interests;
+    @OneToMany(mappedBy = "loanApplication", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Interest> interests = new ArrayList<>();
 
 
     // 대출 상태 변경
@@ -116,5 +118,22 @@ public class LoanApplication {
         this.startDate = LocalDateTime.now();
         this.endDate = LocalDateTime.now().plusMonths(loanApplicationRequest.repaymentMonth());
         this.status = LoanApplicationStatus.PENDING;
+    }
+
+    /**
+     * Member와 연관관계 제거
+     *
+     */
+    public void unlinkMember() {
+        if (this.member != null) {
+            try {
+                Field field = Member.class.getDeclaredField("loanApplication");
+                field.setAccessible(true);
+                field.set(this.member, null);
+            } catch (Exception e) {
+                throw new RuntimeException("Member에서 LoanApplication 연관 끊기 실패", e);
+            }
+            this.member = null;
+        }
     }
 }
