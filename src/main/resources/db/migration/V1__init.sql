@@ -25,7 +25,7 @@ create table member_credit_summary
 (
     id                         bigint auto_increment primary key,
     member_id                  bigint       not null,
-    calculated_at              datetime(6)  not null default current_timestamp, -- 평가 시점
+    calculated_at              datetime(6)  not null,                          -- 평가 시점
     total_loan_count           int          not null default 0,                -- 보유 대출 건수
     active_loan_count          int          not null default 0,                -- 현재 상환 중인 대출 건수
     total_loan_balance         int          not null default 0,                -- 전체 대출 잔액

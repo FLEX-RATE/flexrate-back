@@ -20,7 +20,7 @@ public class ConsumptionHabitCategory {
     private Long categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "report_id", nullable = false)
     private ConsumptionHabitReport report;
 
     @Enumerated(EnumType.STRING)

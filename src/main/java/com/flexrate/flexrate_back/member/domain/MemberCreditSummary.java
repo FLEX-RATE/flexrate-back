@@ -5,9 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "MemberCreditSummary")
 @Getter
@@ -24,9 +28,9 @@ public class MemberCreditSummary {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(name = "calculated_at", nullable = false, updatable = false)
-    @Builder.Default
-    private LocalDateTime calculatedAt = LocalDateTime.now();
+    @CreatedDate
+    @Column(name = "calculated_at", nullable = false)
+    private LocalDateTime calculatedAt;
 
     @Column(name = "total_loan_count", nullable = false)
     @Builder.Default
