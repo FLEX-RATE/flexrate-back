@@ -78,10 +78,11 @@ public class LoanProductService {
                 if (app.getLoanTransactions() != null) loanTransactionRepository.deleteAll(app.getLoanTransactions());
 
                 loanApplicationRepository.flush();
-                loanApplicationRepository.delete(app);
 
                 // member 연관관계 제거
                 app.unlinkMember();
+
+                loanApplicationRepository.delete(app);
 
                 loanApplicationRepository.flush();
             } else {
