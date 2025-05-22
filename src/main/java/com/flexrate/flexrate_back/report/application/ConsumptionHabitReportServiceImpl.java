@@ -30,22 +30,22 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      * @author 서채연
      */
     @Override
-    public void createReport(Member member, YearMonth reportMonth, String summary) {
+    public ConsumptionHabitReport createReport(Member member, YearMonth reportMonth, String summary) {
         if (reportRepository.findByMemberAndReportMonth(member, reportMonth).isPresent()) {
             throw new FlexrateException(ErrorCode.REPORT_ALREADY_EXISTS);
         }
 
         if (summary == null || summary.isBlank()) {
-             summary = apiClient.getConsumptionSummary(member.getMemberId(), reportMonth);
+            summary = apiClient.createConsumptionSummary(member.getMemberId(), reportMonth);
         }
 
-        reportRepository.save(
-                ConsumptionHabitReport.builder()
-                        .member(member)
-                        .reportMonth(reportMonth)
-                        .summary(summary)
-                        .build()
-        );
+        ConsumptionHabitReport report = ConsumptionHabitReport.builder()
+                .member(member)
+                .reportMonth(reportMonth)
+                .summary(summary)
+                .build();
+
+        return reportRepository.save(report);
     }
 
     /**

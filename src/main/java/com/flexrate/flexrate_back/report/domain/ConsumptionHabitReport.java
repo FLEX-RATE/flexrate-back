@@ -44,6 +44,5 @@ public class ConsumptionHabitReport {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDate createdAt;
 
-    @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ConsumptionHabitCategory> categories;
+    private String consumptions;
 }

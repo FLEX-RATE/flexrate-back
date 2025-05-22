@@ -3,6 +3,7 @@ package com.flexrate.flexrate_back.report.api;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.report.application.ConsumptionHabitReportService;
+import com.flexrate.flexrate_back.report.domain.ConsumptionHabitReport;
 import com.flexrate.flexrate_back.report.dto.ConsumptionHabitReportResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,10 +48,11 @@ public class ConsumptionHabitReportController {
         Member member = memberService.findById(memberId);
 
         if (month != null) {
-            return reportService.getReport(member, month)
-                    .map(ConsumptionHabitReportResponse::from)
-                    .map(List::of)
-                    .orElse(List.of());
+            ConsumptionHabitReport report = reportService.getReport(member, month)
+                    .orElseGet(() -> reportService.createReport(member, month, null));
+
+            return List.of(ConsumptionHabitReportResponse.from(report));
+
         } else {
             return reportService.getAllReportsByMember(member).stream()
                     .map(ConsumptionHabitReportResponse::from)
