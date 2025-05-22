@@ -25,7 +25,7 @@ create table member_credit_summary
 (
     id                         bigint auto_increment primary key,
     member_id                  bigint       not null,
-    calculated_at              datetime(6)  not null default current_timestamp, -- 평가 시점
+    calculated_at              datetime(6)  not null,                          -- 평가 시점
     total_loan_count           int          not null default 0,                -- 보유 대출 건수
     active_loan_count          int          not null default 0,                -- 현재 상환 중인 대출 건수
     total_loan_balance         int          not null default 0,                -- 전체 대출 잔액
@@ -37,8 +37,8 @@ create table member_credit_summary
     comm_overdue_max_days      int          not null default 0,                -- 통신비 최장 연체일수
     utility_overdue_count      int          not null default 0,                -- 공과금 연체 건수
     utility_overdue_max_days   int          not null default 0,                -- 공과금 최장 연체일수
-    credit_score               int          null,                              -- 신용점수(산정 결과)
-    interest_rate              float        null,                              -- 금리(산정 결과)
+    credit_score               int          not null,                          -- 신용점수(산정 결과)
+    interest_rate              float        not null,                          -- 금리(산정 결과)
     remark                     varchar(255) null,                              -- 비고
     constraint FK_member_credit_summary_member foreign key (member_id) references member (member_id)
 );
@@ -71,9 +71,9 @@ create table loan_application
     start_date     datetime(6)                                                          null,
     loan_type      enum ('EXTENSION', 'NEW', 'REJOIN')                                  not null,
     status         enum ('COMPLETED', 'EXECUTED', 'PENDING', 'PRE_APPLIED', 'REJECTED') not null,
-    constraint UKnu7i3b6jnfvmb18oufct4mbv0 unique (member_id),
-    constraint FKeewfg5rtu0ux0gv0n357t6g1v foreign key (member_id) references member (member_id),
-    constraint FKeyryxaov7qn04ctajae14l9sf foreign key (product_id) references loan_product (product_id)
+    constraint UK_loan_application_member unique (member_id),
+    constraint FK_loan_application_member foreign key (member_id) references member (member_id),
+    constraint FK_loan_application_product foreign key (product_id) references loan_product (product_id)
 );
 
 -- FIDO_CREDENTIAL (패스키)
@@ -86,8 +86,8 @@ create table fido_credential
     member_id      bigint        not null,
     device_info    varchar(20)   not null,
     public_key     varchar(1000) not null,
-    constraint UKmsct6biuq32sdb2e8icuu4t68 unique (member_id),
-    constraint FKs3bknrmcmske2xkvd96ga2myj foreign key (member_id) references member (member_id)
+    constraint UK_fido_credential_member unique (member_id),
+    constraint FK_fido_credential_member foreign key (member_id) references member (member_id)
 );
 
 -- LOAN_TRANSACTION (대출 거래)
@@ -100,8 +100,8 @@ create table loan_transaction
     transaction_id bigint auto_increment primary key,
     status         enum ('CANCELLED', 'FAILED', 'NORMAL')   not null,
     type           enum ('DELAY', 'EXECUTION', 'REPAYMENT') not null,
-    constraint FK8gityivfar00t9fc7lgyqx0s foreign key (member_id) references member (member_id),
-    constraint FKntk7t4npuvm0ryaq2wl32514w foreign key (application_id) references loan_application (application_id)
+    constraint FK_loan_transaction_member foreign key (member_id) references member (member_id),
+    constraint FK_loan_transaction_application foreign key (application_id) references loan_application (application_id)
 );
 
 -- MFA_LOG (다중 인증 로그)
@@ -113,7 +113,7 @@ create table mfa_log
     device_info      varchar(20)                            null,
     mfa_type         enum ('EMAIL', 'FIDO2', 'PASS', 'SMS') not null,
     result           enum ('FAILURE', 'SUCCESS')            not null,
-    constraint FKkytl8f2c6q4ry0eihdyvwn3k1 foreign key (transaction_id) references loan_transaction (transaction_id)
+    constraint FK_mfa_log_transaction foreign key (transaction_id) references loan_transaction (transaction_id)
 );
 
 -- INTEREST (변동 금리)
@@ -123,7 +123,7 @@ create table interest
     application_id bigint      not null,
     interest_date  datetime(6) not null,
     interest_id    bigint auto_increment primary key,
-    constraint FK71miynswoeucff7manm0xth9g foreign key (application_id) references loan_application (application_id)
+    constraint FK_interest_loan_application foreign key (application_id) references loan_application (application_id)
 );
 
 -- NOTIFICATION (알림)
@@ -135,7 +135,7 @@ create table notification
     sent_at         datetime(6)                               not null,
     content         varchar(50)                               not null,
     type            enum ('LOAN_APPROVAL', 'MATURITY_NOTICE', 'INTEREST_RATE_CHANGE') not null,
-    constraint FK1xep8o2ge7if6diclyyx53v4q foreign key (member_id) references member (member_id)
+    constraint FK_notification_member foreign key (member_id) references member (member_id)
 );
 
 -- REFRESH_TOKEN (리프레시 토큰)
@@ -144,7 +144,7 @@ create table refresh_token
     id            bigint auto_increment primary key,
     member_id     bigint       not null,
     refresh_token varchar(255) not null,
-    constraint UKdnbbikqdsc2r2cee1afysqfk9 unique (member_id)
+    constraint UK_refresh_token_member unique (member_id)
 );
 
 -- USER_FINANCIAL_DATA (유저 재무 데이터)
@@ -156,7 +156,7 @@ create table user_financial_data
     user_id      bigint                                                                                         not null,
     category     enum ('COMMUNICATION', 'EDUCATION', 'ETC', 'FOOD', 'HEALTH', 'LEISURE', 'LIVING', 'TRANSPORT') null,
     data_type    enum ('EXPENSE', 'INCOME')                                                     not null,
-    constraint FKqk7w04q7gt20twv8xi8y17865 foreign key (user_id) references member (member_id)
+    constraint FK_user_financial_data_member foreign key (user_id) references member (member_id)
 );
 
 -- CONSUMPTION_HABIT_REPORT (소비 습관 리포트)
@@ -167,8 +167,8 @@ create table consumption_habit_report
     member_id    bigint       not null,
     report_id    bigint auto_increment primary key,
     summary      varchar(500) null,
-    constraint UK1n794ss5uofb3j16hsnj3l21e unique (member_id, report_month),
-    constraint FKmq81atoh4ght2iogu5ouictrn foreign key (member_id) references member (member_id)
+    constraint UK_consumption_habit_report_member_report_month unique (member_id, report_month),
+    constraint FK_consumption_habbit_report_member foreign key (member_id) references member (member_id)
 );
 
 -- CONSUMPTION_HABIT_CATEGORY (소비 습관 카테고리)
@@ -194,7 +194,7 @@ create table audit_log
     device_info varchar(100) null,
     action      varchar(255) not null,
     detail      varchar(255) null,
-    constraint FK5bcyk09s5o5ss2oag9kbcrvha foreign key (member_id) references member (member_id),
+    constraint FK_audit_log_member foreign key (member_id) references member (member_id),
     check (`auth_method` between 0 and 1),
     check (`event_type` between 0 and 2)
 );
@@ -210,9 +210,9 @@ create table authentication
     ip_address       varchar(20)          null,
     device_info      varchar(100)         null,
     auth_method      enum ('FIDO', 'MFA') null,
-    constraint UK3hebrkl6ex5u6xv8wrj0m13mf unique (credential_id),
-    constraint UKd3jsewxyq9sxygyaau5q46jcv unique (mfa_log_id),
-    constraint FK2q7688loi42jwjgvh8q5s1te3 foreign key (credential_id) references fido_credential (credential_id),
-    constraint FK8u5ywo54pknmfyi542m7ou80 foreign key (mfa_log_id) references mfa_log (mfa_log_id),
-    constraint FKt8w1awoivi0ilqtrwqrjwq2s2 foreign key (member_id) references member (member_id)
+    constraint UK_authentication_credential unique (credential_id),
+    constraint UK_authentication_mfa_log unique (mfa_log_id),
+    constraint FK_authentication_fido_credential foreign key (credential_id) references fido_credential (credential_id),
+    constraint FK_authentication_mfa_log foreign key (mfa_log_id) references mfa_log (mfa_log_id),
+    constraint FK_authentication_member foreign key (member_id) references member (member_id)
 );

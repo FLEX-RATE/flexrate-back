@@ -59,6 +59,10 @@ public class LoanApplication {
     @OneToMany(mappedBy = "loanApplication")
     private List<Interest> interests;
 
+    @OneToOne
+    @JoinColumn(name = "review_id")
+    private LoanReviewHistory reviewHistory; // 대출 심사 이력
+
 
     // 대출 상태 변경
     public void patchStatus(LoanApplicationStatus status) {
@@ -72,14 +76,15 @@ public class LoanApplication {
 
     /**
      * 대출 상태 전환 유효성 체크
-     * 가능한 상태 전환: PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED
+     * 가능한 상태 전환: PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED, COMPLETED -> PRE_APPLIED
      * @param currentStatus 현재 대출 상태
      * @param newStatus 변경할 대출 상태
      * @return true: 유효한 상태 전환, false: 유효하지 않은 상태 전환
      */
     public boolean isTransitionValid(LoanApplicationStatus currentStatus, LoanApplicationStatus newStatus) {
         return (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
-                (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED);
+                (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED) ||
+                (currentStatus == LoanApplicationStatus.COMPLETED && newStatus == LoanApplicationStatus.PRE_APPLIED);
     }
     /**
      * 대출 심사 결과 반영
@@ -87,12 +92,13 @@ public class LoanApplication {
      * @param response 대출심사결과
      * @return true: 유효한 상태 전환인 경우, false: 유효하지 않은 경우
      */
-    public void applyReviewResult(LoanReviewApplicationResponse response) {
+    public void applyReviewResult(LoanReviewApplicationResponse response, LoanReviewHistory loanReviewHistory) {
         this.totalAmount = response.loanLimit();
         this.remainAmount = response.loanLimit();
         this.rate = response.initialRate();
         this.creditScore = response.creditScore();
         this.appliedAt = LocalDateTime.now();
+        this.reviewHistory = loanReviewHistory;
     }
 
     /**
