@@ -37,8 +37,8 @@ create table member_credit_summary
     comm_overdue_max_days      int          not null default 0,                -- 통신비 최장 연체일수
     utility_overdue_count      int          not null default 0,                -- 공과금 연체 건수
     utility_overdue_max_days   int          not null default 0,                -- 공과금 최장 연체일수
-    credit_score               int          null,                              -- 신용점수(산정 결과)
-    interest_rate              float        null,                              -- 금리(산정 결과)
+    credit_score               int          not null,                          -- 신용점수(산정 결과)
+    interest_rate              float        not null,                          -- 금리(산정 결과)
     remark                     varchar(255) null,                              -- 비고
     constraint FK_member_credit_summary_member foreign key (member_id) references member (member_id)
 );
