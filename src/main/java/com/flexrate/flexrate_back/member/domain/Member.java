@@ -108,4 +108,10 @@ public class Member {
     public void updateConsumeGoal(ConsumeGoal consumeGoal) {this.consumeGoal = consumeGoal;}
 
     public int getSexCode() {return this.sex == Sex.MALE ? 1 : 2;}
+
+    public void removeLoanApplication(LoanApplication loanApplication) {
+        if (this.loanApplication != null && this.loanApplication.equals(loanApplication)) {
+            this.loanApplication = null;
+        }
+    }
 }

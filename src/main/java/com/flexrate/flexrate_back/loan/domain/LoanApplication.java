@@ -126,13 +126,7 @@ public class LoanApplication {
      */
     public void unlinkMember() {
         if (this.member != null) {
-            try {
-                Field field = Member.class.getDeclaredField("loanApplication");
-                field.setAccessible(true);
-                field.set(this.member, null);
-            } catch (Exception e) {
-                throw new RuntimeException("Member에서 LoanApplication 연관 끊기 실패", e);
-            }
+            this.member.removeLoanApplication(this);
             this.member = null;
         }
     }
