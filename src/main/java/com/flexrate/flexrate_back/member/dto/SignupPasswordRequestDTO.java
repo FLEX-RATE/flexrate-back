@@ -15,9 +15,6 @@ import java.util.List;
 
 @Builder
 public record SignupPasswordRequestDTO(
-        @NotNull(message = "나이는 필수 항목입니다.")
-        Integer age,
-
         @Email(message = "유효한 이메일을 입력해 주세요.")
         @NotBlank(message = "이메일은 필수 항목입니다.")
         String email,
