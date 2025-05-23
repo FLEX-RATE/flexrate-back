@@ -70,4 +70,19 @@ public class MemberController {
     public ResponseEntity<ConsumeGoalResponse> getConsumeGoal(@PathVariable("consumptionType") ConsumptionType consumptionType) {
         return ResponseEntity.ok(memberService.getConsumeGoal(consumptionType));
     }
+
+    /**
+     * 사용자의 대출 status 조회
+     * @return 대출 상태 (PRE_APPLIED, PENDING, REJECTED, EXECUTED, COMPLETED, NONE)
+     * @since 2025.05.23
+     * @author 권민지
+     */
+    @Operation(summary = "사용자의 대출 상태 조회", description = "사용자의 대출 상태를 조회합니다.",
+            responses = {@ApiResponse(responseCode = "200", description = "대출 상태 조회 결과 반환"),
+                         @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
+    @GetMapping("/loan-status")
+    public ResponseEntity<String> getLoanStatus(Principal principal) {
+        Long memberId = Long.parseLong(principal.getName());
+        return ResponseEntity.ok(memberService.getLoanStatus(memberId));
+    }
 }
