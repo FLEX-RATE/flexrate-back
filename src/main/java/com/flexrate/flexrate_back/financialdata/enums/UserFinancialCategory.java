@@ -8,5 +8,9 @@ public enum UserFinancialCategory {
     COMMUNICATION,
     EDUCATION,
     HEALTH,
+    CLOTHING,
+    ELECTRONICS,
+    SUBSCRIPTION,
+    CAFE,
     ETC,
 }

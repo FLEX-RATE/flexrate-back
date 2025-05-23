@@ -3,9 +3,13 @@ package com.flexrate.flexrate_back.loan.application;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
+import com.flexrate.flexrate_back.financialdata.domain.repository.UserFinancialDataQueryRepositoryImpl;
+import com.flexrate.flexrate_back.financialdata.enums.UserFinancialCategory;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
+import com.flexrate.flexrate_back.loan.application.repository.InterestRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanReviewHistoryRepository;
+import com.flexrate.flexrate_back.loan.domain.Interest;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.domain.LoanProduct;
 import com.flexrate.flexrate_back.loan.domain.LoanReviewHistory;
@@ -15,17 +19,23 @@ import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanReviewApplicationResponse;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.member.domain.Member;
+import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepositoryImpl;
+import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
+import com.flexrate.flexrate_back.member.enums.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,11 +57,15 @@ public class LoanService {
     @Value("${fastapi.port}")
     private String fastApiPort;
 
+    private static final float INTEREST_REDUCTION_STEP = 0.01f;
+
     // 심사 서버 URL (추후 변경 예정)
     private static final String SCREENING_SERVER_URL = "http://external-server/api";
     private final LoanApplicationRepository loanApplicationRepository;
     private final LoanReviewHistoryRepository loanReviewHistoryRepository;
-
+    private final MemberRepository memberRepository;
+    private final UserFinancialDataQueryRepositoryImpl userFinancialDataQueryRepository;
+    private final InterestRepository interestRepository;
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
      * @param request 대출 신청 기본 정보, Member 대출 신청자
@@ -212,6 +226,155 @@ public class LoanService {
                 .filter(data -> data.getCollectedAt().isAfter(oneMonthAgo))
                 .mapToInt(UserFinancialData::getValue)
                 .sum();
+    }
+
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    public void evaluateConsumeGoalAndCreateInterests() {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
+        List<Member> members = memberRepository.findAllWithLoanApplication();
+
+        for (Member member : members) {
+            // 관리자 또는 대출 미신청자는 건너뜀
+            if (Role.ADMIN == member.getRole() || member.getLoanApplication() == null) continue;
+
+            Interest yesterdayInterest = interestRepository
+                    .findByInterestDateAndLoanApplication(yesterday, member.getLoanApplication())
+                    .orElseThrow(() -> new FlexrateException(ErrorCode.NO_INTEREST));
+
+            float previousRate = yesterdayInterest.getInterestRate();
+            float minRate = member.getLoanApplication().getProduct().getMinRate();
+
+            // 전일자 재무 데이터 조회
+            List<UserFinancialData> dataList = userFinancialDataQueryRepository
+                    .findUserFinancialDataOfMemberForYesterday(member.getMemberId(), yesterday);
+
+            ConsumeGoal goal = member.getConsumeGoal();
+            boolean matched = evaluateGoal(goal, dataList);
+
+            float finalRate = matched && (previousRate - INTEREST_REDUCTION_STEP >= minRate)
+                    ? previousRate - INTEREST_REDUCTION_STEP
+                    : previousRate;
+
+            Interest interest = Interest.builder()
+                    .loanApplication(member.getLoanApplication())
+                    .interestRate(finalRate)
+                    .interestDate(today)
+                    .build();
+
+            interestRepository.save(interest);
+        }
+    }
+
+    private boolean evaluateGoal(ConsumeGoal goal, List<UserFinancialData> dataList) {
+        LocalDate today = LocalDate.now();
+        int income = dataList.stream()
+                .filter(d -> d.getDataType() == UserFinancialDataType.INCOME)
+                .mapToInt(UserFinancialData::getValue)
+                .sum();
+        int expense = dataList.stream()
+                .filter(d -> d.getDataType() == UserFinancialDataType.EXPENSE)
+                .mapToInt(UserFinancialData::getValue)
+                .sum();
+
+        switch (goal) {
+            case NO_SPENDING_TODAY:
+                return dataList.stream()
+                        .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum() == 0;
+
+            case LIMIT_DAILY_MEAL:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.FOOD &&
+                                d.getCollectedAt().toLocalDate().equals(today))
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum() <= 10000;
+
+            case SAVE_70_PERCENT:
+                return income > 0 && (income - expense) >= income * 0.7;
+
+            case INCOME_OVER_EXPENSE:
+                return income > expense;
+
+            case ONLY_PUBLIC_TRANSPORT:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.TRANSPORT &&
+                                d.getCollectedAt().toLocalDate().equals(today))
+                        .allMatch(d -> d.getCategory() == UserFinancialCategory.TRANSPORT);
+
+            case COMPARE_BEFORE_BUYING:
+                // 사용자 행동을 추적할 수 있는 로그나 추가 데이터가 있어야 평가 가능. 임의로 true로 가정
+                return true;
+
+            case HAS_HOUSING_SAVING:
+                return dataList.stream()
+                        .anyMatch(d -> d.getDataType() == UserFinancialDataType.INCOME);
+
+            case CLOTHING_UNDER_100K:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.CLOTHING)
+                        .allMatch(d -> d.getValue() <= 100000);
+
+            case ONE_CATEGORY_SPEND:
+                return dataList.stream()
+                        .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
+                        .map(UserFinancialData::getCategory)
+                        .distinct()
+                        .count() == 1;
+
+            case SMALL_MONTHLY_SAVE:
+                int monthlySaving = dataList.stream()
+                        .filter(d -> d.getDataType() == UserFinancialDataType.INCOME)
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum();
+                return monthlySaving >= 10000;
+
+            case NO_USELESS_ELECTRONICS:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.ELECTRONICS)
+                        .allMatch(d -> d.getValue() <= 100000);
+
+            case OVER_10_PERCENT:
+                double avgExpense = dataList.stream()
+                        .filter(d -> d.getDataType().name().startsWith("EXPENSE"))
+                        .mapToInt(UserFinancialData::getValue)
+                        .average()
+                        .orElse(0.0);
+                int todayExpense = dataList.stream()
+                        .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum();
+                return todayExpense > avgExpense * 1.1;
+
+            case NO_EXPENSIVE_DESSERT:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.CAFE)
+                        .noneMatch(d -> d.getValue() > 10000);
+
+            case NO_OVER_50K_PER_DAY:
+                int dailyTotal = dataList.stream()
+                        .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum();
+                return dailyTotal <= 50000;
+
+            case SUBSCRIPTION_UNDER_50K:
+                int monthlySubscription = dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.SUBSCRIPTION)
+                        .mapToInt(UserFinancialData::getValue)
+                        .sum();
+                return monthlySubscription <= 50000;
+
+            case MEAL_UNDER_20K:
+                return dataList.stream()
+                        .filter(d -> d.getCategory() == UserFinancialCategory.FOOD)
+                        .allMatch(d -> d.getValue() <= 20000);
+
+            default:
+                return false;
+        }
     }
 
 
