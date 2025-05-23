@@ -85,6 +85,25 @@ public class MemberService {
 
     }
 
+    /**
+     * 사용자의 대출 상태 조회
+     * @param memberId 회원 ID
+     * @return 대출 상태 (PRE_APPLIED, PENDING, REJECTED, EXECUTED, COMPLETED, NONE)
+     * @since 2025.05.23
+     * @author 권민지
+     */
+    public String getLoanStatus(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        // member의 LoanApplication이 존재하지 않으면 NONE 반환
+        if (member.getLoanApplication() == null) {
+            return "NONE";
+        }
+
+        return member.getLoanApplication().getStatus().name();
+    }
+
     // 회원 ID로 회원 조회
     public Member findById(Long memberId) {
         return memberRepository.findById(memberId)
