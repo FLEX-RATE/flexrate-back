@@ -32,13 +32,8 @@ public class ConsumptionHabitReportScheduler {
         List<Member> members = memberRepository.findAll();
 
         for (Member member : members) {
-            try {
-                String summary = apiClient.getConsumptionSummary(member.getMemberId(), targetMonth);
-                reportService.createReport(member, targetMonth, summary);
-                log.info("[ReportScheduler] {}월 리포트 생성 완료 - {}", targetMonth, member.getEmail());
-            } catch (Exception e) {
-                log.warn("[ReportScheduler] {}월 리포트 생성 실패 - {}: {}", targetMonth, member.getEmail(), e.getMessage());
-            }
+            String summary = apiClient.createConsumptionSummary(member.getMemberId(), targetMonth);
+            reportService.createReport(member, targetMonth, summary);
         }
     }
 }

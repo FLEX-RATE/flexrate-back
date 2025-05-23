@@ -23,7 +23,7 @@ spring:
       leak-detection-threshold: 2000
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         show_sql: true
@@ -38,13 +38,19 @@ spring:
     store-type: redis
     timeout: 1800
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
   cache:
     type: redis
   sql:
     init:
       mode: always
+
+  logging:
+    level:
+      org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
+      org.springframework.web.reactive.function.client.ExchangeStrategies: TRACE
+      reactor.netty.http.client: DEBUG
 
   mail:
     host: smtp.gmail.com
@@ -88,3 +94,9 @@ security:
 fastapi:
   host: ${FASTAPI_HOST:localhost}
   port: ${FASTAPI_PORT:8000}
+
+openai:
+  model: gpt-3.5-turbo
+  api:
+    key: ${OPENAI_API_KEY}
+    url: https://api.openai.com/v1/chat/completions

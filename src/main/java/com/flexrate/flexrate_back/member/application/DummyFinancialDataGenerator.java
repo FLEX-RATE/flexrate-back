@@ -27,11 +27,9 @@ public class DummyFinancialDataGenerator {
 
         for (int i = 0; i < 100; i++) {
             // UserFinancialDataType에 따라 카테고리 설정
-            UserFinancialDataType dataType = i % 3 == 0
+            UserFinancialDataType dataType = i % 2 == 0
                     ? UserFinancialDataType.INCOME
-                    : i % 3 == 1
-                    ? UserFinancialDataType.EXPENSE
-                    : UserFinancialDataType.LOAN_BALANCE;
+                    : UserFinancialDataType.EXPENSE;
 
             // 해당 유형에 맞는 카테고리 랜덤 선택
             UserFinancialCategory category = getRandomCategoryForType(dataType);
@@ -58,8 +56,6 @@ public class DummyFinancialDataGenerator {
                 return getRandomCategoryForIncome();
             case EXPENSE:
                 return getRandomCategoryForExpense();
-            case LOAN_BALANCE:
-                return getRandomCategoryForLoanBalance();
             default:
                 throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
         }

@@ -34,6 +34,10 @@ public enum ErrorCode {
     // 리포트
     REPORT_MEMBER_OR_MONTH_NULL("R001", "member 또는 month는 null일 수 없습니다.", HttpStatus.BAD_REQUEST),
     REPORT_ALREADY_EXISTS("R002", "해당 월의 소비습관 리포트가 이미 존재합니다.", HttpStatus.CONFLICT),
+    NO_CONSUMPTION_DATA("R003", "해당 월의 소비데이터가 존재하지 않습니다.", HttpStatus.CONFLICT),
+
+    // GPT
+    OPENAI_ERROR("GPT001", "OpenAI API 통신 오류", HttpStatus.CONFLICT),
 
     // 금리
     NO_INTEREST("I001", "저장된 금리가 없습니다.", HttpStatus.NOT_FOUND),

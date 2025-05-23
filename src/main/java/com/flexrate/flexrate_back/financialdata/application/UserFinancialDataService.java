@@ -40,7 +40,6 @@ public class UserFinancialDataService {
             switch (data.getDataType()) {
                 case INCOME -> income += data.getValue();
                 case EXPENSE -> expense += data.getValue();
-                case LOAN_BALANCE -> loanBalance += data.getValue();
             }
         }
 
@@ -52,9 +51,6 @@ public class UserFinancialDataService {
 
         // 지출이 많을수록 감산
         score -= Math.min(expense / 100_000, 100); // 지출 10만원당 -1점, 최대 -100점
-
-        // 대출 잔액이 많을수록 감산
-        score -= Math.min(loanBalance / 500_000, 6); // 50만원당 -1점, 최대 -6점
 
         // 점수 제한 범위 조정 (0~1000)
         int finalScore = (int) Math.max(0, Math.min(score, 1000));

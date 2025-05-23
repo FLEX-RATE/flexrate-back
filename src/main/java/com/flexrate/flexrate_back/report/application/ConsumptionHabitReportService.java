@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface ConsumptionHabitReportService {
 
-    void createReport(Member member, YearMonth reportMonth, String summary);
+    ConsumptionHabitReport createReport(Member member, YearMonth reportMonth, String summary);
 
     Optional<ConsumptionHabitReport> getReport(Member member, YearMonth reportMonth);
 

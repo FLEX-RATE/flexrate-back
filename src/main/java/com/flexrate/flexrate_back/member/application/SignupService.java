@@ -4,18 +4,19 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.*;
+import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
+import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupPasswordRequestDTO;
+import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
-import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
-import com.flexrate.flexrate_back.member.enums.Sex;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -36,7 +37,7 @@ public class SignupService {
         String hashedPwd = passwordEncoder.encode(dto.password());
 
         Member member = Member.builder()
-                .age(dto.age())
+                .age(Period.between(dto.birthDate(), LocalDate.now()).getYears())
                 .email(dto.email())
                 .passwordHash(hashedPwd)
                 .name(dto.name())
