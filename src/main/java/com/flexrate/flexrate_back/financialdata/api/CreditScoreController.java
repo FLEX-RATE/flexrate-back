@@ -32,10 +32,11 @@ public class CreditScoreController {
             description = "회원의 신용점수를 반환합니다."
     )
     @GetMapping
-    public ResponseEntity<Integer> getCreditScore(Principal principal) {
+    public ResponseEntity<CreditScoreResponse> getCreditScore(Principal principal) {
         Member member = memberService.findById(Long.parseLong(principal.getName()));
-        int creditScore = userFinancialDataService.evaluateCreditScore(member);
-        return ResponseEntity.ok(creditScore);
+        int creditScore = member.getLoanApplication().getCreditScore();
+        int percentile = userFinancialDataService.getCreditScorePercentile(creditScore);
+        return ResponseEntity.ok(new CreditScoreResponse(creditScore, percentile));
     }
 
     /**
@@ -55,7 +56,8 @@ public class CreditScoreController {
     public ResponseEntity<CreditScoreResponse> evaluateCreditScore(Principal principal) {
         Member member = memberService.findById(Long.parseLong(principal.getName()));
         int creditScore = userFinancialDataService.evaluateCreditScore(member);
-        return ResponseEntity.ok(new CreditScoreResponse(creditScore));
+        int percentile = userFinancialDataService.getCreditScorePercentile(creditScore);
+        return ResponseEntity.ok(new CreditScoreResponse(creditScore, percentile));
     }
 
 }
