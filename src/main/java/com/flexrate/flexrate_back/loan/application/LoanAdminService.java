@@ -109,6 +109,7 @@ public class LoanAdminService {
                     .loanApplication(loanApplication)
                     .interestDate(LocalDate.now())
                     .interestRate(loanApplication.getRate())
+                    .interestChanged(false)
                     .build());
 
             loanApplication.patchExecutedAt();
