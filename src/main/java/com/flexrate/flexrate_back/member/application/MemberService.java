@@ -3,18 +3,15 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.repository.InterestQueryRepository;
-import com.flexrate.flexrate_back.loan.application.repository.InterestRepository;
 import com.flexrate.flexrate_back.loan.application.repository.LoanTransactionRepository;
-import com.flexrate.flexrate_back.loan.domain.Interest;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.domain.LoanTransaction;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
-import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.enums.TransactionType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
-import com.flexrate.flexrate_back.member.dto.MemberDetailResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
@@ -24,9 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
-import java.util.List;
 import java.util.Optional;
 
 
@@ -196,11 +193,15 @@ public class MemberService {
             // 이번 달 상환일이 아직 안 지남
             nextPaymentDate = thisMonthPaymentDate;
         }
+        LocalDateTime recentRepaymentDate = loanTransactionRepository
+                .findFirstByMember_MemberIdAndTypeOrderByOccurredAtDesc(memberId, TransactionType.REPAYMENT)
+                .map(LoanTransaction::getOccurredAt)
+                .orElse(null);
         // 대출금 납부 회차
         int loanRepaymentTransactionNum = loanTransactionRepository.findByMember_MemberIdAndTypeAndOccurredAtBetween(memberId, TransactionType.REPAYMENT, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX)).size();
 
         // 금리 변경 횟수
-        int intersetChangedNum = interestQueryRepositoryImpl.countByConditionsWithInterestChangedTrue(app, startDate, endDate);
+        int interestChangedNum = interestQueryRepositoryImpl.countByConditionsWithInterestChangedTrue(app, startDate, endDate);
 
         return MainPageResponse.builder()
                 .monthlyPayment(monthlyPayment)
@@ -209,8 +210,9 @@ public class MemberService {
                 .monthlyInterest(monthlyInterest)
                 .nextPaymentDate(nextPaymentDate)
                 .loanRepaymentTransactionNum(loanRepaymentTransactionNum)
-                .intersetChangedNum(intersetChangedNum)
+                .interestChangedNum(interestChangedNum)
                 .startDate(startDate)
+                .recentRepaymentDate(recentRepaymentDate)
                 .build();
     }
 
