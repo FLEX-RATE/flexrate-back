@@ -3,7 +3,9 @@ package com.flexrate.flexrate_back.member.application;
 import com.flexrate.flexrate_back.auth.application.TokenService;
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.auth.domain.MfaLog;
+import com.flexrate.flexrate_back.auth.domain.PinCredential;
 import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
+import com.flexrate.flexrate_back.auth.domain.repository.PinCredentialRepository;
 import com.flexrate.flexrate_back.auth.domain.repository.RefreshTokenRepository;
 import com.flexrate.flexrate_back.auth.enums.AuthResult;
 import com.flexrate.flexrate_back.auth.enums.MfaType;
@@ -35,6 +37,62 @@ public class LoginService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final StringRedisUtil stringRedisUtil;
+    private final PinCredentialRepository pinCredentialRepository;
+
+
+    public boolean isPinRegistered(Long userId) {
+        return pinCredentialRepository.findByMember_MemberId(userId).isPresent();
+    }
+
+    public void registerPin(PinRegisterRequestDTO request) {
+        Member member = memberRepository.findById(request.userId())
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        // 중복 등록 방지
+        if (pinCredentialRepository.findByMember_MemberId(member.getMemberId()).isPresent()) {
+            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // PIN 해시화
+        String hashedPin = passwordEncoder.encode(request.pin());
+
+        PinCredential pinCredential = PinCredential.builder()
+                .member(member)
+                .pinHash(hashedPin)
+                .build();
+
+        pinCredentialRepository.save(pinCredential);
+    }
+
+    public LoginResponseDTO loginWithPin(PinLoginRequestDTO request) {
+        PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(request.userId())
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        // PIN 일치 여부 확인 (hash 비교)
+        if (!passwordEncoder.matches(request.pin(), pinCredential.getPinHash())) {
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        // 회원 정보 조회
+        Member member = pinCredential.getMember();
+
+        // 토큰 생성
+        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
+        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
+
+        // Redis에 refreshToken 저장
+        String redisKey = "refreshToken:" + refreshToken;
+        stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofDays(7));
+
+        return LoginResponseDTO.builder()
+                .userId(member.getMemberId())
+                .email(member.getEmail())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .challenge("")  // PIN 로그인에선 challenge 없으니 빈 문자열
+                .build();
+    }
+
 
     public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request) {
 

@@ -1,15 +1,15 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.LoginService;
-import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
-import com.flexrate.flexrate_back.member.dto.MfaLoginRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyLoginRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasswordLoginRequestDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,6 +17,26 @@ import org.springframework.web.bind.annotation.*;
 public class LoginController {
 
     private final LoginService loginService;
+
+
+    @PostMapping("/login/pin")
+    public ResponseEntity<LoginResponseDTO> loginWithPin(@RequestBody @Valid PinLoginRequestDTO request) {
+        LoginResponseDTO response = loginService.loginWithPin(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/pin/register")
+    public ResponseEntity<String> registerPin(@RequestBody @Valid PinRegisterRequestDTO request) {
+        loginService.registerPin(request);
+        return ResponseEntity.ok("PIN 등록 완료");
+    }
+
+
+    @GetMapping("/login/pin/registered")
+    public ResponseEntity<Map<String, Boolean>> checkPinRegistered(@RequestParam Long userId) {
+        boolean registered = loginService.isPinRegistered(userId);
+        return ResponseEntity.ok(Collections.singletonMap("registered", registered));
+    }
 
     @Operation(
             summary = "패스워드 로그인",
