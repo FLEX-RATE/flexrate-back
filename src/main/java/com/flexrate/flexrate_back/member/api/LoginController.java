@@ -19,12 +19,24 @@ public class LoginController {
     private final LoginService loginService;
 
 
+    @Operation(
+            summary = "PIN 로그인",
+            description = "로컬스토리지 userId값과 PIN 6자리로 로그인",
+            tags = { "Auth Controller" }
+    )
     @PostMapping("/login/pin")
     public ResponseEntity<LoginResponseDTO> loginWithPin(@RequestBody @Valid PinLoginRequestDTO request) {
         LoginResponseDTO response = loginService.loginWithPin(request);
         return ResponseEntity.ok(response);
     }
 
+
+
+    @Operation(
+            summary = "PIN 등록",
+            description = "userId값과 PIN 6자리룰 PIN 엔터티에 저장",
+            tags = { "Auth Controller" }
+    )
     @PostMapping("/pin/register")
     public ResponseEntity<String> registerPin(@RequestBody @Valid PinRegisterRequestDTO request) {
         loginService.registerPin(request);
@@ -32,6 +44,12 @@ public class LoginController {
     }
 
 
+
+    @Operation(
+            summary = "PIN 등록 조회",
+            description = "로컬스토리지 userId로 PIN 엔터티에 저장된 memberId를 조회",
+            tags = { "Auth Controller" }
+    )
     @GetMapping("/login/pin/registered")
     public ResponseEntity<Map<String, Boolean>> checkPinRegistered(@RequestParam Long userId) {
         boolean registered = loginService.isPinRegistered(userId);
