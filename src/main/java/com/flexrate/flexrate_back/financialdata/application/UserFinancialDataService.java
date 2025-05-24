@@ -6,6 +6,7 @@ import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.member.domain.Member;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserFinancialDataService {
     private final LoanApplicationRepository loanApplicationRepository;
 
@@ -24,6 +26,7 @@ public class UserFinancialDataService {
      * @since 2025.05.06
      * @author 유승한
      */
+    @Transactional
     public int evaluateCreditScore(Member member) {
         List<UserFinancialData> financialDataList = member.getFinancialData();
 
@@ -34,7 +37,6 @@ public class UserFinancialDataService {
 
         int income = 0;
         int expense = 0;
-        int loanBalance = 0;
 
         for (UserFinancialData data : financialDataList) {
             switch (data.getDataType()) {
@@ -59,6 +61,10 @@ public class UserFinancialDataService {
         loanApplication.patchCreditScore(finalScore);
 
         return finalScore;
+    }
+
+    public int getCreditScorePercentile(int score) {
+        return loanApplicationRepository.findCreditScorePercentile(score);
     }
 
 }
