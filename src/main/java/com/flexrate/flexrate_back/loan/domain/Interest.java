@@ -30,4 +30,6 @@ public class Interest {
     @NotNull
     private LocalDate interestDate;
 
+    @NotNull
+    private Boolean interestChanged;
 }
