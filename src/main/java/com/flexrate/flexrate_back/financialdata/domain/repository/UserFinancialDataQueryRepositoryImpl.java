@@ -3,14 +3,17 @@ package com.flexrate.flexrate_back.financialdata.domain.repository;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.financialdata.domain.QUserFinancialData;
+import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.financialdata.enums.UserFinancialDataType;
 import com.flexrate.flexrate_back.member.domain.Member;
+import com.flexrate.flexrate_back.member.domain.QMember;
 import com.flexrate.flexrate_back.report.dto.ConsumptionCategoryRatioResponse;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -75,4 +78,24 @@ public class UserFinancialDataQueryRepositoryImpl implements UserFinancialDataQu
                 })
                 .toList();
     }
+
+    @Override
+    public List<UserFinancialData> findUserFinancialDataOfMemberForYesterday(Long memberId, LocalDate date) {
+        QUserFinancialData data = QUserFinancialData.userFinancialData;
+        QMember member = QMember.member;
+
+        return queryFactory
+                .selectFrom(data)
+                .join(data.member, member).fetchJoin()
+                .where(
+                        member.memberId.eq(memberId),
+                        data.collectedAt.between(
+                                date.atStartOfDay(),
+                                date.plusDays(1).atStartOfDay().minusNanos(1)
+                        )
+                )
+                .fetch();
+    }
+
+
 }

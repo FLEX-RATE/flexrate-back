@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "Interest")
@@ -28,6 +28,6 @@ public class Interest {
     private float interestRate;
 
     @NotNull
-    private LocalDateTime interestDate;
+    private LocalDate interestDate;
 
 }

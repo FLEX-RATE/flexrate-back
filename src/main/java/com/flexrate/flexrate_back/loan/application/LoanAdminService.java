@@ -13,7 +13,6 @@ import com.flexrate.flexrate_back.loan.dto.*;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.mapper.LoanApplicationMapper;
 import com.flexrate.flexrate_back.loan.mapper.LoanTransactionMapper;
-import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import jakarta.validation.Valid;
@@ -25,7 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -108,7 +107,7 @@ public class LoanAdminService {
         if(request.status() == LoanApplicationStatus.EXECUTED){
             interestRepository.save(Interest.builder()
                     .loanApplication(loanApplication)
-                    .interestDate(LocalDateTime.now())
+                    .interestDate(LocalDate.now())
                     .interestRate(loanApplication.getRate())
                     .build());
 
