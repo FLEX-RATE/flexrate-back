@@ -257,10 +257,13 @@ public class LoanService {
                     ? previousRate - INTEREST_REDUCTION_STEP
                     : previousRate;
 
+            if(finalRate == previousRate) matched = false;
+
             Interest interest = Interest.builder()
                     .loanApplication(member.getLoanApplication())
                     .interestRate(finalRate)
                     .interestDate(today)
+                    .interestChanged(matched)
                     .build();
 
             interestRepository.save(interest);

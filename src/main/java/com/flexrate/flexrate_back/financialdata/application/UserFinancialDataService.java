@@ -54,8 +54,8 @@ public class UserFinancialDataService {
         // 지출이 많을수록 감산
         score -= Math.min(expense / 100_000, 100); // 지출 10만원당 -1점, 최대 -100점
 
-        // 점수 제한 범위 조정 (0~1000)
-        int finalScore = (int) Math.max(0, Math.min(score, 1000));
+        // 점수 제한 범위 조정 (1~1000)
+        int finalScore = (int) Math.max(1, Math.min(score, 1000));
 
         // 신용 점수 적용
         loanApplication.patchCreditScore(finalScore);
