@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
@@ -19,6 +20,23 @@ import java.security.Principal;
 @RequestMapping("/api/members")
 public class MemberController {
     private final MemberService memberService;
+
+    /**
+     * 메인페이지 조회
+     * @return 마이페이지(MainPageResponse)
+     * @since 2025.05.24
+     * @author 유승한
+     */
+    @Operation(summary = "로그인한 사용자의 메인페이지 조회",
+            description = "로그인한 사용자의 메인페이지 정보를 조회합니다.",
+            responses = {@ApiResponse(responseCode = "200", description = "사용자의 마이페이지 조회 결과 반환"),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
+    @GetMapping("/main")
+    public ResponseEntity<MainPageResponse> getMainPage(Principal principal) {
+        Long memberId = Long.parseLong(principal.getName());
+        return ResponseEntity.ok(memberService.getMainPage(memberId));
+    }
+
 
     /**
      * 마이페이지 조회
