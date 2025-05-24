@@ -28,7 +28,7 @@ public class EmailController {
      * 주어진 이메일로 인증 확인 메일을 보내는 메서드이다.
      * @param request 이메일이 포함된 DTO
      */
-    @PostMapping
+    @PostMapping(path = "/send")
     @Operation(summary = "인증메일 발송", description = "인증 확인 메일을 보내는 API", responses = {
             @ApiResponse(responseCode = "200", description = "성공"),
     })
