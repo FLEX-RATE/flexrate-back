@@ -37,7 +37,7 @@ public class LoginController {
             description = "userId값과 PIN 6자리룰 PIN 엔터티에 저장",
             tags = { "Auth Controller" }
     )
-    @PostMapping("/pin/register")
+    @PostMapping("/login/pin/register")
     public ResponseEntity<String> registerPin(@RequestBody @Valid PinRegisterRequestDTO request) {
         loginService.registerPin(request);
         return ResponseEntity.ok("PIN 등록 완료");

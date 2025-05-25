@@ -16,7 +16,7 @@ public class PinCredential {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "member_id", nullable = false, unique = true)
+    @JoinColumn(name = "memberId", nullable = false, unique = true)
     private Member member;
 
     @Column(nullable = false)
