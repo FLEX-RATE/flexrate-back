@@ -65,6 +65,8 @@ public class LoginService {
     }
 
     public LoginResponseDTO loginWithPin(PinLoginRequestDTO request) {
+        System.out.println("loginWithPin 호출 userId=" + request.userId() + ", pin=" + request.pin());
+
         PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(request.userId())
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
