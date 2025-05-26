@@ -47,6 +47,7 @@ public class SignupService {
                 .consumeGoal(dto.consumeGoal())
                 .status(MemberStatus.ACTIVE)
                 .role(Role.MEMBER)
+                .creditScoreEvaluated(false)
                 .build();
 
         Member saved = memberRepository.save(member);
