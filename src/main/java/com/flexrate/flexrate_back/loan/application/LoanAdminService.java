@@ -159,4 +159,24 @@ public class LoanAdminService {
                         .toList())
                 .build();
     }
+
+    /**
+     * 대출 심사 이력 및 기본 정보 상세 조회
+     * @param loanApplicationId 대출 신청 ID
+     * @return 대출 심사 이력 및 기본 정보
+     * @since 2025.05.26
+     * @author 권민지
+     */
+    public LoanReviewDetailResponse getLoanReviewHistory(Long loanApplicationId) {
+        // L002 해당 loanApplicationId 존재 여부 체크
+        if (loanApplicationId == null) {
+            throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+        }
+
+        // L002 loanApplication 데이터 존재여부 체크
+        LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+
+        return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication);
+    }
 }
