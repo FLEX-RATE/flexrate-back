@@ -21,8 +21,8 @@ public record LoanReviewDetailResponse(
 
         // === 대출 심사 결과 ===
         LocalDateTime appliedAt,                    // 대출 신청 일자 - LoanApplication
-        float interestRateMax,                      // 금리 범위 (시작) - LoanProduct
-        float interestRateMin,                      // 금리 범위 (끝) - LoanProduct
+        float interestRateMax,                      // 금리 범위 (끝) - LoanProduct
+        float interestRateMin,                      // 금리 범위 (시작) - LoanProduct
         float initialInterestRate,                  // 대출 초기 금리 - Interest
         float lastInterestRate,                     // 최근 금리 - Interest
         LocalDate lastInterestDate,                 // 최근 금리 최종 갱신 일자 - Interest
