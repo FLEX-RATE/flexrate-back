@@ -16,8 +16,8 @@ public record LoanReviewDetailResponse(
         Long applicationId,                         // 대출 신청 ID - LoanApplication
         String applicantName,                       // 신청자 - Member
         LoanApplicationStatus applicationStatus,    // 현재 상태 - LoanApplication
-        ConsumptionType consumptionType,            // 소비 성향 - Member
-        ConsumeGoal consumeGoal,                    // 소비 목표 - Member
+        String consumptionType,            // 소비 성향 - Member
+        String consumeGoal,                    // 소비 목표 - Member
 
         // === 대출 심사 결과 ===
         LocalDateTime appliedAt,                    // 대출 신청 일자 - LoanApplication
