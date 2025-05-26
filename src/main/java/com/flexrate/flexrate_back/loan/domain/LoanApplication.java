@@ -65,6 +65,10 @@ public class LoanApplication {
     @JoinColumn(name = "review_id")
     private LoanReviewHistory reviewHistory; // 대출 심사 이력
 
+    // 대출 상품 등록
+    public void setProduct(LoanProduct product) {
+        this.product = product;
+    }
 
     // 대출 상태 변경
     public void patchStatus(LoanApplicationStatus status) {
@@ -78,13 +82,14 @@ public class LoanApplication {
 
     /**
      * 대출 상태 전환 유효성 체크
-     * 가능한 상태 전환: PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED, COMPLETED -> PRE_APPLIED
+     * 가능한 상태 전환: NONE -> PRE_APPLIED, PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED, COMPLETED -> PRE_APPLIED
      * @param currentStatus 현재 대출 상태
      * @param newStatus 변경할 대출 상태
      * @return true: 유효한 상태 전환, false: 유효하지 않은 상태 전환
      */
     public boolean isTransitionValid(LoanApplicationStatus currentStatus, LoanApplicationStatus newStatus) {
-        return (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
+        return  (currentStatus == LoanApplicationStatus.NONE && newStatus == LoanApplicationStatus.PRE_APPLIED) ||
+                (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
                 (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED) ||
                 (currentStatus == LoanApplicationStatus.COMPLETED && newStatus == LoanApplicationStatus.PRE_APPLIED);
     }
@@ -110,7 +115,6 @@ public class LoanApplication {
     public void patchExecutedAt() {
         this.executedAt = LocalDateTime.now();
     }
-
 
     // 신용 점수 변경
     public void patchCreditScore(int score) {
