@@ -15,8 +15,12 @@ import com.flexrate.flexrate_back.loan.mapper.LoanApplicationMapper;
 import com.flexrate.flexrate_back.loan.mapper.LoanTransactionMapper;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import com.flexrate.flexrate_back.notification.enums.NotificationType;
+import com.flexrate.flexrate_back.notification.event.NotificationEvent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -37,6 +41,7 @@ public class LoanAdminService {
     private final InterestRepository interestRepository;
     private final LoanAdminQueryRepository loanAdminQueryRepository;
     private final LoanApplicationMapper loanApplicationMapper;
+    private final ApplicationEventPublisher eventPublisher;
     /**
      * 대출 거래 내역 목록 조회
      * @param memberId 사용자 ID
@@ -91,17 +96,24 @@ public class LoanAdminService {
     public LoanApplicationStatusUpdateResponse patchLoanApplicationStatus(
             Long loanApplicationId,
             LoanApplicationStatusUpdateRequest request) {
+        log.info("대출 상태 변경 시작 - loanApplicationId={}, 요청 상태={}", loanApplicationId, request.status());
         // L002 해당 loanApplicationId 존재 여부 체크
         if (loanApplicationId == null) {
+            log.warn("대출 상태 변경 실패 - loanApplicationId가 null입니다.");
             throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
         }
 
-        // L002 loanApplication 데이터 존재여부 체크
         LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() ->{
+                    log.warn("대출 상태 변경 실패 - 해당 loanApplicationId({})가 존재하지 않음", loanApplicationId);
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
 
-        // L005 상태 전환 제약조건 체크 & 상태 변경
+        log.info("기존 상태: {}, 변경할 상태: {}", loanApplication.getStatus(), request.status());
+
+        // 상태 변경 전후 로그
         loanApplication.patchStatus(request.status());
+        log.info("대출 상태 변경 완료 - loanApplicationId={}, 변경된 상태={}", loanApplicationId, loanApplication.getStatus());
 
         // 대출 승인 시 초기 금리 저장 및 loanApplication 상에 승인 반영
         if(request.status() == LoanApplicationStatus.EXECUTED){
@@ -112,6 +124,20 @@ public class LoanAdminService {
                     .build());
 
             loanApplication.patchExecutedAt();
+    // 알림은 실패해도 메인 로직에 영향 안 주도록
+            try {
+                String content = loanApplication.getMember().getName() + NotificationType.LOAN_APPROVAL.getMessageTemplate();
+                NotificationEvent notificationEvent = new NotificationEvent(
+                        this,
+                        loanApplication.getMember(),
+                        NotificationType.LOAN_APPROVAL,
+                        content
+                );
+                eventPublisher.publishEvent(notificationEvent);
+                log.info("알림 이벤트 발행 완료 - loanApplicationId={}", loanApplicationId);
+            } catch (Exception e) {
+                log.error("알림 이벤트 발행 실패 - 대출 승인은 완료됨, loanApplicationId={}", loanApplicationId, e);
+            }
         }
 
 
