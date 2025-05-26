@@ -59,8 +59,7 @@ public class LoanProductService {
      * 사용자가 특정 대출 상품을 선택했을 때 LoanApplication을 미리 생성합니다.
      *
      * 기존 대출 신청이 존재할 경우:
-     * 해당 신청의 status가 PRE_APPLIED인 경우 삭제 후 생성
-     * 그 외의 경우 FlexrateException 예외 발생
+     * 해당 신청의 status가 NONE이 아닌 경우 경우 FlexrateException 예외 발생
      *
      * @param productId 선택한 대출 상품 ID
      * @param member 선택한 사용자
@@ -70,38 +69,14 @@ public class LoanProductService {
     public void selectProduct(Long productId, Member member) {
         Member persistentMember = memberRepository.findById(member.getMemberId())
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-        Optional<LoanApplication> existing = loanApplicationRepository.findByMember(persistentMember);
-        if (existing.isPresent()) {
-            LoanApplication app = existing.get();
-            if (app.getStatus() == LoanApplicationStatus.PRE_APPLIED) {
-                if (app.getInterests() != null) interestRepository.deleteAll(app.getInterests());
-                if (app.getLoanTransactions() != null) loanTransactionRepository.deleteAll(app.getLoanTransactions());
-
-                loanApplicationRepository.flush();
-
-                // member 연관관계 제거
-                app.unlinkMember();
-
-                loanApplicationRepository.delete(app);
-
-                loanApplicationRepository.flush();
-            } else {
-                throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
-            }
+        LoanApplication app = loanApplicationRepository.findByMember(persistentMember).orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+        if (app.getStatus() != LoanApplicationStatus.NONE) {
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
-
         LoanProduct product = loanProductRepository.findById(productId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_PRODUCT_NOT_FOUND));
 
-        LoanApplication application = LoanApplication.builder()
-                .member(persistentMember)
-                .product(product)
-                .status(LoanApplicationStatus.PRE_APPLIED)
-                .loanType(LoanType.NEW)
-                .loanTransactions(new ArrayList<>())
-                .interests(new ArrayList<>())
-                .build();
-
-        loanApplicationRepository.save(application);
+        app.patchStatus(LoanApplicationStatus.PRE_APPLIED);
+        app.setProduct(product);
     }
 }
