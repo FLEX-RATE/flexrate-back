@@ -1,22 +1,28 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
+import com.flexrate.flexrate_back.auth.domain.repository.PinCredentialRepository;
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.application.LoginService;
 import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.Map;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class LoginController {
 
     private final LoginService loginService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PinCredentialRepository pinCredentialRepository;
 
 
     @Operation(
@@ -25,8 +31,12 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/login/pin")
-    public ResponseEntity<LoginResponseDTO> loginWithPin(@RequestBody @Valid PinLoginRequestDTO request) {
-        LoginResponseDTO response = loginService.loginWithPin(request);
+    public ResponseEntity<LoginResponseDTO> loginWithPin(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestBody @Valid PinLoginRequestDTO request
+    ) {
+        String token = bearerToken.replace("Bearer ", "");
+        LoginResponseDTO response = loginService.loginWithPin(token, request);
         return ResponseEntity.ok(response);
     }
 
@@ -38,11 +48,12 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/login/pin/register")
-    public ResponseEntity<String> registerPin(@RequestBody @Valid PinRegisterRequestDTO request) {
-        loginService.registerPin(request);
+    public ResponseEntity<String> registerPin(@RequestBody @Valid PinRegisterRequestDTO request,
+                                              Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        loginService.registerPin(request, userId);
         return ResponseEntity.ok("PIN 등록 완료");
     }
-
 
 
     @Operation(
@@ -51,9 +62,24 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @GetMapping("/login/pin/registered")
-    public ResponseEntity<Map<String, Boolean>> checkPinRegistered(@RequestParam Long userId) {
-        boolean registered = loginService.isPinRegistered(userId);
-        return ResponseEntity.ok(Collections.singletonMap("registered", registered));
+    public ResponseEntity<Boolean> checkPinRegistered(@RequestHeader(value = "Authorization", required = false) String bearerToken) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            log.error("[ERROR] Authorization header is missing or invalid: {}", bearerToken);
+            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+        }
+        String token = bearerToken.replace("Bearer ", "");
+        Long userId;
+        try {
+            userId = jwtTokenProvider.getMemberId(token);
+            log.info("userId extracted from token: {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to extract userId from token", e);
+            throw new FlexrateException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        boolean isRegistered = loginService.isPinRegistered(userId);
+        log.info("PIN 등록 여부 조회 결과: {}", isRegistered);
+        return ResponseEntity.ok(isRegistered);
     }
 
     @Operation(

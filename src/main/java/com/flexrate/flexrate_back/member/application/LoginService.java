@@ -17,6 +17,7 @@ import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginService {
@@ -41,19 +43,19 @@ public class LoginService {
 
 
     public boolean isPinRegistered(Long userId) {
-        return pinCredentialRepository.findByMember_MemberId(userId).isPresent();
+        boolean isRegistered = pinCredentialRepository.findByMember_MemberId(userId).isPresent();
+        log.info("PIN 등록 여부(userId={}): {}", userId, isRegistered);
+        return isRegistered;
     }
 
-    public void registerPin(PinRegisterRequestDTO request) {
-        Member member = memberRepository.findById(request.userId())
+    public void registerPin(PinRegisterRequestDTO request, Long userId) {
+        Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        // 중복 등록 방지
         if (pinCredentialRepository.findByMember_MemberId(member.getMemberId()).isPresent()) {
             throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // PIN 해시화
         String hashedPin = passwordEncoder.encode(request.pin());
 
         PinCredential pinCredential = PinCredential.builder()
@@ -64,36 +66,33 @@ public class LoginService {
         pinCredentialRepository.save(pinCredential);
     }
 
-    public LoginResponseDTO loginWithPin(PinLoginRequestDTO request) {
-        System.out.println("loginWithPin 호출 userId=" + request.userId() + ", pin=" + request.pin());
 
-        PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(request.userId())
+    public LoginResponseDTO loginWithPin(String token, PinLoginRequestDTO request) {
+        Long userId = jwtTokenProvider.getMemberId(token);
+
+        PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        // PIN 일치 여부 확인 (hash 비교)
         if (!passwordEncoder.matches(request.pin(), pinCredential.getPinHash())) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // 회원 정보 조회
         Member member = pinCredential.getMember();
 
-        // 토큰 생성
         String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
         String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
 
-        // Redis에 refreshToken 저장
-        String redisKey = "refreshToken:" + refreshToken;
-        stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofDays(7));
+        stringRedisUtil.set("refreshToken:" + refreshToken, String.valueOf(userId), Duration.ofDays(7));
 
         return LoginResponseDTO.builder()
-                .userId(member.getMemberId())
+                .userId(userId)
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .challenge("")  // PIN 로그인에선 challenge 없으니 빈 문자열
+                .challenge("")
                 .build();
     }
+
 
 
     public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request) {

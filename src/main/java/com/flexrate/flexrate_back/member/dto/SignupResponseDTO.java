@@ -5,5 +5,7 @@ import lombok.Builder;
 @Builder
 public record SignupResponseDTO(
         Long userId,
-        String email
+        String email,
+        String accessToken,
+        String refreshToken
 ) {}

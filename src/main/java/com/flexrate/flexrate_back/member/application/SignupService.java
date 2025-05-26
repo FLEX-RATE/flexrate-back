@@ -1,7 +1,10 @@
 package com.flexrate.flexrate_back.member.application;
 
+import com.flexrate.flexrate_back.auth.application.RefreshTokenService;
+import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.common.util.StringRedisUtil;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,6 +31,8 @@ public class SignupService {
     private final PasswordEncoder passwordEncoder;
     private final WebAuthnService webAuthnService;
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final StringRedisUtil stringRedisUtil;
 
     // 비밀번호 기반 회원가입
     public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
@@ -52,9 +58,17 @@ public class SignupService {
         Member saved = memberRepository.save(member);
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
 
+        // ✅ 로그인 시와 동일한 방식으로 토큰 발급 및 Redis 저장
+        String accessToken = jwtTokenProvider.generateToken(saved, Duration.ofHours(2));
+        String refreshToken = jwtTokenProvider.generateToken(saved, Duration.ofDays(7));
+        String redisKey = "refreshToken:" + refreshToken;
+        stringRedisUtil.set(redisKey, String.valueOf(saved.getMemberId()), Duration.ofDays(7));
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
