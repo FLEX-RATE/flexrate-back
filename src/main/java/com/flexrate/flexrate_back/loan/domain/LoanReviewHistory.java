@@ -1,5 +1,8 @@
 package com.flexrate.flexrate_back.loan.domain;
 
+import com.flexrate.flexrate_back.loan.enums.EmploymentType;
+import com.flexrate.flexrate_back.loan.enums.LoanPurpose;
+import com.flexrate.flexrate_back.loan.enums.ResidenceType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,16 +23,15 @@ public class LoanReviewHistory {
 
     @OneToOne
     @JoinColumn(name = "application_id", nullable = false)
-    private LoanApplication application;                  // 대출 신청서
+    private LoanApplication application;    // 대출 신청서
 
-    @Column(name = "employment_type", length = 30)
-    private String employmentType;                        // 고용형태
-    private Integer annualIncome;                         // 연소득
+    @Enumerated(EnumType.STRING)
+    private EmploymentType employmentType;  // 고용형태
+    @Enumerated(EnumType.STRING)
+    private ResidenceType residenceType;    // 주거형태
+    @Enumerated(EnumType.STRING)
+    private LoanPurpose loanPurpose;        // 대출목적
 
-    @Column(name = "residence_type", length = 30)
-    private String residenceType;                         // 주거형태
-    private Boolean isBankrupt;                           // 개인회생 여부
-
-    @Column(name = "loan_purpose", length = 50)
-    private String loanPurpose;                           // 대출목적
+    private Integer annualIncome;           // 연소득
+    private Boolean isBankrupt;             // 개인회생 여부
 }
