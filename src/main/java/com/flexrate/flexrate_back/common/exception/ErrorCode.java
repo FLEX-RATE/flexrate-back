@@ -35,6 +35,9 @@ public enum ErrorCode {
     REPORT_MEMBER_OR_MONTH_NULL("R001", "member 또는 month는 null일 수 없습니다.", HttpStatus.BAD_REQUEST),
     REPORT_ALREADY_EXISTS("R002", "해당 월의 소비습관 리포트가 이미 존재합니다.", HttpStatus.CONFLICT),
     NO_CONSUMPTION_DATA("R003", "해당 월의 소비데이터가 존재하지 않습니다.", HttpStatus.CONFLICT),
+    REPORT_DOESNT_EXISTS("R004", "해당 월의 소비습관 리포트가 존재하지 않습니다.", HttpStatus.CONFLICT),
+    JSON_SERIALIZATION_ERROR("R005", "소비 데이터 직렬화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    JSON_DESERIALIZATION_ERROR("R006", "소비 데이터 역직렬화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // GPT
     OPENAI_ERROR("GPT001", "OpenAI API 통신 오류", HttpStatus.CONFLICT),
