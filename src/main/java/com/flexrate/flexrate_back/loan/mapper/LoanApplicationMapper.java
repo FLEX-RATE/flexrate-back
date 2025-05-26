@@ -24,33 +24,37 @@ public class LoanApplicationMapper {
     }
 
     public LoanReviewDetailResponse toLoanReviewDetailResponse(LoanApplication loan, Interest interest) {
+        final var member = loan.getMember();
+        final var product = loan.getProduct();
+        final var reviewHistory = loan.getReviewHistory();
+        final var startDate = loan.getStartDate();
+        final var endDate = loan.getEndDate();
+
         return LoanReviewDetailResponse.builder()
                 .applicationId(loan.getApplicationId())
-                .applicantName(loan.getMember().getName())
+                .applicantName(member != null ? member.getName() : null)
                 .applicationStatus(loan.getStatus())
-                .consumptionType(loan.getMember().getConsumptionType())
-                .consumeGoal(loan.getMember().getConsumeGoal())
-
+                .consumptionType(member != null ? member.getConsumptionType() : null)
+                .consumeGoal(member != null ? member.getConsumeGoal() : null)
                 .appliedAt(loan.getAppliedAt())
-                .approvedMaxAmount(loan.getProduct().getMaxAmount())
-                .interestRateMax(loan.getProduct().getMaxRate())
-                .interestRateMin(loan.getProduct().getMinRate())
+                .approvedMaxAmount(product != null ? product.getMaxAmount() : null)
+                .interestRateMax(product != null ? product.getMaxRate() : null)
+                .interestRateMin(product != null ? product.getMinRate() : null)
                 .initialInterestRate(loan.getRate())
                 .lastInterestRate(interest != null ? interest.getInterestRate() : 0.0f)
                 .lastInterestDate(interest != null ? interest.getInterestDate() : null)
                 .requestedAmount(loan.getTotalAmount())
-                .repaymentStartDate(loan.getStartDate())
-                .repaymentEndDate(loan.getEndDate())
+                .repaymentStartDate(startDate)
+                .repaymentEndDate(endDate)
                 .repaymentMonths(
-                        loan.getStartDate() != null && loan.getEndDate() != null ?
-                                (int) java.time.temporal.ChronoUnit.MONTHS.between(loan.getStartDate(), loan.getEndDate()) : 0
+                        (startDate != null && endDate != null) ?
+                                (int) java.time.temporal.ChronoUnit.MONTHS.between(startDate, endDate) : 0
                 )
-
-                .employmentType(loan.getReviewHistory() != null ? loan.getReviewHistory().getEmploymentType() : null)
-                .annualIncome(loan.getReviewHistory() != null ? loan.getReviewHistory().getAnnualIncome() : null)
-                .residenceType(loan.getReviewHistory() != null ? loan.getReviewHistory().getResidenceType() : null)
-                .isBankrupt(loan.getReviewHistory() != null ? loan.getReviewHistory().getIsBankrupt() : null)
-                .loanPurpose(loan.getReviewHistory() != null ? loan.getReviewHistory().getLoanPurpose() : null)
+                .employmentType(reviewHistory != null ? reviewHistory.getEmploymentType() : null)
+                .annualIncome(reviewHistory != null ? reviewHistory.getAnnualIncome() : null)
+                .residenceType(reviewHistory != null ? reviewHistory.getResidenceType() : null)
+                .isBankrupt(reviewHistory != null ? reviewHistory.getIsBankrupt() : null)
+                .loanPurpose(reviewHistory != null ? reviewHistory.getLoanPurpose() : null)
                 .build();
     }
 }
