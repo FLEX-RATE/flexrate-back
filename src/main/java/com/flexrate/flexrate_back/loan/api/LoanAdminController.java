@@ -164,6 +164,6 @@ public class LoanAdminController {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
-        return ResponseEntity.ok(loanAdminService.getLoanReviewHistory(loanApplicationId));
+        return ResponseEntity.ok(loanAdminService.getLoanReviewDetail(loanApplicationId));
     }
 }

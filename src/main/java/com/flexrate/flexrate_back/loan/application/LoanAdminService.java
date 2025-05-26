@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -167,7 +168,7 @@ public class LoanAdminService {
      * @since 2025.05.26
      * @author 권민지
      */
-    public LoanReviewDetailResponse getLoanReviewHistory(Long loanApplicationId) {
+    public LoanReviewDetailResponse getLoanReviewDetail(Long loanApplicationId) {
         // L002 해당 loanApplicationId 존재 여부 체크
         if (loanApplicationId == null) {
             throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
@@ -177,6 +178,11 @@ public class LoanAdminService {
         LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
 
-        return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication);
+        // 가장 최신 Interest 조회
+        Interest latestInterest = loanApplication.getInterests().stream()
+                .max(Comparator.comparing(Interest::getInterestDate))
+                .orElse(null);
+
+        return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication, latestInterest);
     }
 }
