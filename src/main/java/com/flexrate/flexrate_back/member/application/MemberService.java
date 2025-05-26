@@ -120,6 +120,21 @@ public class MemberService {
     }
 
     /**
+     * 사용자의 신용 점수 평가 여부 조회
+     * @param memberId 회원 ID
+     * @return 신용 점수 평가 여부
+     * @since 2025.05.26
+     * @author 유승한
+     */
+    public Boolean getCreditScoreStatus(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        return member.getCreditScoreEvaluated();
+    }
+
+
+    /**
      * 메인페이지 조회
      * @param memberId 조회할 회원id
      * @return MainPageResponse

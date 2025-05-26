@@ -59,6 +59,7 @@ public class UserFinancialDataService {
 
         // 신용 점수 적용
         loanApplication.patchCreditScore(finalScore);
+        member.updateCreditScoreEvaluated(true);
 
         return finalScore;
     }
