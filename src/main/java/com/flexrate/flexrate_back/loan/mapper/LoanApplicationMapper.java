@@ -42,7 +42,8 @@ public class LoanApplicationMapper {
                 .repaymentStartDate(loan.getStartDate())
                 .repaymentEndDate(loan.getEndDate())
                 .repaymentMonths(
-                        (int) java.time.temporal.ChronoUnit.MONTHS.between(loan.getStartDate(), loan.getEndDate())
+                        loan.getStartDate() != null && loan.getEndDate() != null ?
+                                (int) java.time.temporal.ChronoUnit.MONTHS.between(loan.getStartDate(), loan.getEndDate()) : 0
                 )
 
                 .employmentType(loan.getReviewHistory() != null ? loan.getReviewHistory().getEmploymentType() : null)
