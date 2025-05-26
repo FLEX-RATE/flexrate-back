@@ -12,6 +12,7 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
+import com.flexrate.flexrate_back.member.dto.CreditScoreStatusResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
@@ -126,11 +127,11 @@ public class MemberService {
      * @since 2025.05.26
      * @author 유승한
      */
-    public Boolean getCreditScoreStatus(Long memberId) {
+    public CreditScoreStatusResponse getCreditScoreStatus(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        return member.getCreditScoreEvaluated();
+        return CreditScoreStatusResponse.builder().creditScoreStatus(member.getCreditScoreEvaluated()).build();
     }
 
 

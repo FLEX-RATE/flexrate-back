@@ -4,6 +4,7 @@ import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
+import com.flexrate.flexrate_back.member.dto.CreditScoreStatusResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
@@ -116,7 +117,7 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "사용자의 신용점수 평가 여부 반환"),
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/credit-score-status")
-    public ResponseEntity<Boolean> getCreditScoreStatus(Principal principal) {
+    public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(Principal principal) {
         Long memberId = Long.parseLong(principal.getName());
 
         return ResponseEntity.ok(memberService.getCreditScoreStatus(memberId));
