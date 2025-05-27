@@ -1,10 +1,10 @@
 package com.flexrate.flexrate_back.notification.api;
 
 import com.flexrate.flexrate_back.member.application.MemberService;
-import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.application.NotificationService;
 import com.flexrate.flexrate_back.notification.application.NotificationEmitterService;
-import com.flexrate.flexrate_back.notification.dto.NotificationResponseDto;
+import com.flexrate.flexrate_back.notification.dto.NotificationResponse;
+import com.flexrate.flexrate_back.notification.dto.UnreadCountResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.security.Principal;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class NotificationController {
 
         Long memberId;
         try {
-            memberId = Long.parseLong(authentication.getName()); // JWT의 subject가 숫자형이면 가능
+            memberId = Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
             throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
         }
@@ -46,7 +45,7 @@ public class NotificationController {
 
 
     @GetMapping
-    public ResponseEntity<NotificationResponseDto> getNotifications(
+    public ResponseEntity<NotificationResponse> getNotifications(
             Principal principal,
             @RequestParam(required = false) Long lastNotificationId
     ) {
@@ -67,7 +66,7 @@ public class NotificationController {
             lastNotificationId = Long.MAX_VALUE;
         }
 
-        NotificationResponseDto response = notificationService.getNotifications(memberId, lastNotificationId);
+        NotificationResponse response = notificationService.getNotifications(memberId, lastNotificationId);
         return ResponseEntity.ok(response);
     }
 
@@ -82,5 +81,23 @@ public class NotificationController {
         Long memberId = Long.parseLong(principal.getName());
         notificationService.deleteAll(memberId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/unread-count")
+    public ResponseEntity<UnreadCountResponse> getUnreadNotificationCount() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("인증되지 않은 사용자입니다.");
+        }
+
+        Long memberId;
+        try {
+            memberId = Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
+        }
+
+        int unreadCount = notificationService.countUnreadNotifications(memberId);
+        return ResponseEntity.ok(new UnreadCountResponse(unreadCount));
     }
 }

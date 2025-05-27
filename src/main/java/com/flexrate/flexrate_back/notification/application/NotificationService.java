@@ -3,7 +3,7 @@ package com.flexrate.flexrate_back.notification.application;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationQueryRepository;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationRepository;
-import com.flexrate.flexrate_back.notification.dto.NotificationResponseDto;
+import com.flexrate.flexrate_back.notification.dto.NotificationResponse;
 import com.flexrate.flexrate_back.notification.dto.NotificationSummaryDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class NotificationService {
     private static final int PAGE_SIZE = 8;
 
     @Transactional(readOnly = true)
-    public NotificationResponseDto getNotifications(Long memberId, Long lastNotificationId) {
+    public NotificationResponse getNotifications(Long memberId, Long lastNotificationId) {
         log.debug("getNotifications called: memberId={}, lastNotificationId={}", memberId, lastNotificationId);
         List<Notification> notifications = notificationQueryRepository.findNotifications(
                 memberId,
@@ -48,7 +48,7 @@ public class NotificationService {
             System.out.println("알림 ID: " + n.getNotificationId() + ", isRead: " + n.isRead());
         }
 
-        return new NotificationResponseDto(notificationDtos, hasNext);
+        return new NotificationResponse(notificationDtos, hasNext);
     }
 
     @Transactional
@@ -61,5 +61,10 @@ public class NotificationService {
     @Transactional
     public void deleteAll(Long memberId) {
         notificationRepository.deleteByMember_MemberId(memberId);
+    }
+
+    @Transactional
+    public int countUnreadNotifications(Long memberId) {
+        return notificationRepository.countByMember_MemberIdAndIsReadFalse(memberId);
     }
 }

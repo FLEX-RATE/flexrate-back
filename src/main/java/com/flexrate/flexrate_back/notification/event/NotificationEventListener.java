@@ -1,7 +1,6 @@
 package com.flexrate.flexrate_back.notification.event;
 
 import com.flexrate.flexrate_back.notification.domain.Notification;
-import com.flexrate.flexrate_back.notification.enums.NotificationType;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationRepository;
 import com.flexrate.flexrate_back.notification.application.NotificationEmitterService;
 import lombok.RequiredArgsConstructor;

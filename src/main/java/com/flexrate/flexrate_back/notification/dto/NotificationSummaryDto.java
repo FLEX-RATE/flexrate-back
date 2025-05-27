@@ -14,7 +14,7 @@ public record NotificationSummaryDto(
         return new NotificationSummaryDto(
                 notification.getNotificationId(),
                 notification.getContent(),
-                notification.getSentAt().toString(), // 포맷 변경 시 여기를 수정
+                notification.getSentAt().toString(),
                 notification.isRead(),
                 notification.getType().name()
         );
