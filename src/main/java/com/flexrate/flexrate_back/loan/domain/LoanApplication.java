@@ -10,7 +10,6 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
