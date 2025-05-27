@@ -2,7 +2,6 @@ package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.application.SignupService;
-import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import com.flexrate.flexrate_back.member.dto.SignupPasswordRequestDTO;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.Base64;
 
 /*

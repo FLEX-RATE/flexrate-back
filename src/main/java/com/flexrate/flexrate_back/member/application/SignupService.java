@@ -85,8 +85,6 @@ public class SignupService {
 
         loanApplicationRepository.save(application);
 
-
-
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
