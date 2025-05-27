@@ -29,7 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-@Slf4j
+import java.util.Comparator;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -121,6 +122,7 @@ public class LoanAdminService {
                     .loanApplication(loanApplication)
                     .interestDate(LocalDate.now())
                     .interestRate(loanApplication.getRate())
+                    .interestChanged(false)
                     .build());
 
             loanApplication.patchExecutedAt();
@@ -183,5 +185,30 @@ public class LoanAdminService {
                         .map(loanApplicationMapper::toSummaryDto)
                         .toList())
                 .build();
+    }
+
+    /**
+     * 대출 심사 이력 및 기본 정보 상세 조회
+     * @param loanApplicationId 대출 신청 ID
+     * @return 대출 심사 이력 및 기본 정보
+     * @since 2025.05.26
+     * @author 권민지
+     */
+    public LoanReviewDetailResponse getLoanReviewDetail(Long loanApplicationId) {
+        // L002 해당 loanApplicationId 존재 여부 체크
+        if (loanApplicationId == null) {
+            throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+        }
+
+        // L002 loanApplication 데이터 존재여부 체크
+        LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+
+        // 가장 최신 Interest 조회
+        Interest latestInterest = loanApplication.getInterests().stream()
+                .max(Comparator.comparing(Interest::getInterestDate))
+                .orElse(null);
+
+        return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication, latestInterest);
     }
 }

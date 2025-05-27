@@ -45,4 +45,9 @@ public class ConsumptionHabitReport {
     private LocalDate createdAt;
 
     private String consumptions;
+
+    public void setConsumptions(String consumptions) {
+        this.consumptions = consumptions;
+    }
+
 }

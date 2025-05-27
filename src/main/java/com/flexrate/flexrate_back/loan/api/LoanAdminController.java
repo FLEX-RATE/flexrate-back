@@ -138,4 +138,32 @@ public class LoanAdminController {
 
         return ResponseEntity.ok(loanAdminService.searchLoans(request));
     }
+
+    /**
+     * 대출 심사 이력 및 기본 정보 상세 조회
+     * @param loanApplicationId 대출 신청 ID
+     * @return 대출 심사 이력 및 기본 정보
+     * @since 2025.05.26
+     * @author 권민지
+     */
+    @Operation(summary = "대출 심사 이력 및 기본 정보 상세 조회", description = "관리자가 대출 신청의 심사 이력 및 기본 정보를 조회합니다.",
+            parameters = {
+                @Parameter(name = "loanApplicationId", description = "대출 신청 ID", required = true)
+            },
+            responses = {
+                @ApiResponse(responseCode = "200", description = "대출 심사 이력 및 기본 정보 조회 성공"),
+                @ApiResponse(responseCode = "404", description = "대출 신청을 찾을 수 없음", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"code\": \"L002\", \"message\": \"대출 정보를 찾을 수 없습니다.\"}")))
+            })
+    @GetMapping("/{loanApplicationId}/detail")
+    public ResponseEntity<LoanReviewDetailResponse> getLoanReviewDetail(
+            @PathVariable("loanApplicationId") Long loanApplicationId,
+            Principal principal
+    ) {
+        // A007 관리자 인증 체크
+        if (!adminAuthChecker.isAdmin(principal)) {
+            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(loanAdminService.getLoanReviewDetail(loanApplicationId));
+    }
 }

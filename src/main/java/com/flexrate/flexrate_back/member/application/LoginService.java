@@ -53,6 +53,7 @@ public class LoginService {
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
+                .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -90,6 +91,7 @@ public class LoginService {
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
+                .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -122,6 +124,7 @@ public class LoginService {
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
+                .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
