@@ -4,6 +4,10 @@ import com.flexrate.flexrate_back.auth.application.RefreshTokenService;
 import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
+import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
+import com.flexrate.flexrate_back.loan.enums.LoanType;
 import com.flexrate.flexrate_back.common.util.StringRedisUtil;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
@@ -14,6 +18,7 @@ import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -33,8 +39,11 @@ public class SignupService {
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisUtil stringRedisUtil;
+    private final LoanApplicationRepository loanApplicationRepository;
+
 
     // 비밀번호 기반 회원가입
+    @Transactional
     public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
         if (memberRepository.existsByEmail(dto.email())) {
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
@@ -53,6 +62,7 @@ public class SignupService {
                 .consumeGoal(dto.consumeGoal())
                 .status(MemberStatus.ACTIVE)
                 .role(Role.MEMBER)
+                .creditScoreEvaluated(false)
                 .build();
 
         Member saved = memberRepository.save(member);
@@ -64,6 +74,19 @@ public class SignupService {
         String redisKey = "refreshToken:" + refreshToken;
         stringRedisUtil.set(redisKey, String.valueOf(saved.getMemberId()), Duration.ofDays(7));
 
+        // LoanApplication 생성
+        LoanApplication application = LoanApplication.builder()
+                .member(member)
+                .status(LoanApplicationStatus.NONE)
+                .loanType(LoanType.NEW)
+                .loanTransactions(new ArrayList<>())
+                .interests(new ArrayList<>())
+                .build();
+
+        loanApplicationRepository.save(application);
+
+
+
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
@@ -72,6 +95,7 @@ public class SignupService {
                 .build();
     }
 
+    @Transactional
     public void addFidoCredential(Long memberId, PasskeyRequestDTO dto) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
