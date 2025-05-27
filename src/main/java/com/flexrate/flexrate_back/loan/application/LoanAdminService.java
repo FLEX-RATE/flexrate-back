@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Comparator;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,6 +44,7 @@ public class LoanAdminService {
     private final LoanAdminQueryRepository loanAdminQueryRepository;
     private final LoanApplicationMapper loanApplicationMapper;
     private final ApplicationEventPublisher eventPublisher;
+
     /**
      * 대출 거래 내역 목록 조회
      * @param memberId 사용자 ID
@@ -65,9 +67,9 @@ public class LoanAdminService {
 
         // 기본 정렬 occurredAt 내림차순
         Sort sort = sortBy != null
-                ? (sortBy.equals("occurredAt") 
-                    ? Sort.by(sortBy).descending() 
-                    : Sort.by(sortBy).ascending())
+                ? (sortBy.equals("occurredAt")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending())
                 : Sort.by("occurredAt").descending();
 
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
@@ -98,6 +100,7 @@ public class LoanAdminService {
             Long loanApplicationId,
             LoanApplicationStatusUpdateRequest request) {
         log.info("대출 상태 변경 시작 - loanApplicationId={}, 요청 상태={}", loanApplicationId, request.status());
+
         // L002 해당 loanApplicationId 존재 여부 체크
         if (loanApplicationId == null) {
             log.warn("대출 상태 변경 실패 - loanApplicationId가 null입니다.");
@@ -126,22 +129,15 @@ public class LoanAdminService {
                     .build());
 
             loanApplication.patchExecutedAt();
-    // 알림은 실패해도 메인 로직에 영향 안 주도록
-            try {
-                String content = loanApplication.getMember().getName() + NotificationType.LOAN_APPROVAL.getMessageTemplate();
-                NotificationEvent notificationEvent = new NotificationEvent(
-                        this,
-                        loanApplication.getMember(),
-                        NotificationType.LOAN_APPROVAL,
-                        content
-                );
-                eventPublisher.publishEvent(notificationEvent);
-                log.info("알림 이벤트 발행 완료 - loanApplicationId={}", loanApplicationId);
-            } catch (Exception e) {
-                log.error("알림 이벤트 발행 실패 - 대출 승인은 완료됨, loanApplicationId={}", loanApplicationId, e);
-            }
-        }
 
+            // 대출 승인 알림
+            sendNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
+        }
+        // 대출 거절 시 알림 발송
+        else if(request.status() == LoanApplicationStatus.REJECTED) {
+            // 대출 거절 알림
+            sendNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
+        }
 
         return LoanApplicationStatusUpdateResponse.builder()
                 .loanApplicationId(loanApplication.getApplicationId())
@@ -157,7 +153,6 @@ public class LoanAdminService {
      * @since 2025.05.02
      * @author 허연규
      */
-
     public LoanAdminSearchResponse searchLoans(@Valid LoanAdminSearchRequest request) {
 
         Sort sort = Sort.by("appliedAt").descending();
@@ -210,5 +205,28 @@ public class LoanAdminService {
                 .orElse(null);
 
         return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication, latestInterest);
+    }
+
+    /**
+     * 알림 발송 공통 메서드
+     * @param loanApplication 대출 신청 정보
+     * @param notificationType 알림 타입
+     * @param loanApplicationId 대출 신청 ID
+     */
+    private void sendNotification(LoanApplication loanApplication, NotificationType notificationType, Long loanApplicationId) {
+        // 알림은 실패해도 메인 로직에 영향 안 주도록
+        try {
+            String content = loanApplication.getMember().getName() + notificationType.getMessageTemplate();
+            NotificationEvent notificationEvent = new NotificationEvent(
+                    this,
+                    loanApplication.getMember(),
+                    notificationType,
+                    content
+            );
+            eventPublisher.publishEvent(notificationEvent);
+            log.info("알림 이벤트 발행 완료 - loanApplicationId={}, type={}", loanApplicationId, notificationType);
+        } catch (Exception e) {
+            log.error("알림 이벤트 발행 실패 - loanApplicationId={}, type={}", loanApplicationId, notificationType, e);
+        }
     }
 }
