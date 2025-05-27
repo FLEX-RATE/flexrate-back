@@ -1,18 +1,22 @@
 package com.flexrate.flexrate_back.notification.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.flexrate.flexrate_back.notification.domain.Notification;
 
-@Getter
-@AllArgsConstructor
-public class NotificationSummaryDto {
-    private Long id;
-    private String content;
-    private String sentAt;
-
-    @JsonProperty("isRead")
-    private boolean isRead;
-
-    private String type;
+public record NotificationSummaryDto(
+        Long id,
+        String content,
+        String sentAt,
+        @JsonProperty("isRead") boolean isRead,
+        String type
+) {
+    public static NotificationSummaryDto from(Notification notification) {
+        return new NotificationSummaryDto(
+                notification.getNotificationId(),
+                notification.getContent(),
+                notification.getSentAt().toString(), // 포맷 변경 시 여기를 수정
+                notification.isRead(),
+                notification.getType().name()
+        );
+    }
 }

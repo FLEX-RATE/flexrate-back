@@ -20,7 +20,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationQueryRepository notificationQueryRepository;
 
-    private static final int PAGE_SIZE = 6;
+    private static final int PAGE_SIZE = 8;
 
     @Transactional(readOnly = true)
     public NotificationResponseDto getNotifications(Long memberId, Long lastNotificationId) {
