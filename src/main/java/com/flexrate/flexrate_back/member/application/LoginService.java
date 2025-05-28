@@ -115,7 +115,6 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .challenge("")
                 .build();
     }
@@ -153,7 +152,6 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .challenge("") // 인증 완료 상태
                 .build();
     }
@@ -186,8 +184,7 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .challenge("") // 추후 필요 시 재사용
+                .challenge("")
                 .build();
     }
 
