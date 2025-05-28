@@ -68,12 +68,6 @@ public class SignupService {
         Member saved = memberRepository.save(member);
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
 
-        // ✅ 로그인 시와 동일한 방식으로 토큰 발급 및 Redis 저장
-        String accessToken = jwtTokenProvider.generateToken(saved, Duration.ofHours(2));
-        String refreshToken = jwtTokenProvider.generateToken(saved, Duration.ofDays(7));
-        String redisKey = "refreshToken:" + refreshToken;
-        stringRedisUtil.set(redisKey, String.valueOf(saved.getMemberId()), Duration.ofDays(7));
-
         // LoanApplication 생성
         LoanApplication application = LoanApplication.builder()
                 .member(member)
@@ -85,12 +79,7 @@ public class SignupService {
 
         loanApplicationRepository.save(application);
 
-        return SignupResponseDTO.builder()
-                .userId(saved.getMemberId())
-                .email(saved.getEmail())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+        return new SignupResponseDTO(saved.getMemberId(), saved.getEmail());
     }
 
     @Transactional

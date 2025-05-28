@@ -84,13 +84,14 @@ public class LoginService {
 
         stringRedisUtil.set("refreshToken:" + refreshToken, String.valueOf(userId), Duration.ofDays(7));
 
-        return LoginResponseDTO.builder()
-                .userId(userId)
-                .email(member.getEmail())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .challenge("")
-                .build();
+        return new LoginResponseDTO(
+                userId,
+                member.getName(),
+                member.getEmail(),
+                accessToken,
+                refreshToken,
+                ""
+        );
     }
 
 
