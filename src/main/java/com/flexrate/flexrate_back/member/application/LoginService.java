@@ -89,7 +89,6 @@ public class LoginService {
                 member.getName(),
                 member.getEmail(),
                 accessToken,
-                refreshToken,
                 ""
         );
     }
