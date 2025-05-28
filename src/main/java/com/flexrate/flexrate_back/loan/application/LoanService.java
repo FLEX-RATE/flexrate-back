@@ -156,7 +156,7 @@ public class LoanService {
 
         return LoanReviewApplicationResponse.builder()
                 .name(member.getName())
-                .screeningDate(loanApplication.getAppliedAt().toLocalDate().toString())
+                .screeningDate(loanApplication.getAppliedAt() != null ? loanApplication.getAppliedAt().toLocalDate().toString() : null)
                 .loanLimit(loanApplication.getTotalAmount())
                 .initialRate(loanApplication.getRate())
                 .rateRangeFrom(loanApplication.getProduct().getMinRate())
