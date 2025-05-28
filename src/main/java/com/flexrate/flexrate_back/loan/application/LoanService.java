@@ -23,6 +23,8 @@ import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
 import com.flexrate.flexrate_back.member.enums.Role;
+import com.flexrate.flexrate_back.notification.enums.NotificationType;
+import com.flexrate.flexrate_back.notification.event.NotificationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -66,6 +68,7 @@ public class LoanService {
     private final MemberRepository memberRepository;
     private final UserFinancialDataQueryRepositoryImpl userFinancialDataQueryRepository;
     private final InterestRepository interestRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
      * @param request 대출 신청 기본 정보, Member 대출 신청자
@@ -267,6 +270,15 @@ public class LoanService {
                     .build();
 
             interestRepository.save(interest);
+
+            // 금리 변동 알림
+            if (interest.getInterestChanged()) {
+                notificationEventPublisher.sendInterestNotification(
+                        member,
+                        interest.getInterestId(),
+                        NotificationType.INTEREST_RATE_CHANGE
+                );
+            }
         }
     }
 
@@ -379,6 +391,5 @@ public class LoanService {
                 return false;
         }
     }
-
 
 }

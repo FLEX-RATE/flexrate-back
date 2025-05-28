@@ -16,11 +16,10 @@ import com.flexrate.flexrate_back.loan.mapper.LoanTransactionMapper;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.notification.enums.NotificationType;
-import com.flexrate.flexrate_back.notification.event.NotificationEvent;
+import com.flexrate.flexrate_back.notification.event.NotificationEventPublisher;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +42,7 @@ public class LoanAdminService {
     private final InterestRepository interestRepository;
     private final LoanAdminQueryRepository loanAdminQueryRepository;
     private final LoanApplicationMapper loanApplicationMapper;
-    private final ApplicationEventPublisher eventPublisher;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     /**
      * 대출 거래 내역 목록 조회
@@ -131,12 +130,12 @@ public class LoanAdminService {
             loanApplication.patchExecutedAt();
 
             // 대출 승인 알림
-            sendNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
+            notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
         }
         // 대출 거절 시 알림 발송
         else if(request.status() == LoanApplicationStatus.REJECTED) {
             // 대출 거절 알림
-            sendNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
+            notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
         }
 
         return LoanApplicationStatusUpdateResponse.builder()
@@ -205,28 +204,5 @@ public class LoanAdminService {
                 .orElse(null);
 
         return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication, latestInterest);
-    }
-
-    /**
-     * 알림 발송 공통 메서드
-     * @param loanApplication 대출 신청 정보
-     * @param notificationType 알림 타입
-     * @param loanApplicationId 대출 신청 ID
-     */
-    private void sendNotification(LoanApplication loanApplication, NotificationType notificationType, Long loanApplicationId) {
-        // 알림은 실패해도 메인 로직에 영향 안 주도록
-        try {
-            String content = loanApplication.getMember().getName() + notificationType.getMessageTemplate();
-            NotificationEvent notificationEvent = new NotificationEvent(
-                    this,
-                    loanApplication.getMember(),
-                    notificationType,
-                    content
-            );
-            eventPublisher.publishEvent(notificationEvent);
-            log.info("알림 이벤트 발행 완료 - loanApplicationId={}, type={}", loanApplicationId, notificationType);
-        } catch (Exception e) {
-            log.error("알림 이벤트 발행 실패 - loanApplicationId={}, type={}", loanApplicationId, notificationType, e);
-        }
     }
 }

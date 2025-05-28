@@ -2,6 +2,7 @@ package com.flexrate.flexrate_back.notification.application;
 
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.dto.NotificationSummaryDto;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -24,81 +25,131 @@ public class NotificationEmitterService {
     public SseEmitter subscribe(Long memberId) {
         log.info("SSE 구독 시작: memberId={}", memberId);
 
-        // 기존 emitter 있으면 종료 및 제거
-        SseEmitter existingEmitter = emitters.get(memberId);
-        if (existingEmitter != null) {
-            log.info("기존 emitter 및 heartbeat 종료: memberId={}", memberId);
-            existingEmitter.complete();
-            ScheduledFuture<?> existingHeartbeat = heartbeats.remove(memberId);
-            if (existingHeartbeat != null) {
-                existingHeartbeat.cancel(true);
-                log.info("기존 heartbeat 취소 완료: memberId={}", memberId);
-            }
-            emitters.remove(memberId);
-        }
+        // 기존 연결 정리
+        cleanupExistingConnection(memberId);
 
-        SseEmitter emitter = new SseEmitter(60L * 1000 * 60);
+        SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 60분 timeout
         emitters.put(memberId, emitter);
 
+        // 에러 상황 핸들러 설정
         emitter.onCompletion(() -> {
-            emitters.remove(memberId);
-            ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
-            if (heartbeat != null) heartbeat.cancel(true);
-            log.info("Emitter onCompletion 및 heartbeat 취소: memberId={} 제거됨", memberId);
+            log.info("Emitter onCompletion: memberId={}", memberId);
+            cleanupConnection(memberId);
         });
 
         emitter.onTimeout(() -> {
-            emitters.remove(memberId);
-            ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
-            if (heartbeat != null) heartbeat.cancel(true);
-            log.info("Emitter onTimeout 및 heartbeat 취소: memberId={} 제거됨", memberId);
+            log.info("Emitter onTimeout: memberId={}", memberId);
+            cleanupConnection(memberId);
         });
 
+        emitter.onError((throwable) -> {
+            log.warn("Emitter onError: memberId={}, error={}", memberId, throwable.getMessage());
+            cleanupConnection(memberId);
+        });
+
+        // 초기 연결 이벤트 전송
         try {
             emitter.send(SseEmitter.event().name("connect").data("connected"));
             log.info("connect 이벤트 전송 성공: memberId={}", memberId);
         } catch (IOException e) {
-            emitters.remove(memberId);
             log.error("connect 이벤트 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+            cleanupConnection(memberId);
+            return emitter;
         }
 
-        ScheduledFuture<?> heartbeatFuture = scheduler.scheduleAtFixedRate(() -> {
-            try {
-                emitter.send(SseEmitter.event().comment("heartbeat"));
-                log.debug("heartbeat 전송 성공: memberId={}", memberId);
-            } catch (IOException e) {
-                log.warn("heartbeat 전송 실패: memberId={}, error={}, heartbeat 취소 중", memberId, e.getMessage());
-                emitters.remove(memberId);
-                ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
-                if (heartbeat != null) {
-                    heartbeat.cancel(true);
-                    log.info("heartbeat 취소 완료: memberId={}", memberId);
-                }
-            }
-        }, 10, 10, TimeUnit.SECONDS);
-
-        heartbeats.put(memberId, heartbeatFuture);
+        // Heartbeat 스케줄링 (30초로 늘림)
+        startHeartbeat(memberId, emitter);
 
         return emitter;
     }
 
+    private void cleanupExistingConnection(Long memberId) {
+        SseEmitter existingEmitter = emitters.get(memberId);
+        if (existingEmitter != null) {
+            log.info("기존 연결 정리: memberId={}", memberId);
+            try {
+                existingEmitter.complete();
+            } catch (Exception e) {
+                log.warn("기존 emitter 완료 중 에러: memberId={}, error={}", memberId, e.getMessage());
+            }
+            cleanupConnection(memberId);
+        }
+    }
+
+    private void cleanupConnection(Long memberId) {
+        emitters.remove(memberId);
+        ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
+        if (heartbeat != null) {
+            heartbeat.cancel(true);
+            log.debug("heartbeat 취소 완료: memberId={}", memberId);
+        }
+    }
+
+    private void startHeartbeat(Long memberId, SseEmitter emitter) {
+        ScheduledFuture<?> heartbeatFuture = scheduler.scheduleAtFixedRate(() -> {
+            // Emitter 상태 확인
+            if (!emitters.containsKey(memberId)) {
+                log.debug("Emitter 없음, heartbeat 중단: memberId={}", memberId);
+                return;
+            }
+
+            try {
+                emitter.send(SseEmitter.event().comment("heartbeat"));
+                log.debug("heartbeat 전송 성공: memberId={}", memberId);
+            } catch (IOException e) {
+                log.warn("heartbeat 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+                cleanupConnection(memberId);
+            } catch (Exception e) {
+                log.error("heartbeat 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
+                cleanupConnection(memberId);
+            }
+        }, 30, 30, TimeUnit.SECONDS); // 30초로 변경
+
+        heartbeats.put(memberId, heartbeatFuture);
+    }
+
     public void sendNotification(Long memberId, Notification notification) {
         SseEmitter emitter = emitters.get(memberId);
-        if (emitter != null) {
-            try {
-                NotificationSummaryDto dto = NotificationSummaryDto.from(notification);
-                emitter.send(SseEmitter.event()
-                        .name("notification")
-                        .data(dto));
-                log.info("notification 이벤트 전송 성공: memberId={}, notificationId={}", memberId, notification.getNotificationId());
-            } catch (IOException e) {
-                emitters.remove(memberId);
-                ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
-                if (heartbeat != null) heartbeat.cancel(true);
-                log.warn("notification 이벤트 전송 실패 및 emitter 제거: memberId={}, error={}", memberId, e.getMessage());
-            }
-        } else {
-            log.warn("SSE Emitter 없음: memberId={}", memberId);
+        if (emitter == null) {
+            log.debug("SSE Emitter 없음: memberId={}", memberId);
+            return;
         }
+
+        try {
+            NotificationSummaryDto dto = NotificationSummaryDto.from(notification);
+            emitter.send(SseEmitter.event()
+                    .name("notification")
+                    .data(dto));
+            log.info("notification 이벤트 전송 성공: memberId={}, notificationId={}",
+                    memberId, notification.getNotificationId());
+        } catch (IOException e) {
+            log.warn("notification 이벤트 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+            cleanupConnection(memberId);
+        } catch (Exception e) {
+            log.error("notification 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
+            cleanupConnection(memberId);
+        }
+    }
+
+    // 서비스 종료 시 정리
+    @PreDestroy
+    public void shutdown() {
+        log.info("NotificationEmitterService 종료 시작");
+
+        // 모든 연결 정리
+        emitters.keySet().forEach(this::cleanupConnection);
+
+        // 스케줄러 종료
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        log.info("NotificationEmitterService 종료 완료");
     }
 }
