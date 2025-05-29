@@ -130,12 +130,20 @@ public class LoanAdminService {
             loanApplication.patchExecutedAt();
 
             // 대출 승인 알림
-            notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
+            try {
+                notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
+            } catch (Exception e) {
+                log.error("대출 승인 알림 발송 실패 - loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
+            }
         }
         // 대출 거절 시 알림 발송
         else if(request.status() == LoanApplicationStatus.REJECTED) {
             // 대출 거절 알림
-            notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
+            try {
+                notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
+            } catch (Exception e) {
+                log.error("대출 거절 알림 발송 실패 - loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
+            }
         }
 
         return LoanApplicationStatusUpdateResponse.builder()
