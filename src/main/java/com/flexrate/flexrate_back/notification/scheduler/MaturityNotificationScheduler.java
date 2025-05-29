@@ -24,12 +24,12 @@ public class MaturityNotificationScheduler {
     private final NotificationEventPublisher notificationEventPublisher;
 
     /**
-     * 매일 오전 9시에 만기일 30일, 7일, 3일, 2일, 1일 전인 대출을 찾아 알림을 발송
+     * 매일 오전 9시에 만기일 30일, 7일, 3일, 2일, 1일 전, 당일인 대출을 찾아 알림을 발송
      */
     @Scheduled(cron = "0 0 9 * * *")
     public void sendMaturityNotifications() {
         LocalDate today = LocalDate.now();
-        int[] daysBefore = {30, 7, 3, 2, 1};
+        int[] daysBefore = {30, 7, 3, 2, 1, 0};
 
         for (int days : daysBefore) {
             LocalDate targetDate = today.plusDays(days);
@@ -40,16 +40,22 @@ public class MaturityNotificationScheduler {
 
             for (LoanApplication loan : loans) {
                 try {
-                    String formattedEndDate = loan.getEndDate().toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+                    String dateMessage;
+
+                    if (days == 0) {
+                        dateMessage = "오늘 내";
+                    } else {
+                        dateMessage = loan.getEndDate().toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+                    }
 
                     notificationEventPublisher.sendMaturityNotification(
                             loan,
                             NotificationType.MATURITY_NOTICE,
-                            formattedEndDate
+                            dateMessage
                     );
 
-                    log.info("만기 알림 발송 완료 - loanId: {}, member: {}, 만기일: {}",
-                            loan.getApplicationId(), loan.getMember().getName(), loan.getEndDate());
+                    log.info("만기 알림 발송 완료 - loanId: {}, member: {}, 만기일: {}, 알림타입: {}일전",
+                            loan.getApplicationId(), loan.getMember().getName(), loan.getEndDate(), days);
                 } catch (Exception e) {
                     log.error("만기 알림 발송 실패 - loanId: {}", loan.getApplicationId(), e);
                 }
