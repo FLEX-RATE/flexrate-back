@@ -10,8 +10,8 @@ public class TestController {
     // 테스트용 API
     @GetMapping("/test")
     public String test() {
-        log.info("Logback -> Test API is working!");
-        return "Test API is working!";
+        log.info("Logback -> 25.05.27 19H Test API is working!");
+        return "25.05.27 19H - Test API is working!";
     }
 
 }

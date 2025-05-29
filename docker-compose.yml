@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   fastapi:
     build:
@@ -75,7 +73,7 @@ services:
     environment:
       - discovery.type=single-node # 단일 노드 모드로 실행
       - ES_JAVA_OPTS=-Xms2g -Xmx2g # JVM 메모리 설정 (최소 2GB, 최대 2GB)
-      - xpack.security.enabled=${ELASTICSEARCH_XPACK_SECURITY_ENABLED} # 보안 기능 설정 (개발: false, 운영: true).
+      - xpack.security.enabled=false # 보안 기능 설정 (개발: false, 운영: true).
     ports:
       - "9200:9200"
     restart: always
