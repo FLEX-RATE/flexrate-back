@@ -63,6 +63,7 @@ public class SignupService {
                 .status(MemberStatus.ACTIVE)
                 .role(Role.MEMBER)
                 .creditScoreEvaluated(false)
+                .pinHash(dto.pin().orElse(null))
                 .build();
 
         Member saved = memberRepository.save(member);

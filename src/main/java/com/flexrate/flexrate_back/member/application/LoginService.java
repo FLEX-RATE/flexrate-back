@@ -152,7 +152,7 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
-                .challenge("") // 인증 완료 상태
+                .challenge("")
                 .build();
     }
 

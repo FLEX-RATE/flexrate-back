@@ -12,6 +12,7 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Builder
 public record SignupPasswordRequestDTO(
@@ -36,5 +37,8 @@ public record SignupPasswordRequestDTO(
         ConsumptionType consumptionType,
 
         @NotNull(message = "소비 목표는 필수 항목입니다.")
-        ConsumeGoal consumeGoal
+        ConsumeGoal consumeGoal,
+
+        @JsonProperty("pin") // JSON에서 "pin"이라는 이름으로 매핑
+        Optional<String> pin // 핀번호 필드 추가
 ) {}
