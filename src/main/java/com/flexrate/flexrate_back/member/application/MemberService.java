@@ -219,6 +219,11 @@ public class MemberService {
         // 금리 변경 횟수
         int interestChangedNum = interestQueryRepositoryImpl.countByConditionsWithInterestChangedTrue(app, startDate, endDate);
 
+        int repaymentMonth = (int) java.time.temporal.ChronoUnit.MONTHS.between(
+                app.getStartDate().toLocalDate(),
+                app.getEndDate().toLocalDate()
+        );
+
         return MainPageResponse.builder()
                 .monthlyPayment(monthlyPayment)
                 .repaymentRate(repaymentRate)
@@ -229,6 +234,8 @@ public class MemberService {
                 .interestChangedNum(interestChangedNum)
                 .startDate(startDate)
                 .recentRepaymentDate(recentRepaymentDate)
+                .totalAmount(app.getTotalAmount())
+                .repaymentMonth(repaymentMonth)
                 .build();
     }
 
