@@ -70,7 +70,10 @@ public enum ErrorCode {
     NOT_FOUND_STATIC_RESOURCE("S404", "요청한 정적 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // 유효성
-    VALIDATION_ERROR("V001", "유효성 검사 오류", HttpStatus.BAD_REQUEST);
+    VALIDATION_ERROR("V001", "유효성 검사 오류", HttpStatus.BAD_REQUEST),
+
+    // 예상치 못한 에러
+    UNEXPECTED_ERROR("E001", "예상치 못한 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String message;
