@@ -1,7 +1,9 @@
 package com.flexrate.flexrate_back.member.application;
 
 import com.flexrate.flexrate_back.auth.application.RefreshTokenService;
+import com.flexrate.flexrate_back.auth.domain.PinCredential;
 import com.flexrate.flexrate_back.auth.domain.jwt.JwtTokenProvider;
+import com.flexrate.flexrate_back.auth.domain.repository.PinCredentialRepository;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
@@ -40,6 +42,7 @@ public class SignupService {
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisUtil stringRedisUtil;
     private final LoanApplicationRepository loanApplicationRepository;
+    private final PinCredentialRepository pinCredentialRepository;
 
 
     // 비밀번호 기반 회원가입
@@ -63,10 +66,22 @@ public class SignupService {
                 .status(MemberStatus.ACTIVE)
                 .role(Role.MEMBER)
                 .creditScoreEvaluated(false)
-                .pinHash(dto.pin().orElse(null))
                 .build();
 
         Member saved = memberRepository.save(member);
+
+        // PIN이 존재한다면 PinCredential에 저장
+        dto.pin().ifPresent(pin -> {
+            String hashedPin = passwordEncoder.encode(pin);
+
+            PinCredential pinCredential = PinCredential.builder()
+                    .member(saved)
+                    .pinHash(hashedPin)
+                    .build();
+
+            pinCredentialRepository.save(pinCredential);
+        });
+
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
 
         // LoanApplication 생성

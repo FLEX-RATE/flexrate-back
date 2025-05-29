@@ -85,10 +85,6 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<UserFinancialData> financialData;
 
-    @Column(nullable = true)
-    private String pinHash;
-
-
     public void updateName(String name) {
         this.name = name;
     }

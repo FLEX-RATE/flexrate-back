@@ -39,6 +39,6 @@ public record SignupPasswordRequestDTO(
         @NotNull(message = "소비 목표는 필수 항목입니다.")
         ConsumeGoal consumeGoal,
 
-        @JsonProperty("pin") // JSON에서 "pin"이라는 이름으로 매핑
-        Optional<String> pin // 핀번호 필드 추가
+        @JsonProperty("pin")
+        Optional<String> pin
 ) {}
