@@ -46,12 +46,6 @@ spring:
     init:
       mode: always
 
-  logging:
-    level:
-      org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
-      org.springframework.web.reactive.function.client.ExchangeStrategies: TRACE
-      reactor.netty.http.client: DEBUG
-
   mail:
     host: smtp.gmail.com
     port: 587
@@ -90,6 +84,7 @@ springdoc:
 security:
   allowed-origins:
     - http://localhost:3000
+    - https://flexrate-front.vercel.app
 
 fastapi:
   host: ${FASTAPI_HOST:localhost}
