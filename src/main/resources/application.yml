@@ -85,6 +85,7 @@ security:
   allowed-origins:
     - http://localhost:3000
     - https://flexrate-front.vercel.app
+    - https://flexrate.online/
 
 fastapi:
   host: ${FASTAPI_HOST:localhost}
