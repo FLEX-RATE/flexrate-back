@@ -15,6 +15,8 @@ public record MainPageResponse(
         Integer loanRepaymentTransactionNum,
         LocalDateTime recentRepaymentDate,
         LocalDate startDate,
-        Integer interestChangedNum
+        Integer interestChangedNum,
+        Integer totalAmount,
+        Integer repaymentMonth
 ) {
 }
