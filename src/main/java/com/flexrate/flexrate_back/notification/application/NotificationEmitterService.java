@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class NotificationEmitterService {
+    private static final long SSE_TIMEOUT_MILLIS = 60L * 1000 * 60;
+
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final Map<Long, ScheduledFuture<?>> heartbeats = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -28,7 +30,7 @@ public class NotificationEmitterService {
         // 기존 연결 정리
         cleanupExistingConnection(memberId);
 
-        SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 60분 timeout
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
         emitters.put(memberId, emitter);
 
         // 에러 상황 핸들러 설정
