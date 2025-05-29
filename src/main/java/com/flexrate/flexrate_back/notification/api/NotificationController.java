@@ -49,8 +49,6 @@ public class NotificationController {
             Principal principal,
             @RequestParam(required = false) Long lastNotificationId
     ) {
-        System.out.println("알림 조회 요청 받음");
-
         if (principal == null) {
             throw new RuntimeException("인증되지 않은 사용자입니다.");
         }
@@ -78,7 +76,17 @@ public class NotificationController {
 
     @DeleteMapping
     public ResponseEntity<Void> deleteAll(Principal principal) {
-        Long memberId = Long.parseLong(principal.getName());
+        if (principal == null) {
+            throw new RuntimeException("인증되지 않은 사용자입니다.");
+        }
+
+        Long memberId;
+        try {
+            memberId = Long.parseLong(principal.getName());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
+        }
+
         notificationService.deleteAll(memberId);
         return ResponseEntity.ok().build();
     }
