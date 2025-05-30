@@ -60,6 +60,7 @@ public class ConsumptionHabitReportController {
         if (month != null) {
             ConsumptionHabitReport report = reportService.getReport(member, month)
                     .orElseGet(() -> reportService.createReport(member, month, null));
+
             return List.of(ConsumptionHabitReportResponse.from(report));
 
         } else {
