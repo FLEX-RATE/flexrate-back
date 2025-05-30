@@ -129,14 +129,26 @@ public class LoanService {
                 .build();
 
         // 대출 신청 사전 정보 저장
-        LoanReviewHistory loanReviewHistory = LoanReviewHistory.builder()
-                .employmentType(request.employmentType())
-                .annualIncome(request.annualIncome())
-                .residenceType(request.residenceType())
-                .isBankrupt(request.isBankrupt())
-                .loanPurpose(request.loanPurpose())
-                .application(loanApplication)
-                .build();
+        LoanReviewHistory loanReviewHistory = loanApplication.getReviewHistory();
+
+        if (loanReviewHistory != null) {
+            loanReviewHistory.updateReview(
+                    request.employmentType(),
+                    request.residenceType(),
+                    request.loanPurpose(),
+                    request.annualIncome(),
+                    request.isBankrupt()
+            );
+        } else {
+            loanReviewHistory = LoanReviewHistory.builder()
+                    .employmentType(request.employmentType())
+                    .annualIncome(request.annualIncome())
+                    .residenceType(request.residenceType())
+                    .isBankrupt(request.isBankrupt())
+                    .loanPurpose(request.loanPurpose())
+                    .application(loanApplication)
+                    .build();
+        }
 
         loanReviewHistoryRepository.save(loanReviewHistory);
         loanApplication.applyReviewResult(externalResponse, loanReviewHistory);
