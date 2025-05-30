@@ -73,6 +73,12 @@ public class LoginService {
         PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(userId)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
+        log.info("PIN 로그인 시도 - userId: {}", userId);
+        log.info("입력된 PIN: {}", request.pin());
+        log.info("저장된 PIN 해시: {}", pinCredential.getPinHash());
+        log.info("일치 여부: {}", passwordEncoder.matches(request.pin(), pinCredential.getPinHash()));
+
+
         if (!passwordEncoder.matches(request.pin(), pinCredential.getPinHash())) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
@@ -89,6 +95,7 @@ public class LoginService {
                 member.getName(),
                 member.getEmail(),
                 accessToken,
+                refreshToken,
                 ""
         );
     }
@@ -115,6 +122,7 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .challenge("")
                 .build();
     }
@@ -152,6 +160,7 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .challenge("")
                 .build();
     }
@@ -184,6 +193,7 @@ public class LoginService {
                 .username(member.getName())
                 .email(member.getEmail())
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .challenge("")
                 .build();
     }
