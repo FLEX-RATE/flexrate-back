@@ -27,6 +27,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         String code = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getCode();
         String message = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getMessage();
+        initMDC(code, ex);
         logError(code, message, ex);
 
         return buildResponse(HttpStatus.BAD_REQUEST, code, message);
@@ -39,6 +40,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
         String code = ErrorCode.VALIDATION_ERROR.getCode();
         String message = ErrorCode.VALIDATION_ERROR.getMessage();
+        initMDC(code, ex);
 
         String details = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -56,6 +58,7 @@ public class GlobalExceptionHandler {
         String code = ErrorCode.NOT_FOUND_STATIC_RESOURCE.getCode();
         String message = ErrorCode.NOT_FOUND_STATIC_RESOURCE.getMessage();
         String path = request.getRequestURI();
+        initMDC(code, ex);
 
         log.error("[{}] {} | path={} | details = {}",
                 code,
@@ -76,7 +79,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ex.getErrorCode();
         String code = errorCode.getCode();
         String message = errorCode.getMessage();
-        log.info("커스텀 예외 진입 pageId={}", MDC.get("pageId"));
+        initMDC(code, ex);
         logError(code, message, ex);
 
         return ResponseEntity.status(errorCode.getHttpStatus())
@@ -91,23 +94,29 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-        logError(ErrorCode.INTERNAL_SERVER_ERROR.getCode(), ex.getMessage(), ex);
+        String code = ErrorCode.INTERNAL_SERVER_ERROR.getCode();
+        String message = ErrorCode.INTERNAL_SERVER_ERROR.getMessage();
+        initMDC(code, ex);
+        logError(code, ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR.getCode(), ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+                .body(new ErrorResponse(code, message));
     }
 
     /**
      * 공통 헬퍼
      * - errorCode, message, MDC pageId, stackTrace
      */
+    private void initMDC(String code, Exception ex) {
+        MDC.put("errorCode", code);
+        MDC.put("details", ExceptionUtils.getStackTrace(ex));
+    }
+
     private void logError(String code, String message, Exception ex) {
-        log.error("[{}] {} | pageId={} | details = {}",
-                code, message, MDC.get("pageId"), ExceptionUtils.getStackTrace(ex));
+        log.error("[{}] {}", code, message);
     }
 
     private void logWarn(String code, String message, String details, Exception ex) {
-        log.warn("[{}] {} | pageId={} | message = {} | details = {}",
-                code, message, MDC.get("pageId"), details, ExceptionUtils.getStackTrace(ex));
+        log.warn("[{}] {} | message = {}", code, message, details);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String code, String message) {
