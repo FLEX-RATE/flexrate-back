@@ -22,23 +22,11 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final NotificationEmitterService emitterService;
-    private final MemberService memberService;
 
     @GetMapping("/subscribe")
-    public SseEmitter subscribe(HttpServletResponse response) {
+    public SseEmitter subscribe(HttpServletResponse response, Principal principal) {
         response.setHeader("X-Accel-Buffering", "no");
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("인증되지 않은 사용자입니다.");
-        }
-
-        Long memberId;
-        try {
-            memberId = Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
-        }
+        Long memberId = Long.parseLong(principal.getName());
 
         return emitterService.subscribe(memberId);
     }
@@ -46,19 +34,10 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<NotificationResponse> getNotifications(
-            Principal principal,
-            @RequestParam(required = false) Long lastNotificationId
+            @RequestParam(required = false) Long lastNotificationId,
+            Principal principal
     ) {
-        if (principal == null) {
-            throw new RuntimeException("인증되지 않은 사용자입니다.");
-        }
-
-        Long memberId;
-        try {
-            memberId = Long.parseLong(principal.getName());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
-        }
+        Long memberId = Long.parseLong(principal.getName());
 
         if (lastNotificationId == null) {
             lastNotificationId = Long.MAX_VALUE;
@@ -76,35 +55,14 @@ public class NotificationController {
 
     @DeleteMapping
     public ResponseEntity<Void> deleteAll(Principal principal) {
-        if (principal == null) {
-            throw new RuntimeException("인증되지 않은 사용자입니다.");
-        }
-
-        Long memberId;
-        try {
-            memberId = Long.parseLong(principal.getName());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
-        }
-
+        Long memberId = Long.parseLong(principal.getName());
         notificationService.deleteAll(memberId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<UnreadCountResponse> getUnreadNotificationCount() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("인증되지 않은 사용자입니다.");
-        }
-
-        Long memberId;
-        try {
-            memberId = Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("잘못된 사용자 ID 형식입니다.");
-        }
-
+    public ResponseEntity<UnreadCountResponse> getUnreadNotificationCount(Principal principal) {
+        Long memberId = Long.parseLong(principal.getName());
         int unreadCount = notificationService.countUnreadNotifications(memberId);
         return ResponseEntity.ok(new UnreadCountResponse(unreadCount));
     }
