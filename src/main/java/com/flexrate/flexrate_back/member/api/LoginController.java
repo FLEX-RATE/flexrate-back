@@ -6,8 +6,11 @@ import com.flexrate.flexrate_back.member.dto.MfaLoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyLoginRequestDTO;
 import com.flexrate.flexrate_back.member.dto.PasswordLoginRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,10 +27,26 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/login/password")
-    public ResponseEntity<LoginResponseDTO> loginWithPassword(@RequestBody @Valid PasswordLoginRequestDTO request) {
-        LoginResponseDTO response = loginService.loginWithPassword(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponseDTO> loginWithPassword(
+            @RequestBody @Valid PasswordLoginRequestDTO request,
+            HttpServletResponse response
+    ) {
+        LoginResponseDTO loginResponse = loginService.loginWithPassword(request);
+
+        String refreshToken = loginResponse.refreshToken();
+
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(false) // <---- https일 시, true로 변경하기!
+                .path("/")
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ResponseEntity.ok(loginResponse);
     }
+
 
     @Operation(
             summary = "Passkey 로그인",
