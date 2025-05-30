@@ -5,11 +5,13 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.security.Principal;
 import java.util.function.Supplier;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class AdminActionTemplate {
     private final AdminAuthChecker adminAuthChecker;
@@ -19,15 +21,15 @@ public class AdminActionTemplate {
      */
     public <T> T execute(String actionName, Principal principal, Supplier<T> action) {
         String principalName = principal != null ? principal.getName() : "anonymous";
-        log.info("{} 요청 by principal={}", actionName, principalName);
+        log.info("{} 요청, principal={}", actionName, principalName);
 
         if (!adminAuthChecker.isAdmin(principal)) {
-            log.warn("관리자 인증 실패 {} principal={}", actionName, principalName);
+            log.warn("관리자 인증 실패 {}, principal={}", actionName, principalName);
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
         T result = action.get();
-        log.info("{} 성공 by principal={}", actionName, principalName);
+        log.info("{} 성공, principal={}", actionName, principalName);
         return result;
     }
 }
