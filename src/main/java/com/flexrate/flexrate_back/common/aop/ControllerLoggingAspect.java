@@ -37,7 +37,7 @@ public class ControllerLoggingAspect {
         }
     }
 
-    // 파라미터 요약 (Principal, HttpServletRequest 등은 생략)
+    // 파라미터 요약
     private String paramSummary(MethodSignature signature, Object[] args) {
         String[] paramNames = signature.getParameterNames();
         if (paramNames == null) return "";
@@ -45,8 +45,8 @@ public class ControllerLoggingAspect {
 
         for (int i = 0; i < paramNames.length; i++) {
             Object arg = args[i];
-            // Principal, ServletRequest 등은 로그에서 제외
             if (arg == null) continue;
+
             String typeName = arg.getClass().getSimpleName();
             if (typeName.contains("Principal") || typeName.contains("Servlet")) continue;
             sb.append(paramNames[i]).append("=").append(arg).append(", ");
@@ -56,7 +56,7 @@ public class ControllerLoggingAspect {
         return sb.toString();
     }
 
-    // 반환값 요약 (ResponseEntity, DTO, String만)
+    // 반환값 요약 (ResponseEntity, DTO, String)
     private String resultSummary(Object result) {
         if (result == null) return "null";
         String type = result.getClass().getSimpleName();
