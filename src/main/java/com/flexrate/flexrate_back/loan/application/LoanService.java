@@ -26,6 +26,7 @@ import com.flexrate.flexrate_back.member.enums.Role;
 import com.flexrate.flexrate_back.notification.enums.NotificationType;
 import com.flexrate.flexrate_back.notification.event.NotificationEventPublisher;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,7 @@ import java.util.Map;
  * @since 2025.05.05
  * @author 유승한
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -69,6 +71,7 @@ public class LoanService {
     private final UserFinancialDataQueryRepositoryImpl userFinancialDataQueryRepository;
     private final InterestRepository interestRepository;
     private final NotificationEventPublisher notificationEventPublisher;
+
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
      * @param request 대출 신청 기본 정보, Member 대출 신청자
@@ -77,10 +80,16 @@ public class LoanService {
      */
     @Transactional
     public void preApply(LoanReviewApplicationRequest request, Member member) {
+        log.info("대출 사전 심사 요청: memberId={}", member.getMemberId());
+
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("대출 사전 심사 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
 
         if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
+            log.warn("대출 사전 심사 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
@@ -93,6 +102,8 @@ public class LoanService {
                 .path("/predict-initial-rate")
                 .build()
                 .toUriString();
+
+        log.info("외부 심사 서버 호출 준비: memberId={}, fastApiUrl={}", member.getMemberId(), fastApiUrl);
 
         // FastAPI로 보낼 요청 JSON 생성
         Map<String, Object> fastApiRequest = new HashMap<>();
@@ -111,6 +122,7 @@ public class LoanService {
         );
 
         if (rateResponse == null || rateResponse.get("initialRate") == null) {
+            log.error("외부 심사 서버 응답 오류: memberId={}, 응답={}", member.getMemberId(), rateResponse);
             throw new FlexrateException(ErrorCode.LOAN_SERVER_ERROR);
         }
 
@@ -152,6 +164,8 @@ public class LoanService {
 
         loanReviewHistoryRepository.save(loanReviewHistory);
         loanApplication.applyReviewResult(externalResponse, loanReviewHistory);
+
+        log.info("대출 사전 심사 결과 저장 완료: memberId={}, initialRate={}", member.getMemberId(), initialRate);
     }
 
     /**
@@ -161,13 +175,20 @@ public class LoanService {
      * @author 유승한
      */
     public LoanReviewApplicationResponse preApplyResult(Member member) {
-        LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+        log.info("대출 사전 심사 결과 조회 요청: memberId={}", member.getMemberId());
 
-        if (loanApplication.getStatus() !=  LoanApplicationStatus.PRE_APPLIED){
-            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS); // 이미 대출 중인 경우 예외처리
+        LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
+                .orElseThrow(() -> {
+                    log.warn("대출 사전 심사 결과 조회 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
+
+        if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
+            log.warn("대출 사전 심사 결과 조회 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
+        log.info("대출 사전 심사 결과 반환: memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
 
         return LoanReviewApplicationResponse.builder()
                 .name(member.getName())
@@ -188,25 +209,32 @@ public class LoanService {
      */
     @Transactional
     public void applyLoan(Member member, LoanApplicationRequest loanApplicationRequest) {
+        log.info("대출 신청 요청: memberId={}, 신청금액={}", member.getMemberId(), loanApplicationRequest.loanAmount());
+
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("대출 신청 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
 
         if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
+            log.warn("대출 신청 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
-        // 한도를 초과한 대출금액 요청 시 예외 처리
         if(loanApplication.getProduct().getMaxAmount() < loanApplicationRequest.loanAmount()){
+            log.warn("대출 신청 실패: 한도 초과, memberId={}, 신청금액={}, 한도={}", member.getMemberId(), loanApplicationRequest.loanAmount(), loanApplication.getProduct().getMaxAmount());
             throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
         }
 
-        // 최대 대출 기한을 초과한 기한 요청 시 예외 처리
         if(loanApplication.getProduct().getTerms() < loanApplicationRequest.repaymentMonth()){
+            log.warn("대출 신청 실패: 기한 초과, memberId={}, 요청기한={}, 최대기한={}", member.getMemberId(), loanApplicationRequest.repaymentMonth(), loanApplication.getProduct().getTerms());
             throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
         }
 
-        // 신청 정보 반영
         loanApplication.applyLoan(loanApplicationRequest);
+
+        log.info("대출 신청 완료: memberId={}, 신청금액={}, 기한={}", member.getMemberId(), loanApplicationRequest.loanAmount(), loanApplicationRequest.repaymentMonth());
     }
     /**
      * 대출 결과 조회
@@ -215,15 +243,22 @@ public class LoanService {
      * @author 유승한
      */
     public LoanApplicationResultResponse getLoanApplicationResult(Member member) {
+        log.info("대출 결과 조회 요청: memberId={}", member.getMemberId());
+
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("대출 결과 조회 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
 
         if(loanApplication.getStatus() == LoanApplicationStatus.PRE_APPLIED){
+            log.warn("대출 결과 조회 실패: 아직 미신청 상태, memberId={}", member.getMemberId());
             throw new FlexrateException(ErrorCode.LOAN_NOT_APPLIED);
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        log.info("대출 결과 반환: memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         return LoanApplicationResultResponse.builder()
                 .loanApplicationResult(loanApplication.getStatus().name())
                 .loanApplicationAmount(loanApplication.getTotalAmount())
@@ -245,6 +280,8 @@ public class LoanService {
 
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정
     public void evaluateConsumeGoalAndCreateInterests() {
+        log.info("금리 평가 및 생성 스케줄 시작");
+
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
 
@@ -256,7 +293,10 @@ public class LoanService {
 
             Interest yesterdayInterest = interestRepository
                     .findByInterestDateAndLoanApplication(yesterday, member.getLoanApplication())
-                    .orElseThrow(() -> new FlexrateException(ErrorCode.NO_INTEREST));
+                    .orElseThrow(() -> {
+                        log.error("전일 금리 정보 없음: memberId={}, date={}", member.getMemberId(), yesterday);
+                        return new FlexrateException(ErrorCode.NO_INTEREST);
+                    });
 
             float previousRate = yesterdayInterest.getInterestRate();
             float minRate = member.getLoanApplication().getProduct().getMinRate();
@@ -283,13 +323,20 @@ public class LoanService {
 
             interestRepository.save(interest);
 
+            log.debug("금리 평가 결과: memberId={}, 이전금리={}, 변경금리={}, 목표달성={}", member.getMemberId(), previousRate, finalRate, matched);
+
             // 금리 변동 알림
             if (interest.getInterestChanged()) {
-                notificationEventPublisher.sendInterestNotification(
-                        member,
-                        interest.getInterestId(),
-                        NotificationType.INTEREST_RATE_CHANGE
-                );
+                try {
+                    notificationEventPublisher.sendInterestNotification(
+                            member,
+                            interest.getInterestId(),
+                            NotificationType.INTEREST_RATE_CHANGE
+                    );
+                    log.info("금리 변동 알림 발송 성공: memberId={}, interestId={}", member.getMemberId(), interest.getInterestId());
+                } catch (Exception e) {
+                    log.error("금리 변동 알림 발송 실패: memberId={}, interestId={}, error={}", member.getMemberId(), interest.getInterestId(), e.getMessage(), e);
+                }
             }
         }
     }
@@ -305,63 +352,95 @@ public class LoanService {
                 .mapToInt(UserFinancialData::getValue)
                 .sum();
 
+        log.debug("소비 목표 평가 시작: goal={}, 수입={}, 지출={}, 데이터 건수={}", goal, income, expense, dataList.size());
+
+        boolean result;
+
         switch (goal) {
             case NO_SPENDING_TODAY:
-                return dataList.stream()
+                int todaySpend = dataList.stream()
                         .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
                         .mapToInt(UserFinancialData::getValue)
-                        .sum() == 0;
+                        .sum();
+                result = todaySpend == 0;
+                log.debug("NO_SPENDING_TODAY 평가: 오늘 지출={}, 결과={}", todaySpend, result);
+                break;
 
             case LIMIT_DAILY_MEAL:
-                return dataList.stream()
+                int todayMeal = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.FOOD &&
                                 d.getCollectedAt().toLocalDate().equals(today))
                         .mapToInt(UserFinancialData::getValue)
-                        .sum() <= 10000;
+                        .sum();
+                result = todayMeal <= 10000;
+                log.debug("LIMIT_DAILY_MEAL 평가: 오늘 식비={}, 결과={}", todayMeal, result);
+                break;
 
             case SAVE_70_PERCENT:
-                return income > 0 && (income - expense) >= income * 0.7;
+                result = income > 0 && (income - expense) >= income * 0.7;
+                log.debug("SAVE_70_PERCENT 평가: 수입={}, 지출={}, 결과={}", income, expense, result);
+                break;
 
             case INCOME_OVER_EXPENSE:
-                return income > expense;
+                result = income > expense;
+                log.debug("INCOME_OVER_EXPENSE 평가: 수입={}, 지출={}, 결과={}", income, expense, result);
+                break;
 
             case ONLY_PUBLIC_TRANSPORT:
-                return dataList.stream()
+                long transportCount = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.TRANSPORT &&
                                 d.getCollectedAt().toLocalDate().equals(today))
-                        .allMatch(d -> d.getCategory() == UserFinancialCategory.TRANSPORT);
+                        .count();
+                long allTransport = dataList.stream()
+                        .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
+                        .count();
+                result = transportCount == allTransport;
+                log.debug("ONLY_PUBLIC_TRANSPORT 평가: 오늘 교통건수={}, 전체건수={}, 결과={}", transportCount, allTransport, result);
+                break;
 
             case COMPARE_BEFORE_BUYING:
-                // 사용자 행동을 추적할 수 있는 로그나 추가 데이터가 있어야 평가 가능. 임의로 true로 가정
-                return true;
+                result = true;
+                log.debug("COMPARE_BEFORE_BUYING 평가: 임의 true 반환");
+                break;
 
             case HAS_HOUSING_SAVING:
-                return dataList.stream()
+                result = dataList.stream()
                         .anyMatch(d -> d.getDataType() == UserFinancialDataType.INCOME);
+                log.debug("HAS_HOUSING_SAVING 평가: 주택청약저축 여부 결과={}", result);
+                break;
 
             case CLOTHING_UNDER_100K:
-                return dataList.stream()
+                result = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.CLOTHING)
                         .allMatch(d -> d.getValue() <= 100000);
+                log.debug("CLOTHING_UNDER_100K 평가: 결과={}", result);
+                break;
 
             case ONE_CATEGORY_SPEND:
-                return dataList.stream()
+                long categoryCount = dataList.stream()
                         .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
                         .map(UserFinancialData::getCategory)
                         .distinct()
-                        .count() == 1;
+                        .count();
+                result = categoryCount == 1;
+                log.debug("ONE_CATEGORY_SPEND 평가: 오늘 카테고리수={}, 결과={}", categoryCount, result);
+                break;
 
             case SMALL_MONTHLY_SAVE:
                 int monthlySaving = dataList.stream()
                         .filter(d -> d.getDataType() == UserFinancialDataType.INCOME)
                         .mapToInt(UserFinancialData::getValue)
                         .sum();
-                return monthlySaving >= 10000;
+                result = monthlySaving >= 10000;
+                log.debug("SMALL_MONTHLY_SAVE 평가: 월저축액={}, 결과={}", monthlySaving, result);
+                break;
 
             case NO_USELESS_ELECTRONICS:
-                return dataList.stream()
+                result = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.ELECTRONICS)
                         .allMatch(d -> d.getValue() <= 100000);
+                log.debug("NO_USELESS_ELECTRONICS 평가: 결과={}", result);
+                break;
 
             case OVER_10_PERCENT:
                 double avgExpense = dataList.stream()
@@ -373,35 +452,49 @@ public class LoanService {
                         .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
                         .mapToInt(UserFinancialData::getValue)
                         .sum();
-                return todayExpense > avgExpense * 1.1;
+                result = todayExpense > avgExpense * 1.1;
+                log.debug("OVER_10_PERCENT 평가: 오늘지출={}, 평균지출={}, 결과={}", todayExpense, avgExpense, result);
+                break;
 
             case NO_EXPENSIVE_DESSERT:
-                return dataList.stream()
+                result = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.CAFE)
                         .noneMatch(d -> d.getValue() > 10000);
+                log.debug("NO_EXPENSIVE_DESSERT 평가: 결과={}", result);
+                break;
 
             case NO_OVER_50K_PER_DAY:
                 int dailyTotal = dataList.stream()
                         .filter(d -> d.getCollectedAt().toLocalDate().equals(today))
                         .mapToInt(UserFinancialData::getValue)
                         .sum();
-                return dailyTotal <= 50000;
+                result = dailyTotal <= 50000;
+                log.debug("NO_OVER_50K_PER_DAY 평가: 오늘합계={}, 결과={}", dailyTotal, result);
+                break;
 
             case SUBSCRIPTION_UNDER_50K:
                 int monthlySubscription = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.SUBSCRIPTION)
                         .mapToInt(UserFinancialData::getValue)
                         .sum();
-                return monthlySubscription <= 50000;
+                result = monthlySubscription <= 50000;
+                log.debug("SUBSCRIPTION_UNDER_50K 평가: 월구독료={}, 결과={}", monthlySubscription, result);
+                break;
 
             case MEAL_UNDER_20K:
-                return dataList.stream()
+                result = dataList.stream()
                         .filter(d -> d.getCategory() == UserFinancialCategory.FOOD)
                         .allMatch(d -> d.getValue() <= 20000);
+                log.debug("MEAL_UNDER_20K 평가: 결과={}", result);
+                break;
 
             default:
-                return false;
+                log.warn("정의되지 않은 목표 평가 요청: goal={}", goal);
+                result = false;
         }
+
+        log.debug("소비 목표 평가 종료: goal={}, 평가결과={}", goal, result);
+        return result;
     }
 
 }

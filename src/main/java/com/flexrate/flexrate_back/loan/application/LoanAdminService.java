@@ -60,9 +60,14 @@ public class LoanAdminService {
             int size,
             String sortBy
     ) {
+        log.info("대출 거래 내역 조회 요청: memberId={}, page={}, size={}, sortBy={}", memberId, page, size, sortBy);
+
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("대출 거래 내역 조회 실패 - 존재하지 않는 회원, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
 
         // 기본 정렬 occurredAt 내림차순
         Sort sort = sortBy != null
@@ -72,8 +77,9 @@ public class LoanAdminService {
                 : Sort.by("occurredAt").descending();
 
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
-
         var transactionHistory = loanTransactionQueryRepository.findByMemberId(memberId, pageable);
+
+        log.info("대출 거래 내역 조회 성공: memberId={}, 결과 건수={}", memberId, transactionHistory.getTotalElements());
 
         return TransactionHistoryResponse.builder()
                 .paginationInfo(new PaginationInfo(
@@ -98,17 +104,17 @@ public class LoanAdminService {
     public LoanApplicationStatusUpdateResponse patchLoanApplicationStatus(
             Long loanApplicationId,
             LoanApplicationStatusUpdateRequest request) {
-        log.info("대출 상태 변경 시작 - loanApplicationId={}, 요청 상태={}", loanApplicationId, request.status());
+        log.info("대출 상태 변경 시작: loanApplicationId={}, 요청 상태={}", loanApplicationId, request.status());
 
         // L002 해당 loanApplicationId 존재 여부 체크
         if (loanApplicationId == null) {
-            log.warn("대출 상태 변경 실패 - loanApplicationId가 null입니다.");
+            log.warn("대출 상태 변경 실패: loanApplicationId = null");
             throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
         }
 
         LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
                 .orElseThrow(() ->{
-                    log.warn("대출 상태 변경 실패 - 해당 loanApplicationId({})가 존재하지 않음", loanApplicationId);
+                    log.warn("대출 상태 변경 실패: 해당 loanApplicationId({})가 존재하지 않음", loanApplicationId);
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
@@ -116,7 +122,7 @@ public class LoanAdminService {
 
         // 상태 변경 전후 로그
         loanApplication.patchStatus(request.status());
-        log.info("대출 상태 변경 완료 - loanApplicationId={}, 변경된 상태={}", loanApplicationId, loanApplication.getStatus());
+        log.info("대출 상태 변경 완료: loanApplicationId={}, 변경된 상태={}", loanApplicationId, loanApplication.getStatus());
 
         // 대출 승인 시 초기 금리 저장 및 loanApplication 상에 승인 반영
         if(request.status() == LoanApplicationStatus.EXECUTED){
@@ -133,7 +139,7 @@ public class LoanAdminService {
             try {
                 notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_APPROVAL, loanApplicationId);
             } catch (Exception e) {
-                log.error("대출 승인 알림 발송 실패 - loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
+                log.error("대출 승인 알림 발송 실패: loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
             }
         }
         // 대출 거절 시 알림 발송
@@ -142,7 +148,7 @@ public class LoanAdminService {
             try {
                 notificationEventPublisher.sendLoanNotification(loanApplication, NotificationType.LOAN_REJECTED, loanApplicationId);
             } catch (Exception e) {
-                log.error("대출 거절 알림 발송 실패 - loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
+                log.error("대출 거절 알림 발송 실패: loanApplicationId={}, error={}", loanApplicationId, e.getMessage(), e);
             }
         }
 
@@ -161,9 +167,9 @@ public class LoanAdminService {
      * @author 허연규
      */
     public LoanAdminSearchResponse searchLoans(@Valid LoanAdminSearchRequest request) {
+        log.info("대출 현황 목록 조회 요청: 필터={}, page={}, size={}", request, request.page(), request.size());
 
         Sort sort = Sort.by("appliedAt").descending();
-
         Pageable pageable = PageRequest.of(
                 request.page() != null ? request.page() : 0,
                 request.size() != null ? request.size() : 20,
@@ -173,8 +179,11 @@ public class LoanAdminService {
         Page<LoanApplication> loans = loanAdminQueryRepository.searchLoans(request, pageable);
 
         if (loans.isEmpty()) {
+            log.warn("대출 현황 목록 조회 결과 없음: 필터={}", request);
             throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
         }
+
+        log.info("대출 현황 목록 조회 성공: 총 건수={}, page={}", loans.getTotalElements(), loans.getNumber());
 
         return LoanAdminSearchResponse.builder()
                 .paginationInfo(new PaginationInfo(
@@ -197,19 +206,27 @@ public class LoanAdminService {
      * @author 권민지
      */
     public LoanReviewDetailResponse getLoanReviewDetail(Long loanApplicationId) {
+        log.info("대출 심사 상세 조회 요청: loanApplicationId={}", loanApplicationId);
+
         // L002 해당 loanApplicationId 존재 여부 체크
         if (loanApplicationId == null) {
+            log.warn("대출 심사 상세 조회 실패: loanApplicationId가 null");
             throw new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
         }
 
         // L002 loanApplication 데이터 존재여부 체크
         LoanApplication loanApplication = loanApplicationRepository.findById(loanApplicationId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.LOAN_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("대출 심사 상세 조회 실패: 해당 loanApplicationId({}) 없음", loanApplicationId);
+                    return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
+                });
 
         // 가장 최신 Interest 조회
         Interest latestInterest = loanApplication.getInterests().stream()
                 .max(Comparator.comparing(Interest::getInterestDate))
                 .orElse(null);
+
+        log.info("대출 심사 상세 조회 성공: loanApplicationId={}", loanApplicationId);
 
         return loanApplicationMapper.toLoanReviewDetailResponse(loanApplication, latestInterest);
     }
