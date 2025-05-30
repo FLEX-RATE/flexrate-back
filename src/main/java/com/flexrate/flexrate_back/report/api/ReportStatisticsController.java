@@ -7,12 +7,14 @@ import com.flexrate.flexrate_back.report.dto.ConsumptionCategoryStatsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.YearMonth;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/statistics")
@@ -49,7 +51,9 @@ public class ReportStatisticsController {
     ) {
         Long memberId = Long.parseLong(principal.getName());
         Member member = memberService.findById(memberId);
+        ConsumptionCategoryStatsResponse response = statisticsService.getCategoryStats(member, month);
+        log.info("해당 월의 소비 통계를 카테고리 기준으로 집계하여 반환 성공 : memberId={} yearMonth={}", memberId, month );
 
-        return statisticsService.getCategoryStats(member, month);
+        return response;
     }
 }
