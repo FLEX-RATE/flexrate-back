@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ import java.security.Principal;
 import java.time.YearMonth;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/reports")
@@ -60,10 +62,11 @@ public class ConsumptionHabitReportController {
         if (month != null) {
             ConsumptionHabitReport report = reportService.getReport(member, month)
                     .orElseGet(() -> reportService.createReport(member, month, null));
-
+            log.info("특정 연월 소비 개선 리포트 조회 성공: reportMonth={}", month);
             return List.of(ConsumptionHabitReportResponse.from(report));
 
         } else {
+            log.info("소비 개선 리포트 전체 조회");
             return reportService.getAllReportsByMember(member).stream()
                     .map(ConsumptionHabitReportResponse::from)
                     .toList();
