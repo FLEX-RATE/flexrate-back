@@ -34,4 +34,14 @@ public class LoanReviewHistory {
 
     private Integer annualIncome;           // 연소득
     private Boolean isBankrupt;             // 개인회생 여부
+
+    // 대출 심사 결과 갱신
+    public void updateReview(EmploymentType employmentType, ResidenceType residenceType,
+                             LoanPurpose loanPurpose, Integer annualIncome, Boolean isBankrupt) {
+        this.employmentType = employmentType;
+        this.residenceType = residenceType;
+        this.loanPurpose = loanPurpose;
+        this.annualIncome = annualIncome;
+        this.isBankrupt = isBankrupt;
+    }
 }
