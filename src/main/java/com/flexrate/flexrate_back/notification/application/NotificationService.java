@@ -24,7 +24,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public NotificationResponse getNotifications(Long memberId, Long lastNotificationId) {
-        log.debug("getNotifications called: memberId={}, lastNotificationId={}", memberId, lastNotificationId);
+        log.debug("알림 조회 시작: memberId={}, lastNotificationId={}", memberId, lastNotificationId);
         List<Notification> notifications = notificationQueryRepository.findNotifications(
                 memberId,
                 lastNotificationId,
@@ -45,7 +45,7 @@ public class NotificationService {
                         n.getType().name()))
                 .toList();
         for (Notification n : notifications) {
-            System.out.println("알림 ID: " + n.getNotificationId() + ", isRead: " + n.isRead());
+            log.debug("알림 ID: {}, isRead: {}", n.getNotificationId(), n.isRead());
         }
 
         return new NotificationResponse(notificationDtos, hasNext);
@@ -54,7 +54,7 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
+                .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
         notification.markAsRead();
     }
 
