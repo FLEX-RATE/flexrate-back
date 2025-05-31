@@ -43,7 +43,7 @@ public class SignupService {
     @Transactional
     public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
         if (memberRepository.existsByEmail(dto.email())) {
-            log.warn("이미 등록된 이메일로 회원가입 시도: email={}", dto.email());
+            log.warn("이미 등록된 이메일로 회원가입 시도:\nemail={}", dto.email());
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
@@ -67,10 +67,10 @@ public class SignupService {
         log.debug("회원 DB 저장 성공:\nmemberId={}, email={}", saved.getMemberId(), saved.getEmail());
 
         authService.registerPin(dto.pin(), saved.getMemberId());
-        log.debug("회원 PIN 등록 완료: memberId={}", saved.getMemberId());
+        log.debug("회원 PIN 등록 완료:\nmemberId={}", saved.getMemberId());
 
         dummyFinancialDataGenerator.generateDummyFinancialData(saved);
-        log.debug("회원 금융 데이터 생성 완료: memberId={}", saved.getMemberId());
+        log.debug("회원 금융 데이터 생성 완료:\nmemberId={}", saved.getMemberId());
 
         LoanApplication application = LoanApplication.builder()
                 .member(member)
@@ -81,7 +81,7 @@ public class SignupService {
                 .build();
 
         loanApplicationRepository.save(application);
-        log.debug("회원 대출 신청 객체 생성 완료: memberId={}, applicationId={}", saved.getMemberId(), application.getApplicationId());
+        log.debug("회원 대출 신청 객체 생성 완료:\nmemberId={}, applicationId={}", saved.getMemberId(), application.getApplicationId());
 
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
@@ -112,7 +112,7 @@ public class SignupService {
         int randomIndex = ThreadLocalRandom.current().nextInt(types.length);
         ConsumptionType randomType = types[randomIndex];
 
-        log.debug("소비타입 분석 결과: consumptionType={}", randomType);
+        log.debug("소비타입 분석 결과:\nconsumptionType={}", randomType);
 
         return AnalyzeConsumptionTypeResponse.builder()
                 .consumptionType(randomType)

@@ -31,14 +31,14 @@ public class UserFinancialDataService {
      */
     @Transactional
     public int evaluateCreditScore(Member member) {
-        log.debug("신용점수 평가 시작 | memberId={}", member.getMemberId());
+        log.debug("신용점수 평가 시작:\nmemberId={}", member.getMemberId());
 
         List<UserFinancialData> financialDataList = member.getFinancialData();
 
         // 신용 점수 평가는 대출 상품 선정 이후여야함
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
-                    log.warn("대출 신청 정보 없음 | memberId={}", member.getMemberId());
+                    log.warn("대출 신청 정보 없음:\nmemberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
@@ -68,19 +68,19 @@ public class UserFinancialDataService {
         loanApplication.patchCreditScore(finalScore);
         member.updateCreditScoreEvaluated(true);
 
-        log.info("신용점수 평가 완료 | memberId={} | 최종점수={}", member.getMemberId(), finalScore);
+        log.info("신용점수 평가 완료:\nmemberId={}, 최종점수={}", member.getMemberId(), finalScore);
 
         return finalScore;
     }
 
     public int getCreditScorePercentile(int score) {
-        log.debug("신용점수 백분위 조회 | score={}", score);
+        log.debug("신용점수 백분위 조회:\nscore={}", score);
         return loanApplicationRepository.findCreditScorePercentile(score);
     }
 
     @Transactional
     public List<YearMonth> getReportAvailableMonths(Member member) {
-        log.debug("리포트 조회 가능 월 리스트 요청 | memberId={}", member.getMemberId());
+        log.debug("리포트 조회 가능 월 리스트 요청:\nmemberId={}", member.getMemberId());
 
         return member.getFinancialData().stream()
                 .map(UserFinancialData::getCollectedAt)

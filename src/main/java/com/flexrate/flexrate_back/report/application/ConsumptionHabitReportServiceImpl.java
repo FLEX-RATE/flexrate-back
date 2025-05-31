@@ -46,12 +46,12 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
     @Override
     public ConsumptionHabitReport createReport(Member member, YearMonth reportMonth, String summary) {
         if (reportRepository.findByMemberAndReportMonth(member, reportMonth).isPresent()) {
-            log.warn("이미 존재하는 소비 개선 리포트 생성 시도 : reportMonth={}", reportMonth);
+            log.warn("이미 존재하는 소비 개선 리포트 생성 시도 :\nreportMonth={}", reportMonth);
             throw new FlexrateException(ErrorCode.REPORT_ALREADY_EXISTS);
         }
 
         if (summary == null || summary.isBlank()) {
-            log.debug("소비 개선 리포트 생성 : reportMonth={}", reportMonth);
+            log.debug("소비 개선 리포트 생성 :\nreportMonth={}", reportMonth);
             summary = apiClient.createConsumptionSummary(member.getMemberId(), reportMonth);
         }
 
@@ -60,7 +60,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
                 .reportMonth(reportMonth)
                 .summary(summary)
                 .build();
-        log.debug("소비 개선 리포트 생성 성공 : reportMonth={}", reportMonth);
+        log.debug("소비 개선 리포트 생성 성공 :\nreportMonth={}", reportMonth);
 
         return reportRepository.save(report);
     }
@@ -75,7 +75,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      */
     @Override
     public Optional<ConsumptionHabitReport> getReport(Member member, YearMonth reportMonth) {
-        log.debug("특정 소비 개선 리포트 조회 : reportMonth={}", reportMonth);
+        log.debug("특정 소비 개선 리포트 조회 :\nreportMonth={}", reportMonth);
         return reportRepository.findByMemberAndReportMonth(member, reportMonth);
     }
 
