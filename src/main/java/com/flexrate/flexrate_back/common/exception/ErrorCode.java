@@ -51,6 +51,7 @@ public enum ErrorCode {
     MESSAGING_EXCEPTION("M001", "이메일 오류가 발생하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ALREADY_USING("M002", "이메일 오류가 발생하였습니다.", HttpStatus.BAD_REQUEST),
     WRONG_AUTH_CODE("M003", "제공된 인증코드가 불일치합니다.", HttpStatus.BAD_REQUEST),
+    DUPLICATE_EMAIL("M004", "이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
 
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
