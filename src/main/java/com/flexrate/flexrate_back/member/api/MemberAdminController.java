@@ -1,12 +1,11 @@
 package com.flexrate.flexrate_back.member.api;
 
-import com.flexrate.flexrate_back.common.exception.ErrorCode;
-import com.flexrate.flexrate_back.common.exception.FlexrateException;
-import com.flexrate.flexrate_back.member.application.AdminAuthChecker;
+import com.flexrate.flexrate_back.common.util.AdminActionTemplate;
 import com.flexrate.flexrate_back.member.application.MemberAdminService;
 import com.flexrate.flexrate_back.member.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,12 +16,13 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 import java.security.Principal;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/members")
 public class MemberAdminController {
     private final MemberAdminService memberAdminService;
-    private final AdminAuthChecker adminAuthChecker;
+    private final AdminActionTemplate adminActionTemplate;
 
     /**
      * 관리자 권한으로 회원 목록 조회
@@ -40,12 +40,14 @@ public class MemberAdminController {
             @Valid MemberSearchRequest request,
             Principal principal
     ) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
-        return ResponseEntity.ok(memberAdminService.searchMembers(request));
+        return ResponseEntity.ok(
+                adminActionTemplate.
+                    execute(
+                            "회원 목록 조회",
+                            principal,
+                            () -> memberAdminService.searchMembers(request)
+                    )
+        );
     }
 
     /**
@@ -72,12 +74,13 @@ public class MemberAdminController {
             @Valid @RequestBody PatchMemberRequest request,
             Principal principal
     ) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
-        return ResponseEntity.ok(memberAdminService.patchMember(memberId, request));
+        return ResponseEntity.ok(
+                adminActionTemplate.execute(
+                        "회원 정보 수정 memberId=" + memberId,
+                        principal,
+                        () -> memberAdminService.patchMember(memberId, request)
+                )
+        );
     }
 
     /**
@@ -87,7 +90,6 @@ public class MemberAdminController {
      * @since 2025.04.29
      * @author 허연규
      */
-
     @Operation(summary = "관리자 권한으로 회원 정보 상세 조회", description = "관리자가 회원 id를 통해 특정 회원의 정보를 상세 조회합니다.",
             parameters = {
                     @Parameter(name = "memberId", description = "조회할 memberId", required = true)},
@@ -103,11 +105,12 @@ public class MemberAdminController {
             @PathVariable Long memberId,
             Principal principal
     ) {
-        // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
-            throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
-        }
-
-        return ResponseEntity.ok(memberAdminService.searchMemberDetail(memberId));
+        return ResponseEntity.ok(
+                adminActionTemplate.execute(
+                        "회원 상세조회 memberId=" + memberId,
+                        principal,
+                        () -> memberAdminService.searchMemberDetail(memberId)
+                )
+        );
     }
 }
