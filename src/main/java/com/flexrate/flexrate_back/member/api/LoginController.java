@@ -76,7 +76,7 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestParam String refreshToken) {
+    public ResponseEntity<String> logout(@CookieValue(value = "refresh_token") String refreshToken) {
         loginService.logout(refreshToken);
         return ResponseEntity.ok("로그아웃");
     }
