@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
         log.error("{}: \npath={}\ndetails={}",
                 message,
                 path,
-                ex.getStackTrace());
+                ExceptionUtils.getStackTrace(ex));
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(code, message));

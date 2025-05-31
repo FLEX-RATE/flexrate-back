@@ -47,8 +47,6 @@ public class ControllerLoggingAspect {
             MDC.put("details", ex.getMessage());
             log.warn("{} API 예외 발생", methodName);
             throw ex;
-        } finally {
-            MDC.clear();
         }
     }
 
