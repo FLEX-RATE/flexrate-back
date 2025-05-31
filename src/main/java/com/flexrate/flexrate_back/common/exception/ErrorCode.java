@@ -61,6 +61,7 @@ public enum ErrorCode {
     REFRESH_TOKEN_NOT_FOUND("A008", "리프레쉬 토큰이 누락되었습니다.", HttpStatus.BAD_REQUEST),
     PIN_NOT_REGISTERED("A009", "PIN이 등록되어 있지 않습니다.", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED("A010", "로그인이 필요합니다.", HttpStatus.UNAUTHORIZED),
+    PIN_ALREADY_REGISTERED("A011", "이미 등록된 PIN입니다.", HttpStatus.BAD_REQUEST),
 
     // 상품
     PRODUCT_LOAD_ERROR("P001", "상품을 불러오는 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST),

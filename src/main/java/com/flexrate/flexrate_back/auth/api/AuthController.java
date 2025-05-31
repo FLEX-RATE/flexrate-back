@@ -7,6 +7,7 @@ import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +46,7 @@ public class AuthController {
             description = "로그인된 사용자가 입력한 PIN이 등록된 PIN과 일치하는지 확인합니다."
     )
     @PostMapping("/pin/verify")
-    public ResponseEntity<Boolean> verifyPin(@RequestBody PinRequest pinRequest, Principal principal) {
+    public ResponseEntity<Boolean> verifyPin(@Valid @RequestBody PinRequest pinRequest, Principal principal) {
         if (principal == null || principal.getName() == null) {
             throw new FlexrateException(ErrorCode.UNAUTHORIZED);
         }

@@ -45,7 +45,7 @@ public class AuthService {
 
         if (pinCredentialRepository.findByMember_MemberId(member.getMemberId()).isPresent()) {
             log.warn("PIN 이미 등록된 사용자: memberId={}", member.getMemberId());
-            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+            throw new FlexrateException(ErrorCode.PIN_ALREADY_REGISTERED);
         }
 
         String hashedPin = passwordEncoder.encode(pin);
