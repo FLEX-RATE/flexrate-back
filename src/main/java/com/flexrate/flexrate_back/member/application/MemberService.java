@@ -7,6 +7,7 @@ import com.flexrate.flexrate_back.loan.application.repository.LoanTransactionRep
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.domain.LoanTransaction;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
+import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.enums.TransactionType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository;
@@ -187,13 +188,32 @@ public class MemberService {
             throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
         }
 
+        if (app.getStatus().equals(LoanApplicationStatus.NONE)) {
+            log.warn("보유한 대출 신청 내역이 초기 상태입니다. memberId={}, applicationId={}",
+                    memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_STATUS_NONE);
+        }
+
         float interestRate = Optional.ofNullable(memberQueryRepository.findLatestInterestRate(memberId))
                 .orElse(0.0f); // 기본값
 
         // 날짜 관련 계산
         LocalDate now = LocalDate.now();
-        LocalDate startDate = app.getStartDate().toLocalDate();
-        LocalDate endDate = app.getEndDate().toLocalDate();
+        LocalDate startDate;
+        LocalDate endDate;
+
+        if (app.getStartDate() != null) {
+            startDate = app.getStartDate().toLocalDate();
+        } else {
+            log.warn("대출 시작일 정보 없음, memberId={}, applicationId={}", memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_START_DATE_MISSING);
+        }
+        if (app.getEndDate() != null) {
+            endDate = app.getEndDate().toLocalDate();
+        } else {
+            log.warn("대출 종료일 정보 없음, memberId={}, applicationId={}", memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_END_DATE_MISSING);
+        }
 
         int totalMonths = Period.between(startDate, endDate).getYears() * 12 +
                 Period.between(startDate, endDate).getMonths();
