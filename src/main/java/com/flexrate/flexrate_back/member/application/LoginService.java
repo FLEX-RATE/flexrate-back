@@ -33,7 +33,7 @@ public class LoginService {
     private final StringRedisUtil stringRedisUtil;
 
     public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request) {
-        log.debug("로그인 시도: email={}", request.email());
+        log.info("로그인 시도: email={}", request.email());
 
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
@@ -59,7 +59,7 @@ public class LoginService {
     }
 
     public LoginResponseDTO loginWithPasskey(PasskeyLoginRequestDTO request) {
-        log.debug("Passkey 로그인 시도 email={}", request.email());
+        log.info("Passkey 로그인 시도 email={}", request.email());
 
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
@@ -80,12 +80,12 @@ public class LoginService {
         // JWT 발급
         String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));  // 2시간 만료
         String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
-        log.debug("JWT 토큰 발급 완료 userId={}", member.getMemberId());
+        log.info("JWT 토큰 발급 완료 userId={}", member.getMemberId());
 
         // Redis 저장
         String redisKey = "refreshToken:" + refreshToken;
         stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofDays(7));
-        log.debug("RefreshToken Redis 저장 완료 userId={}", member.getMemberId());
+        log.info("RefreshToken Redis 저장 완료 userId={}", member.getMemberId());
 
         // MFA 로그 저장
         MfaLog mfaLog = MfaLog.builder()
@@ -95,7 +95,7 @@ public class LoginService {
                 .deviceInfo(request.deviceInfo())
                 .build();
         mfaLogRepository.save(mfaLog);
-        log.debug("MFA 인증 로그 저장 userId={}", member.getMemberId());
+        log.info("MFA 인증 로그 저장 userId={}", member.getMemberId());
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
@@ -108,7 +108,7 @@ public class LoginService {
     }
 
     public LoginResponseDTO loginWithMFA(MfaLoginRequestDTO request) {
-        log.debug("MFA 로그인 시도 memberId={}", request.memberId());
+        log.info("MFA 로그인 시도 memberId={}", request.memberId());
 
         // 사용자 존재 여부 확인
         Member member = memberRepository.findById(request.memberId())
@@ -133,11 +133,11 @@ public class LoginService {
         // 인증 성공 → 토큰 발급
         String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
         String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
-        log.debug("JWT 토큰 발급 완료 userId={}", member.getMemberId());
+        log.info("JWT 토큰 발급 완료 userId={}", member.getMemberId());
 
         String redisKey = "refreshToken:" + refreshToken;
         stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofDays(7));
-        log.debug("RefreshToken Redis 저장 완료 userId={}", member.getMemberId());
+        log.info("RefreshToken Redis 저장 완료 userId={}", member.getMemberId());
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
@@ -160,6 +160,6 @@ public class LoginService {
     public void logout(String refreshToken) {
         String redisKey = "refreshToken:" + refreshToken;
         stringRedisUtil.delete(redisKey);
-        log.debug("RefreshToken 삭제 완료 redisKey={}", redisKey.substring(0, Math.min(20, redisKey.length())) + "...");
+        log.info("RefreshToken 삭제 완료 redisKey={}", redisKey.substring(0, Math.min(20, redisKey.length())) + "...");
     }
 }

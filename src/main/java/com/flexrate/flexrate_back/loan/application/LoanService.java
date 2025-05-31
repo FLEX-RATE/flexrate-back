@@ -323,7 +323,7 @@ public class LoanService {
 
             interestRepository.save(interest);
 
-            log.debug("금리 평가 결과: memberId={}, 이전금리={}, 변경금리={}, 목표달성={}", member.getMemberId(), previousRate, finalRate, matched);
+            log.info("금리 평가 결과: memberId={}, 이전금리={}, 변경금리={}, 목표달성={}", member.getMemberId(), previousRate, finalRate, matched);
 
             // 금리 변동 알림
             if (interest.getInterestChanged()) {
@@ -352,7 +352,7 @@ public class LoanService {
                 .mapToInt(UserFinancialData::getValue)
                 .sum();
 
-        log.debug("소비 목표 평가 시작: goal={}, 수입={}, 지출={}, 데이터 건수={}", goal, income, expense, dataList.size());
+        log.info("소비 목표 평가 시작: goal={}, 수입={}, 지출={}, 데이터 건수={}", goal, income, expense, dataList.size());
 
         boolean result;
 
@@ -493,7 +493,7 @@ public class LoanService {
                 result = false;
         }
 
-        log.debug("소비 목표 평가 종료: goal={}, 평가결과={}", goal, result);
+        log.info("소비 목표 평가 종료: goal={}, 평가결과={}", goal, result);
         return result;
     }
 

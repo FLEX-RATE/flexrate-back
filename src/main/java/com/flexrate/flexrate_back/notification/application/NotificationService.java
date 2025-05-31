@@ -24,7 +24,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public NotificationResponse getNotifications(Long memberId, Long lastNotificationId) {
-        log.debug("알림 조회 시작: memberId={}, lastNotificationId={}", memberId, lastNotificationId);
+        log.info("알림 조회 시작: memberId={}, lastNotificationId={}", memberId, lastNotificationId);
         List<Notification> notifications = notificationQueryRepository.findNotifications(
                 memberId,
                 lastNotificationId,
@@ -45,7 +45,7 @@ public class NotificationService {
                         n.getType().name()))
                 .toList();
         for (Notification n : notifications) {
-            log.debug("알림 ID: {}, isRead: {}", n.getNotificationId(), n.isRead());
+            log.info("알림 ID: {}, isRead: {}", n.getNotificationId(), n.isRead());
         }
 
         return new NotificationResponse(notificationDtos, hasNext);

@@ -59,7 +59,7 @@ public class WebAuthnService {
     // 패스키 등록
     @Transactional
     public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
-        log.debug("패스키 중복 체크: memberId={}", member.getMemberId());
+        log.info("패스키 중복 체크: memberId={}", member.getMemberId());
 
         // 중복된 공개키와 Credential ID 체크
         if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey()) ||
@@ -81,7 +81,7 @@ public class WebAuthnService {
 
         fidoCredentialRepository.save(fidoCredential);
 
-        log.debug("패스키 등록 완료: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
+        log.info("패스키 등록 완료: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
     }
 
     // 패스키 인증

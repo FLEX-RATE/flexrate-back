@@ -28,7 +28,7 @@ public class AuthService {
      */
     public boolean checkPinRegistered(Member member) {
         boolean present = pinCredentialRepository.findByMember_MemberId(member.getMemberId()).isPresent();
-        log.debug("PIN 등록 여부: memberId={}, registered={}", member.getMemberId(), present);
+        log.info("PIN 등록 여부: memberId={}, registered={}", member.getMemberId(), present);
 
         return present;
     }
@@ -70,7 +70,7 @@ public class AuthService {
                 });
 
         boolean isValid = passwordEncoder.matches(pinRequest.pin(), pinCredential.getPinHash());
-        log.debug("PIN 인증 결과: memberId={}, isValid={}", member.getMemberId(), isValid);
+        log.info("PIN 인증 결과: memberId={}, isValid={}", member.getMemberId(), isValid);
 
         return isValid;
     }

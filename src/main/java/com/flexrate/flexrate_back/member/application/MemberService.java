@@ -48,13 +48,13 @@ public class MemberService {
      * @author 권민지
      */
     public MypageResponse getMyPage(Long memberId) {
-        log.debug("마이페이지 조회 시작, memberId={}", memberId);
+        log.info("마이페이지 조회 시작, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> {
                     log.warn("회원 정보 없음, memberId={}", memberId);
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
-        log.debug("마이페이지 조회 완료, memberId={}, name={}", memberId, member.getName());
+        log.info("마이페이지 조회 완료, memberId={}, name={}", memberId, member.getName());
 
         return MypageResponse.builder()
                 .name(member.getName())
@@ -82,7 +82,7 @@ public class MemberService {
 
         if (request.email() != null) {
             member.updateEmail(request.email());
-            log.debug("이메일 변경, memberId={}, email={}", memberId, request.email());
+            log.info("이메일 변경, memberId={}, email={}", memberId, request.email());
         }
 
         if (request.consumeGoal() != null) {
@@ -92,10 +92,10 @@ public class MemberService {
                 throw new FlexrateException(ErrorCode.LOAN_CONSUMPTION_TYPE_MISMATCH);
             }
             member.updateConsumeGoal(request.consumeGoal());
-            log.debug("소비 목표 변경, memberId={}, consumeGoal={}", memberId, request.consumeGoal());
+            log.info("소비 목표 변경, memberId={}, consumeGoal={}", memberId, request.consumeGoal());
         }
 
-        log.debug("마이페이지 정보 수정 완료, memberId={}", memberId);
+        log.info("마이페이지 정보 수정 완료, memberId={}", memberId);
 
         return MypageResponse.builder()
                 .name(member.getName())
@@ -113,11 +113,11 @@ public class MemberService {
      * @author 권민지
      */
     public ConsumeGoalResponse getConsumeGoal(ConsumptionType consumptionType) {
-        log.debug("소비 유형별 소비 목표 조회 요청, consumptionType={}", consumptionType);
+        log.info("소비 유형별 소비 목표 조회 요청, consumptionType={}", consumptionType);
         ConsumeGoalResponse response = ConsumeGoalResponse.builder()
                 .consumeGoals(ConsumeGoal.getConsumeGoalsByType(consumptionType))
                 .build();
-        log.debug("소비 유형별 소비 목표 조회 성공, consumptionType={}", consumptionType);
+        log.info("소비 유형별 소비 목표 조회 성공, consumptionType={}", consumptionType);
 
         return response;
     }
@@ -130,7 +130,7 @@ public class MemberService {
      * @author 권민지
      */
     public String getLoanStatus(Long memberId) {
-        log.debug("대출 상태 조회 요청, memberId={}", memberId);
+        log.info("대출 상태 조회 요청, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> {
                     log.warn("회원 정보 없음, memberId={}", memberId);
@@ -138,12 +138,12 @@ public class MemberService {
                 });
 
         if (member.getLoanApplication() == null) {
-            log.debug("대출 신청 내역 없음, memberId={}", memberId);
+            log.info("대출 신청 내역 없음, memberId={}", memberId);
             return "NONE";
         }
 
         String status = member.getLoanApplication().getStatus().name();
-        log.debug("대출 상태 조회 성공, memberId={}, status={}", memberId, status);
+        log.info("대출 상태 조회 성공, memberId={}, status={}", memberId, status);
 
         return status;
     }
@@ -156,14 +156,14 @@ public class MemberService {
      * @author 유승한
      */
     public CreditScoreStatusResponse getCreditScoreStatus(Long memberId) {
-        log.debug("신용점수 평가 여부 조회 요청, memberId={}", memberId);
+        log.info("신용점수 평가 여부 조회 요청, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> {
                     log.warn("회원 정보 없음, memberId={}", memberId);
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
 
-        log.debug("신용점수 평가 여부 조회 성공, memberId={}, creditScoreStatus={}", memberId, member.getCreditScoreEvaluated());
+        log.info("신용점수 평가 여부 조회 성공, memberId={}, creditScoreStatus={}", memberId, member.getCreditScoreEvaluated());
 
         return CreditScoreStatusResponse.builder()
                 .creditScoreStatus(member.getCreditScoreEvaluated())
@@ -180,7 +180,7 @@ public class MemberService {
      * @author 유승한
      */
     public MainPageResponse getMainPage(Long memberId) {
-        log.debug("MainPageResponse 생성 시작, memberId={}", memberId);
+        log.info("MainPageResponse 생성 시작, memberId={}", memberId);
 
         LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
         if (app == null) {
@@ -286,7 +286,7 @@ public class MemberService {
                 app.getEndDate().toLocalDate()
         );
 
-        log.debug("MainPageResponse 생성 완료, memberId={}, loanAppId={}", memberId, app.getApplicationId());
+        log.info("MainPageResponse 생성 완료, memberId={}, loanAppId={}", memberId, app.getApplicationId());
 
         return MainPageResponse.builder()
                 .monthlyPayment(monthlyPayment)
@@ -310,7 +310,7 @@ public class MemberService {
                     log.warn("회원 정보 없음, memberId={}", memberId);
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
-        log.debug("회원 정보 조회 성공, memberId={}", memberId);
+        log.info("회원 정보 조회 성공, memberId={}", memberId);
 
         return member;
     }

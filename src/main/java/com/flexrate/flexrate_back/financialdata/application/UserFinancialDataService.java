@@ -31,7 +31,7 @@ public class UserFinancialDataService {
      */
     @Transactional
     public int evaluateCreditScore(Member member) {
-        log.debug("신용점수 평가 시작:\nmemberId={}", member.getMemberId());
+        log.info("신용점수 평가 시작:\nmemberId={}", member.getMemberId());
 
         List<UserFinancialData> financialDataList = member.getFinancialData();
 
@@ -74,13 +74,13 @@ public class UserFinancialDataService {
     }
 
     public int getCreditScorePercentile(int score) {
-        log.debug("신용점수 백분위 조회:\nscore={}", score);
+        log.info("신용점수 백분위 조회:\nscore={}", score);
         return loanApplicationRepository.findCreditScorePercentile(score);
     }
 
     @Transactional
     public List<YearMonth> getReportAvailableMonths(Member member) {
-        log.debug("리포트 조회 가능 월 리스트 요청:\nmemberId={}", member.getMemberId());
+        log.info("리포트 조회 가능 월 리스트 요청:\nmemberId={}", member.getMemberId());
 
         return member.getFinancialData().stream()
                 .map(UserFinancialData::getCollectedAt)

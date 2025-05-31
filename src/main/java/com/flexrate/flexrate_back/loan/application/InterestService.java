@@ -26,7 +26,7 @@ public class InterestService {
      * 현재 대출 금리 변동 정보 조회
      */
     public InterestResponse getCurrentInterestChange(Long applicationId) {
-        log.debug("금리 변동 조회 요청: applicationId={}", applicationId);
+        log.info("금리 변동 조회 요청: applicationId={}", applicationId);
         List<Interest> interests = interestRepository
                 .findTop2ByLoanApplication_ApplicationIdOrderByInterestDateDesc(applicationId);
 
@@ -101,7 +101,7 @@ public class InterestService {
                 change = ((avg - previous) / previous) * 100;
             }
 
-            log.debug("기간={} 평균금리={}, 변동률={}", entry.getKey(), avg, change);
+            log.info("기간={} 평균금리={}, 변동률={}", entry.getKey(), avg, change);
 
             result.add(new InterestStatsDto(entry.getKey(), avg, change));
             previous = avg;

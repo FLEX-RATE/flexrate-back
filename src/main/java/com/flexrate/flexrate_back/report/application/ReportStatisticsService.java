@@ -38,20 +38,20 @@ public class ReportStatisticsService {
     public ConsumptionCategoryStatsResponse getCategoryStats(Member member, YearMonth month) {
         ConsumptionHabitReport report = reportRepository.findByMemberAndReportMonth(member, month)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.REPORT_DOESNT_EXISTS));
-        log.debug("리포트 객체 조회 :\nmemberId={}, yearMonth={}", member.getMemberId(), month);
+        log.info("리포트 객체 조회 :\nmemberId={}, yearMonth={}", member.getMemberId(), month);
 
         List<ConsumptionCategoryRatioResponse> stats;
 
         // consumptions가 비어 있거나 null이면 계산 및 저장
         if (report.getConsumptions() == null || report.getConsumptions().isBlank()) {
-            log.debug("기존에 계산한 소비 비율 존재하지 않음: reportId={}", report.getReportId());
+            log.info("기존에 계산한 소비 비율 존재하지 않음: reportId={}", report.getReportId());
 
             stats = financialDataRepository.findCategoryStatsWithRatio(member, month);
             try {
                 String consumptionsJson = objectMapper.writeValueAsString(stats);
                 report.setConsumptions(consumptionsJson);
                 reportRepository.save(report);
-                log.debug("report 상에 consumption으로 계산한 소비 비율 json type으로 저장 : reportId={}", report.getReportId());
+                log.info("report 상에 consumption으로 계산한 소비 비율 json type으로 저장 : reportId={}", report.getReportId());
             } catch (JsonProcessingException e) {
                 log.warn("소비 데이터 직렬화 실패 : reportId={}", report.getReportId());
                 throw new FlexrateException(ErrorCode.JSON_SERIALIZATION_ERROR, e);
@@ -62,7 +62,7 @@ public class ReportStatisticsService {
                         report.getConsumptions(),
                         new TypeReference<>() {}
                 );
-                log.debug("소비 데이터 역직렬화 성공 : reportId={}", report.getReportId());
+                log.info("소비 데이터 역직렬화 성공 : reportId={}", report.getReportId());
             } catch (JsonProcessingException e) {
                 log.warn("소비 데이터 역직렬화 실패 : reportId={}", report.getReportId());
                 throw new FlexrateException(ErrorCode.JSON_DESERIALIZATION_ERROR, e);

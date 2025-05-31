@@ -51,7 +51,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
         }
 
         if (summary == null || summary.isBlank()) {
-            log.debug("소비 개선 리포트 생성 :\nreportMonth={}", reportMonth);
+            log.info("소비 개선 리포트 생성 :\nreportMonth={}", reportMonth);
             summary = apiClient.createConsumptionSummary(member.getMemberId(), reportMonth);
         }
 
@@ -60,7 +60,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
                 .reportMonth(reportMonth)
                 .summary(summary)
                 .build();
-        log.debug("소비 개선 리포트 생성 성공 :\nreportMonth={}", reportMonth);
+        log.info("소비 개선 리포트 생성 성공 :\nreportMonth={}", reportMonth);
 
         return reportRepository.save(report);
     }
@@ -75,7 +75,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      */
     @Override
     public Optional<ConsumptionHabitReport> getReport(Member member, YearMonth reportMonth) {
-        log.debug("특정 소비 개선 리포트 조회 :\nreportMonth={}", reportMonth);
+        log.info("특정 소비 개선 리포트 조회 :\nreportMonth={}", reportMonth);
         return reportRepository.findByMemberAndReportMonth(member, reportMonth);
     }
 
@@ -88,7 +88,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      */
     @Override
     public List<ConsumptionHabitReport> getAllReportsByMember(Member member) {
-        log.debug("소비 개선 리포트 목록 조회");
+        log.info("소비 개선 리포트 목록 조회");
         return reportRepository.findAllByMember(member);
     }
 

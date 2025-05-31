@@ -40,7 +40,7 @@ public class MemberAdminService {
      * @author 권민지
      */
     public MemberSearchResponse searchMembers(@Valid MemberSearchRequest request) {
-        log.debug("회원 목록 조회 요청: {}", request);
+        log.info("회원 목록 조회 요청: {}", request);
 
         // 기본 정렬 createdAt 내림차순
         Sort sort = request.sortBy() != null
@@ -54,7 +54,7 @@ public class MemberAdminService {
         );
 
         var members = memberQueryRepository.searchMembers(request, pageable);
-        log.debug("회원 목록 DB 조회 완료 count={}", members.getTotalElements());
+        log.info("회원 목록 DB 조회 완료 count={}", members.getTotalElements());
 
         return MemberSearchResponse.builder()
                 .paginationInfo(new PaginationInfo(
@@ -80,7 +80,7 @@ public class MemberAdminService {
      */
     @Transactional
     public PatchMemberResponse patchMember(Long memberId, @Valid PatchMemberRequest request) {
-        log.debug("회원 정보 수정 요청: memberId={}, request={}", memberId, request);
+        log.info("회원 정보 수정 요청: memberId={}, request={}", memberId, request);
 
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
@@ -97,19 +97,19 @@ public class MemberAdminService {
         }
 
         if (request.name() != null) {
-            log.debug("이름 변경 memberId={} name={}", memberId, request.name());
+            log.info("이름 변경 memberId={} name={}", memberId, request.name());
             member.updateName(request.name());
         }
         if (request.sex() != null) {
-            log.debug("성별 변경 memberId={} sex={}", memberId, request.sex());
+            log.info("성별 변경 memberId={} sex={}", memberId, request.sex());
             member.updateSex(request.sex());
         }
         if (request.birthDate() != null) {
-            log.debug("생년월일 변경 memberId={} birthDate={}", memberId, request.birthDate());
+            log.info("생년월일 변경 memberId={} birthDate={}", memberId, request.birthDate());
             member.updateBirthDate(request.birthDate());
         }
         if (request.memberStatus() != null) {
-            log.debug("상태 변경 memberId={} memberStatus={}", memberId, request.memberStatus());
+            log.info("상태 변경 memberId={} memberStatus={}", memberId, request.memberStatus());
             member.updateMemberStatus(request.memberStatus());
         }
 
@@ -122,7 +122,7 @@ public class MemberAdminService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        log.debug("회원 정보 수정 완료 memberId={}", memberId);
+        log.info("회원 정보 수정 완료 memberId={}", memberId);
         return response;
     }
 
@@ -135,7 +135,7 @@ public class MemberAdminService {
      * @author 허연규
      */
     public MemberDetailResponse searchMemberDetail(Long memberId) {
-        log.debug("회원 상세조회 요청 memberId={}", memberId);
+        log.info("회원 상세조회 요청 memberId={}", memberId);
 
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
@@ -144,13 +144,13 @@ public class MemberAdminService {
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
 
-        log.debug("회원 정보 조회 성공 memberId={}", memberId);
+        log.info("회원 정보 조회 성공 memberId={}", memberId);
 
         LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
         Long tsCount = memberQueryRepository.countLoanTransactions(memberId);
         float interestRate = memberQueryRepository.findLatestInterestRate(memberId);
 
-        log.debug("대출/거래/이율 조회 성공 memberId={} loanAppId={}", memberId, app != null ? app.getApplicationId() : null);
+        log.info("대출/거래/이율 조회 성공 memberId={} loanAppId={}", memberId, app != null ? app.getApplicationId() : null);
 
         boolean hasLoan = false;
         LocalDate startDate = null;
@@ -233,9 +233,9 @@ public class MemberAdminService {
                     .loanAmount(loanAmount)
                     .paymentDue(repaymentDay)
                     .monthlyPayment(monthlyPayment);
-            log.debug("대출 정보 포함 memberId={} loanAmount={}", memberId, loanAmount);
+            log.info("대출 정보 포함 memberId={} loanAmount={}", memberId, loanAmount);
         } else {
-            log.debug("대출 정보 없음 memberId={}", memberId);
+            log.info("대출 정보 없음 memberId={}", memberId);
         }
 
         return responseBuilder.build();

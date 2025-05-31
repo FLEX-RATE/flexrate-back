@@ -83,7 +83,7 @@ public class NotificationEmitterService {
         ScheduledFuture<?> heartbeat = heartbeats.remove(memberId);
         if (heartbeat != null) {
             heartbeat.cancel(true);
-            log.debug("heartbeat 취소 완료: memberId={}", memberId);
+            log.info("heartbeat 취소 완료: memberId={}", memberId);
         }
     }
 
@@ -91,13 +91,13 @@ public class NotificationEmitterService {
         ScheduledFuture<?> heartbeatFuture = scheduler.scheduleAtFixedRate(() -> {
             // Emitter 상태 확인
             if (!emitters.containsKey(memberId)) {
-                log.debug("Emitter 없음, heartbeat 중단: memberId={}", memberId);
+                log.info("Emitter 없음, heartbeat 중단: memberId={}", memberId);
                 return;
             }
 
             try {
                 emitter.send(SseEmitter.event().comment("heartbeat"));
-                log.debug("heartbeat 전송 성공:\nmemberId={}", memberId);
+                log.info("heartbeat 전송 성공:\nmemberId={}", memberId);
             } catch (IOException e) {
                 log.warn("heartbeat 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
@@ -113,7 +113,7 @@ public class NotificationEmitterService {
     public void sendNotification(Long memberId, Notification notification) {
         SseEmitter emitter = emitters.get(memberId);
         if (emitter == null) {
-            log.debug("SSE Emitter 없음: memberId={}", memberId);
+            log.info("SSE Emitter 없음: memberId={}", memberId);
             return;
         }
 
