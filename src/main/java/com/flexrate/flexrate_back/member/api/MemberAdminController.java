@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.common.util.AdminActionTemplate;
 import com.flexrate.flexrate_back.member.application.MemberAdminService;
 import com.flexrate.flexrate_back.member.dto.*;
@@ -13,8 +14,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-
-import java.security.Principal;
 
 @Slf4j
 @RestController
@@ -38,13 +37,13 @@ public class MemberAdminController {
     @GetMapping("/search")
     public ResponseEntity<MemberSearchResponse> searchMembers(
             @Valid MemberSearchRequest request,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
         return ResponseEntity.ok(
                 adminActionTemplate.
                     execute(
                             "회원 목록 조회",
-                            principal,
+                            memberId,
                             () -> memberAdminService.searchMembers(request)
                     )
         );
@@ -72,12 +71,12 @@ public class MemberAdminController {
     public ResponseEntity<PatchMemberResponse> patchMember(
             @PathVariable Long memberId,
             @Valid @RequestBody PatchMemberRequest request,
-            Principal principal
+            @CurrentMemberId Long currentMemberId
     ) {
         return ResponseEntity.ok(
                 adminActionTemplate.execute(
                         "회원 정보 수정 memberId=" + memberId,
-                        principal,
+                        currentMemberId,
                         () -> memberAdminService.patchMember(memberId, request)
                 )
         );
@@ -103,12 +102,12 @@ public class MemberAdminController {
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberDetailResponse> getMemberDetail(
             @PathVariable Long memberId,
-            Principal principal
+            @CurrentMemberId Long currentMemberId
     ) {
         return ResponseEntity.ok(
                 adminActionTemplate.execute(
                         "회원 상세조회 memberId=" + memberId,
-                        principal,
+                        currentMemberId,
                         () -> memberAdminService.searchMemberDetail(memberId)
                 )
         );

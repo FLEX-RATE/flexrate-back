@@ -1,7 +1,6 @@
 package com.flexrate.flexrate_back.member.api;
 
-import com.flexrate.flexrate_back.common.exception.ErrorCode;
-import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
@@ -15,8 +14,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,12 +32,7 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "사용자의 마이페이지 조회 결과 반환"),
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/main")
-    public ResponseEntity<MainPageResponse> getMainPage(Principal principal) {
-        if (principal == null || principal.getName() == null) {
-            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = Long.parseLong(principal.getName());
+    public ResponseEntity<MainPageResponse> getMainPage(@CurrentMemberId Long memberId) {
         return ResponseEntity.ok(memberService.getMainPage(memberId));
     }
 
@@ -55,12 +47,7 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "사용자의 마이페이지 조회 결과 반환"),
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/mypage")
-    public ResponseEntity<MypageResponse> getMyPage(Principal principal) {
-        if (principal == null || principal.getName() == null) {
-            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = Long.parseLong(principal.getName());
+    public ResponseEntity<MypageResponse> getMyPage(@CurrentMemberId Long memberId) {
         return ResponseEntity.ok(memberService.getMyPage(memberId));
     }
 
@@ -78,13 +65,8 @@ public class MemberController {
     @PatchMapping("/mypage")
     public ResponseEntity<MypageResponse> updateMyPage(
             @Valid @RequestBody MypageUpdateRequest request,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        if (principal == null || principal.getName() == null) {
-            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.updateMyPage(memberId, request));
     }
 
@@ -113,12 +95,7 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "대출 상태 조회 결과 반환"),
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/loan-status")
-    public ResponseEntity<String> getLoanStatus(Principal principal) {
-        if (principal == null || principal.getName() == null) {
-            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = Long.parseLong(principal.getName());
+    public ResponseEntity<String> getLoanStatus(@CurrentMemberId Long memberId) {
         return ResponseEntity.ok(memberService.getLoanStatus(memberId));
     }
 
@@ -132,12 +109,7 @@ public class MemberController {
             responses = {@ApiResponse(responseCode = "200", description = "사용자의 신용점수 평가 여부 반환"),
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/credit-score-status")
-    public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(Principal principal) {
-        if (principal == null || principal.getName() == null) {
-            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = Long.parseLong(principal.getName());
+    public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(@CurrentMemberId Long memberId) {
         return ResponseEntity.ok(memberService.getCreditScoreStatus(memberId));
     }
 }
