@@ -38,7 +38,7 @@ public class ReportStatisticsService {
     public ConsumptionCategoryStatsResponse getCategoryStats(Member member, YearMonth month) {
         ConsumptionHabitReport report = reportRepository.findByMemberAndReportMonth(member, month)
                 .orElseThrow(() -> new FlexrateException(ErrorCode.REPORT_DOESNT_EXISTS));
-        log.debug("리포트 객체 조회 성공: memberId={}, yearMonth={}", member.getMemberId(), month);
+        log.debug("리포트 객체 조회 :\nmemberId={}, yearMonth={}", member.getMemberId(), month);
 
         List<ConsumptionCategoryRatioResponse> stats;
 

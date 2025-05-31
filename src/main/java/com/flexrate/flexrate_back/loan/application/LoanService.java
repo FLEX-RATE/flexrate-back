@@ -84,12 +84,12 @@ public class LoanService {
 
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
-                    log.warn("대출 사전 심사 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    log.warn("대출 사전 심사 실패:\n신청 내역 없음, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
         if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
-            log.warn("대출 사전 심사 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
+            log.warn("대출 사전 심사 실패:\n상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
@@ -179,12 +179,12 @@ public class LoanService {
 
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
-                    log.warn("대출 사전 심사 결과 조회 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    log.warn("대출 사전 심사 결과 조회 실패:\n신청 내역 없음, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
         if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
-            log.warn("대출 사전 심사 결과 조회 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
+            log.warn("대출 사전 심사 결과 조회 실패:\n상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
@@ -213,22 +213,22 @@ public class LoanService {
 
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
-                    log.warn("대출 신청 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    log.warn("대출 신청 실패:\n신청 내역 없음, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
         if (loanApplication.getStatus() != LoanApplicationStatus.PRE_APPLIED) {
-            log.warn("대출 신청 실패: 상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
+            log.warn("대출 신청 실패:\n상태 불일치, memberId={}, status={}", member.getMemberId(), loanApplication.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
         if(loanApplication.getProduct().getMaxAmount() < loanApplicationRequest.loanAmount()){
-            log.warn("대출 신청 실패: 한도 초과, memberId={}, 신청금액={}, 한도={}", member.getMemberId(), loanApplicationRequest.loanAmount(), loanApplication.getProduct().getMaxAmount());
+            log.warn("대출 신청 실패:\n한도 초과, memberId={}, 신청금액={}, 한도={}", member.getMemberId(), loanApplicationRequest.loanAmount(), loanApplication.getProduct().getMaxAmount());
             throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
         }
 
         if(loanApplication.getProduct().getTerms() < loanApplicationRequest.repaymentMonth()){
-            log.warn("대출 신청 실패: 기한 초과, memberId={}, 요청기한={}, 최대기한={}", member.getMemberId(), loanApplicationRequest.repaymentMonth(), loanApplication.getProduct().getTerms());
+            log.warn("대출 신청 실패:\n기한 초과, memberId={}, 요청기한={}, 최대기한={}", member.getMemberId(), loanApplicationRequest.repaymentMonth(), loanApplication.getProduct().getTerms());
             throw new FlexrateException(ErrorCode.LOAN_REQUEST_CONFLICT);
         }
 
@@ -247,12 +247,12 @@ public class LoanService {
 
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
-                    log.warn("대출 결과 조회 실패: 신청 내역 없음, memberId={}", member.getMemberId());
+                    log.warn("대출 결과 조회 실패:\n신청 내역 없음, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
         if(loanApplication.getStatus() == LoanApplicationStatus.PRE_APPLIED){
-            log.warn("대출 결과 조회 실패: 아직 미신청 상태, memberId={}", member.getMemberId());
+            log.warn("대출 결과 조회 실패:\n아직 미신청 상태, memberId={}", member.getMemberId());
             throw new FlexrateException(ErrorCode.LOAN_NOT_APPLIED);
         }
 
@@ -333,9 +333,9 @@ public class LoanService {
                             interest.getInterestId(),
                             NotificationType.INTEREST_RATE_CHANGE
                     );
-                    log.info("금리 변동 알림 발송 성공: memberId={}, interestId={}", member.getMemberId(), interest.getInterestId());
+                    log.info("금리 변동 알림 발송 성공:\nmemberId={}, interestId={}", member.getMemberId(), interest.getInterestId());
                 } catch (Exception e) {
-                    log.error("금리 변동 알림 발송 실패: memberId={}, interestId={}, error={}", member.getMemberId(), interest.getInterestId(), e.getMessage(), e);
+                    log.error("금리 변동 알림 발송 실패:\nmemberId={}, interestId={}, error={}", member.getMemberId(), interest.getInterestId(), e.getMessage(), e);
                 }
             }
         }

@@ -4,6 +4,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,14 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(String.format("{\"code\": \"%s\", \"message\": \"%s\"}",
                 ErrorCode.UNAUTHORIZED.getCode(),
                 ErrorCode.UNAUTHORIZED.getMessage()));
-        log.warn("[{}] {} | message = {}", ErrorCode.UNAUTHORIZED.getCode(), ErrorCode.UNAUTHORIZED.getMessage(), authException.getMessage());
+
+        try {
+            MDC.put("loginId", "anonymous");
+            MDC.put("errorCode", ErrorCode.UNAUTHORIZED.getCode());
+            MDC.put("traceId", request.getHeader("X-Trace-Id"));
+            log.warn("{}", ErrorCode.UNAUTHORIZED.getMessage());
+        } finally {
+            MDC.clear();
+        }
     }
 }

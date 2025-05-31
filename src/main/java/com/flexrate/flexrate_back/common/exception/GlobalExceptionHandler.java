@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
         String code = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getCode();
         String message = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getMessage();
         initMDC(code, ex);
-        logError(code, message, ex);
+        logError(message);
 
         return buildResponse(HttpStatus.BAD_REQUEST, code, message);
     }
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
         String details = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .reduce((a, b) -> a + ", " + b).orElse("");
-        logWarn(code, message, details, ex);
+        logWarn(message, details);
 
         return buildResponse(HttpStatus.BAD_REQUEST, code, details);
     }
@@ -60,8 +60,7 @@ public class GlobalExceptionHandler {
         String path = request.getRequestURI();
         initMDC(code, ex);
 
-        log.error("[{}] {} | path={} | details = {}",
-                code,
+        log.error("{}: \npath={}\ndetails={}",
                 message,
                 path,
                 ex.getStackTrace());
@@ -80,7 +79,7 @@ public class GlobalExceptionHandler {
         String code = errorCode.getCode();
         String message = errorCode.getMessage();
         initMDC(code, ex);
-        logError(code, message, ex);
+        logError(message);
 
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(new ErrorResponse(code, message));
@@ -97,7 +96,7 @@ public class GlobalExceptionHandler {
         String code = ErrorCode.INTERNAL_SERVER_ERROR.getCode();
         String message = ErrorCode.INTERNAL_SERVER_ERROR.getMessage();
         initMDC(code, ex);
-        logError(code, ex.getMessage(), ex);
+        logError(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(code, message));
     }
@@ -111,12 +110,12 @@ public class GlobalExceptionHandler {
         MDC.put("details", ExceptionUtils.getStackTrace(ex));
     }
 
-    private void logError(String code, String message, Exception ex) {
-        log.error("[{}] {}", code, message);
+    private void logError(String message) {
+        log.error("{}", message);
     }
 
-    private void logWarn(String code, String message, String details, Exception ex) {
-        log.warn("[{}] {} | message = {}", code, message, details);
+    private void logWarn(String message, String details) {
+        log.warn("{}: \n{}", message, details);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String code, String message) {

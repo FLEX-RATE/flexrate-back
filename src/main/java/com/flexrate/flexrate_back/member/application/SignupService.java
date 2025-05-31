@@ -64,7 +64,7 @@ public class SignupService {
                 .build();
 
         Member saved = memberRepository.save(member);
-        log.debug("회원 DB 저장 성공: memberId={}, email={}", saved.getMemberId(), saved.getEmail());
+        log.debug("회원 DB 저장 성공:\nmemberId={}, email={}", saved.getMemberId(), saved.getEmail());
 
         authService.registerPin(dto.pin(), saved.getMemberId());
         log.debug("회원 PIN 등록 완료: memberId={}", saved.getMemberId());

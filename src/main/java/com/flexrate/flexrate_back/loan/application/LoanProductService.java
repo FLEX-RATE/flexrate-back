@@ -55,7 +55,7 @@ public class LoanProductService {
                 ))
                 .toList();
 
-        log.info("대출 상품 전체 목록 조회 성공: 반환 건수: {}", result.size());
+        log.info("대출 상품 전체 목록 조회 성공:\n반환 건수: {}", result.size());
         return result;
     }
 
@@ -76,30 +76,30 @@ public class LoanProductService {
         assert member != null;
         Member persistentMember = memberRepository.findById(member.getMemberId())
                 .orElseThrow(() -> {
-                    log.warn("대출 상품 선택 실패: 존재하지 않는 회원, memberId={}", member.getMemberId());
+                    log.warn("대출 상품 선택 실패:\n존재하지 않는 회원, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
 
         LoanApplication app = loanApplicationRepository.findByMember(persistentMember)
                 .orElseThrow(() -> {
-                    log.warn("대출 상품 선택 실패: 기존 대출 신청 없음, memberId={}", persistentMember.getMemberId());
+                    log.warn("대출 상품 선택 실패:\n기존 대출 신청 없음, memberId={}", persistentMember.getMemberId());
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
         if (app.getStatus() != LoanApplicationStatus.NONE) {
-            log.warn("대출 상품 선택 실패: 이미 신청된 대출 존재, memberId={}, status={}", persistentMember.getMemberId(), app.getStatus());
+            log.warn("대출 상품 선택 실패:\n이미 신청된 대출 존재, memberId={}, status={}", persistentMember.getMemberId(), app.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }
 
         LoanProduct product = loanProductRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("대출 상품 선택 실패: 존재하지 않는 상품, productId={}", productId);
+                    log.warn("대출 상품 선택 실패:\n존재하지 않는 상품, productId={}", productId);
                     return new FlexrateException(ErrorCode.LOAN_PRODUCT_NOT_FOUND);
                 });
 
         app.patchStatus(LoanApplicationStatus.PRE_APPLIED);
         app.setProduct(product);
 
-        log.info("대출 상품 선택 및 상태 변경 성공: memberId={}, productId={}, 변경 상태={}", persistentMember.getMemberId(), productId, app.getStatus());
+        log.info("대출 상품 선택 및 상태 변경 성공:\nmemberId={}, productId={}, 변경 상태={}", persistentMember.getMemberId(), productId, app.getStatus());
     }
 }

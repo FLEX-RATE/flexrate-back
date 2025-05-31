@@ -52,9 +52,9 @@ public class NotificationEmitterService {
         // 초기 연결 이벤트 전송
         try {
             emitter.send(SseEmitter.event().name("connect").data("connected"));
-            log.info("connect 이벤트 전송 성공: memberId={}", memberId);
+            log.info("connect 이벤트 전송 성공:\nmemberId={}", memberId);
         } catch (IOException e) {
-            log.error("connect 이벤트 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+            log.error("connect 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
             return emitter;
         }
@@ -97,9 +97,9 @@ public class NotificationEmitterService {
 
             try {
                 emitter.send(SseEmitter.event().comment("heartbeat"));
-                log.debug("heartbeat 전송 성공: memberId={}", memberId);
+                log.debug("heartbeat 전송 성공:\nmemberId={}", memberId);
             } catch (IOException e) {
-                log.warn("heartbeat 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+                log.warn("heartbeat 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
             } catch (Exception e) {
                 log.error("heartbeat 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
@@ -122,10 +122,10 @@ public class NotificationEmitterService {
             emitter.send(SseEmitter.event()
                     .name("notification")
                     .data(dto));
-            log.info("notification 이벤트 전송 성공: memberId={}, notificationId={}",
+            log.info("notification 이벤트 전송 성공:\nmemberId={}, notificationId={}",
                     memberId, notification.getNotificationId());
         } catch (IOException e) {
-            log.warn("notification 이벤트 전송 실패: memberId={}, error={}", memberId, e.getMessage());
+            log.warn("notification 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
         } catch (Exception e) {
             log.error("notification 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
