@@ -2,6 +2,8 @@ package com.flexrate.flexrate_back.auth.api;
 
 import com.flexrate.flexrate_back.auth.application.AuthService;
 import com.flexrate.flexrate_back.auth.dto.PinRequest;
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +32,10 @@ public class AuthController {
     )
     @GetMapping("/pin/registered")
     public ResponseEntity<Boolean> checkPinRegistered(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Member member = memberService.findById(Long.parseLong(principal.getName()));
         return ResponseEntity.ok(authService.checkPinRegistered(member));
     }
@@ -40,6 +46,10 @@ public class AuthController {
     )
     @PostMapping("/pin/verify")
     public ResponseEntity<Boolean> verifyPin(@RequestBody PinRequest pinRequest, Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Member member = memberService.findById(Long.parseLong(principal.getName()));
         return ResponseEntity.ok(authService.verifyPin(pinRequest, member));
     }
