@@ -1,8 +1,9 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
-import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
 import com.flexrate.flexrate_back.member.dto.CreditScoreStatusResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
@@ -22,7 +23,6 @@ import java.security.Principal;
 @RequestMapping("/api/members")
 public class MemberController {
     private final MemberService memberService;
-    private final MemberRepository memberRepository;
 
     /**
      * 메인페이지 조회
@@ -36,10 +36,13 @@ public class MemberController {
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/main")
     public ResponseEntity<MainPageResponse> getMainPage(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getMainPage(memberId));
     }
-
 
     /**
      * 마이페이지 조회
@@ -53,6 +56,10 @@ public class MemberController {
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/mypage")
     public ResponseEntity<MypageResponse> getMyPage(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getMyPage(memberId));
     }
@@ -73,6 +80,10 @@ public class MemberController {
             @Valid @RequestBody MypageUpdateRequest request,
             Principal principal
     ) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.updateMyPage(memberId, request));
     }
@@ -103,6 +114,10 @@ public class MemberController {
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/loan-status")
     public ResponseEntity<String> getLoanStatus(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getLoanStatus(memberId));
     }
@@ -118,8 +133,11 @@ public class MemberController {
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/credit-score-status")
     public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(Principal principal) {
-        Long memberId = Long.parseLong(principal.getName());
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
 
+        Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getCreditScoreStatus(memberId));
     }
 }
