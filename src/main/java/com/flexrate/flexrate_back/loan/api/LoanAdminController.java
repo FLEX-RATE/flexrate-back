@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.loan.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.LoanAdminService;
@@ -10,14 +11,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/admin/loans")
@@ -53,10 +51,10 @@ public class LoanAdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "date") String sortBy,
-            Principal principal
+            @CurrentMemberId Long currentMemberId
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
+        if (!adminAuthChecker.isAdmin(currentMemberId)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -86,10 +84,10 @@ public class LoanAdminController {
     public ResponseEntity<LoanApplicationStatusUpdateResponse> patchLoanApplicationStatus(
             @PathVariable("loanApplicationId") Long loanApplicationId,
             @Valid @RequestBody LoanApplicationStatusUpdateRequest request,
-            Principal principal
+            @CurrentMemberId Long currentMemberId
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
+        if (!adminAuthChecker.isAdmin(currentMemberId)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -128,11 +126,11 @@ public class LoanAdminController {
             })
     @GetMapping
     public ResponseEntity<LoanAdminSearchResponse> searchLoans(
-            @Valid LoanAdminSearchRequest request
-            , Principal principal
+            @Valid LoanAdminSearchRequest request,
+            @CurrentMemberId Long currentMemberId
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
+        if (!adminAuthChecker.isAdmin(currentMemberId)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 
@@ -157,10 +155,10 @@ public class LoanAdminController {
     @GetMapping("/{loanApplicationId}/detail")
     public ResponseEntity<LoanReviewDetailResponse> getLoanReviewDetail(
             @PathVariable("loanApplicationId") Long loanApplicationId,
-            Principal principal
+            @CurrentMemberId Long currentMemberId
     ) {
         // A007 관리자 인증 체크
-        if (!adminAuthChecker.isAdmin(principal)) {
+        if (!adminAuthChecker.isAdmin(currentMemberId)) {
             throw new FlexrateException(ErrorCode.ADMIN_AUTH_REQUIRED);
         }
 

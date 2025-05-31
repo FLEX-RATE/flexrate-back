@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.loan.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.loan.application.InterestService;
 import com.flexrate.flexrate_back.loan.dto.InterestAnalysisRequest;
 import com.flexrate.flexrate_back.loan.dto.InterestResponse;
@@ -41,9 +42,9 @@ public class InterestController {
     )
     @GetMapping("/interest/current")
     public ResponseEntity<InterestResponse> getCurrentInterestChange(
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         InterestResponse response = interestService.getCurrentInterestChange(member.getLoanApplication().getApplicationId());
         return ResponseEntity.ok(response);
     }
@@ -65,9 +66,9 @@ public class InterestController {
     @GetMapping("/interest/stats")
     public ResponseEntity<InterestSummaryResponse> getInterestStats(
             @RequestParam PeriodType periodType,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         InterestSummaryResponse response = interestService.getInterestStats(
                 new InterestAnalysisRequest(member.getLoanApplication().getApplicationId(), periodType)
         );
@@ -77,10 +78,10 @@ public class InterestController {
     /**
      * Principal 객체를 통해 현재 로그인한 회원을 조회합니다.
      *
-     * @param principal Spring Security에서 주입한 사용자 인증 정보
+     * @param memberId 현재 로그인한 사용자의 ID
      * @return 해당 사용자의 Member 엔티티
      */
-    private Member getMember(Principal principal) {
-        return memberService.findById(Long.parseLong(principal.getName()));
+    private Member getMember(@CurrentMemberId Long memberId) {
+        return memberService.findById(memberId);
     }
 }

@@ -1,27 +1,24 @@
 package com.flexrate.flexrate_back.common.exception;
 
-import com.flexrate.flexrate_back.common.util.ProfileUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
-    private final ProfileUtil profileUtil;
 
     /**
      * 필수 파라미터 누락 에러 처리
@@ -30,11 +27,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         String code = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getCode();
         String message = ErrorCode.AUTH_REQUIRED_FIELD_MISSING.getMessage();
+        initMDC(code, ex);
+        logError(message);
 
-        log.warn("[{}] {} | detail={}", code, message, ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(code, message));
+        return buildResponse(HttpStatus.BAD_REQUEST, code, message);
     }
 
     /**
@@ -42,29 +38,32 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.toList());
+        String code = ErrorCode.VALIDATION_ERROR.getCode();
+        String message = ErrorCode.VALIDATION_ERROR.getMessage();
+        initMDC(code, ex);
 
-        ErrorResponse errorResponse = new ErrorResponse("V001", String.join(", ", errors));
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        String details = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .reduce((a, b) -> a + ", " + b).orElse("");
+        logWarn(message, details);
+
+        return buildResponse(HttpStatus.BAD_REQUEST, code, details);
     }
-
 
     /**
      * 404 에러 처리
      */
-    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
-            org.springframework.web.servlet.resource.NoResourceFoundException ex,
-            HttpServletRequest request) {
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
         String code = ErrorCode.NOT_FOUND_STATIC_RESOURCE.getCode();
         String message = ErrorCode.NOT_FOUND_STATIC_RESOURCE.getMessage();
         String path = request.getRequestURI();
+        initMDC(code, ex);
 
-        log.warn("[{}] {} | path={} | detail={}", code, message, path, ex.getMessage());
+        log.error("{}: \npath={}\ndetails={}",
+                message,
+                path,
+                ExceptionUtils.getStackTrace(ex));
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(code, message));
@@ -75,17 +74,12 @@ public class GlobalExceptionHandler {
      * 커스텀 예외 처리
      */
     @ExceptionHandler(FlexrateException.class)
-    public ResponseEntity<ErrorResponse> handleFlexrateException(FlexrateException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleFlexrateException(FlexrateException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         String code = errorCode.getCode();
         String message = errorCode.getMessage();
-        String path = request.getRequestURI();
-
-        if (profileUtil.isProduction()) {
-            log.error("[{}] {} | path={}", code, message, path);
-        } else {
-            log.error("[{}] {} | path={} | detail={}", code, message, path, ex.getMessage());
-        }
+        initMDC(code, ex);
+        logError(message);
 
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(new ErrorResponse(code, message));
@@ -99,14 +93,33 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-        if (profileUtil.isProduction()) {
-            log.error("Unhandled exception occurred: {}", ex.toString());
-        } else {
-            log.error("Unhandled exception occurred", ex);
-        }
-
+        String code = ErrorCode.INTERNAL_SERVER_ERROR.getCode();
+        String message = ErrorCode.INTERNAL_SERVER_ERROR.getMessage();
+        initMDC(code, ex);
+        logError(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR.getCode(), ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+                .body(new ErrorResponse(code, message));
+    }
+
+    /**
+     * 공통 헬퍼
+     * - errorCode, message, MDC pageId, stackTrace
+     */
+    private void initMDC(String code, Exception ex) {
+        MDC.put("errorCode", code);
+        MDC.put("details", ExceptionUtils.getStackTrace(ex));
+    }
+
+    private void logError(String message) {
+        log.error("{}", message);
+    }
+
+    private void logWarn(String message, String details) {
+        log.warn("{}: \n{}", message, details);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String code, String message) {
+        return ResponseEntity.status(status).body(new ErrorResponse(code, message));
     }
 
     /**

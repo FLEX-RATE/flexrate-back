@@ -28,7 +28,7 @@ public class AuthService {
      */
     public boolean checkPinRegistered(Member member) {
         boolean present = pinCredentialRepository.findByMember_MemberId(member.getMemberId()).isPresent();
-        log.debug("PIN 등록 여부: memberId={}, registered={}", member.getMemberId(), present);
+        log.info("PIN 등록 여부: memberId={}, registered={}", member.getMemberId(), present);
 
         return present;
     }
@@ -65,12 +65,12 @@ public class AuthService {
     public boolean verifyPin(PinRequest pinRequest, Member member) {
         PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(member.getMemberId())
                 .orElseThrow(() -> {
-                    log.warn("PIN 인증 실패: 등록되지 않은 사용자 PIN, memberId={}", member.getMemberId());
+                    log.warn("PIN 인증 실패:\n등록되지 않은 사용자 PIN, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.PIN_NOT_REGISTERED);
                 });
 
         boolean isValid = passwordEncoder.matches(pinRequest.pin(), pinCredential.getPinHash());
-        log.debug("PIN 인증 결과: memberId={}, isValid={}", member.getMemberId(), isValid);
+        log.info("PIN 인증 결과: memberId={}, isValid={}", member.getMemberId(), isValid);
 
         return isValid;
     }

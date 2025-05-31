@@ -14,6 +14,7 @@ import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -57,9 +59,12 @@ public class WebAuthnService {
     // 패스키 등록
     @Transactional
     public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
+        log.info("패스키 중복 체크: memberId={}", member.getMemberId());
+
         // 중복된 공개키와 Credential ID 체크
         if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey()) ||
                 fidoCredentialRepository.existsByCredentialId(passkeyDTO.credentialId())) {
+            log.warn("중복된 패스키 등록 시도: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
@@ -75,6 +80,8 @@ public class WebAuthnService {
                 .build();
 
         fidoCredentialRepository.save(fidoCredential);
+
+        log.info("패스키 등록 완료: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
     }
 
     // 패스키 인증

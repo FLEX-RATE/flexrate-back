@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.loan.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.loan.application.LoanProductService;
 import com.flexrate.flexrate_back.loan.dto.LoanProductSummaryDto;
 import com.flexrate.flexrate_back.member.application.MemberService;
@@ -46,9 +47,8 @@ public class LoanProductController {
      * 다른 상태의 신청이 존재하면 예외가 발생합니다.
      *
      * @param productId 선택한 대출 상품 ID
-     * @param principal 인증된 사용자 Principal
+     * @param memberId 로그인한 사용자의 ID
      * @return HTTP 200 OK (성공 시)
-     * @throws FlexrateException 중복 대출 신청 시 예외 발생 (DUPLICATE_LOAN_APPLICATION)
      * @since 2025.05.05
      */
     @Operation(
@@ -64,9 +64,9 @@ public class LoanProductController {
     @PostMapping("/{productId}/select")
     public ResponseEntity<Void> selectProduct(
             @PathVariable Long productId,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         loanProductService.selectProduct(productId, member);
         return ResponseEntity.ok().build();
     }
@@ -74,12 +74,11 @@ public class LoanProductController {
     /**
      * Principal 객체를 통해 현재 로그인한 회원을 조회합니다.
      *
-     * @param principal Spring Security에서 주입한 사용자 인증 정보
+     * @param memberId 현재 로그인한 사용자의 ID
      * @return 해당 사용자의 Member 엔티티
      */
-
-    private Member getMember(Principal principal) {
-        return memberService.findById(Long.parseLong(principal.getName()));
+    private Member getMember(@CurrentMemberId Long memberId) {
+        return memberService.findById(memberId);
     }
 
 }

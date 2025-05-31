@@ -7,6 +7,7 @@ import com.flexrate.flexrate_back.loan.application.repository.LoanTransactionRep
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.domain.LoanTransaction;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
+import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.enums.TransactionType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository;
@@ -18,6 +19,7 @@ import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +29,7 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.util.Optional;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -37,6 +39,7 @@ public class MemberService {
     private final MemberQueryRepository memberQueryRepository;
     private final LoanTransactionRepository loanTransactionRepository;
     private final InterestQueryRepository interestQueryRepositoryImpl;
+
     /**
      * 마이페이지 조회
      * @param memberId 회원 ID
@@ -45,8 +48,13 @@ public class MemberService {
      * @author 권민지
      */
     public MypageResponse getMyPage(Long memberId) {
+        log.info("마이페이지 조회 시작, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("회원 정보 없음, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
+        log.info("마이페이지 조회 완료, memberId={}, name={}", memberId, member.getName());
 
         return MypageResponse.builder()
                 .name(member.getName())
@@ -67,17 +75,27 @@ public class MemberService {
     @Transactional
     public MypageResponse updateMyPage(Long memberId, MypageUpdateRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("회원 정보 없음, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
 
-        if (request.email() != null) member.updateEmail(request.email());
+        if (request.email() != null) {
+            member.updateEmail(request.email());
+            log.info("이메일 변경, memberId={}, email={}", memberId, request.email());
+        }
+
         if (request.consumeGoal() != null) {
-            // L011 - 소비 목표가 소비 타입과 다르다면, 소비 목표를 변경할 수 없음
             if (request.consumeGoal().getType() != member.getConsumptionType()) {
+                log.warn("소비 목표-유형 불일치, memberId={}, 요청 consumeGoalType={}, 현재 consumptionType={}",
+                        memberId, request.consumeGoal().getType(), member.getConsumptionType());
                 throw new FlexrateException(ErrorCode.LOAN_CONSUMPTION_TYPE_MISMATCH);
             }
-
             member.updateConsumeGoal(request.consumeGoal());
+            log.info("소비 목표 변경, memberId={}, consumeGoal={}", memberId, request.consumeGoal());
         }
+
+        log.info("마이페이지 정보 수정 완료, memberId={}", memberId);
 
         return MypageResponse.builder()
                 .name(member.getName())
@@ -95,10 +113,13 @@ public class MemberService {
      * @author 권민지
      */
     public ConsumeGoalResponse getConsumeGoal(ConsumptionType consumptionType) {
-        return ConsumeGoalResponse.builder()
+        log.info("소비 유형별 소비 목표 조회 요청, consumptionType={}", consumptionType);
+        ConsumeGoalResponse response = ConsumeGoalResponse.builder()
                 .consumeGoals(ConsumeGoal.getConsumeGoalsByType(consumptionType))
                 .build();
+        log.info("소비 유형별 소비 목표 조회 성공, consumptionType={}", consumptionType);
 
+        return response;
     }
 
     /**
@@ -109,15 +130,22 @@ public class MemberService {
      * @author 권민지
      */
     public String getLoanStatus(Long memberId) {
+        log.info("대출 상태 조회 요청, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("회원 정보 없음, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
 
-        // member의 LoanApplication이 존재하지 않으면 NONE 반환
         if (member.getLoanApplication() == null) {
+            log.info("대출 신청 내역 없음, memberId={}", memberId);
             return "NONE";
         }
 
-        return member.getLoanApplication().getStatus().name();
+        String status = member.getLoanApplication().getStatus().name();
+        log.info("대출 상태 조회 성공, memberId={}, status={}", memberId, status);
+
+        return status;
     }
 
     /**
@@ -128,10 +156,18 @@ public class MemberService {
      * @author 유승한
      */
     public CreditScoreStatusResponse getCreditScoreStatus(Long memberId) {
+        log.info("신용점수 평가 여부 조회 요청, memberId={}", memberId);
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("회원 정보 없음, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
 
-        return CreditScoreStatusResponse.builder().creditScoreStatus(member.getCreditScoreEvaluated()).build();
+        log.info("신용점수 평가 여부 조회 성공, memberId={}, creditScoreStatus={}", memberId, member.getCreditScoreEvaluated());
+
+        return CreditScoreStatusResponse.builder()
+                .creditScoreStatus(member.getCreditScoreEvaluated())
+                .build();
     }
 
 
@@ -144,14 +180,40 @@ public class MemberService {
      * @author 유승한
      */
     public MainPageResponse getMainPage(Long memberId) {
+        log.info("MainPageResponse 생성 시작, memberId={}", memberId);
+
         LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
+        if (app == null) {
+            log.warn("대출 정보 없음, memberId={}", memberId);
+            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if (app.getStatus().equals(LoanApplicationStatus.NONE)) {
+            log.warn("보유한 대출 신청 내역이 초기 상태입니다. memberId={}, applicationId={}",
+                    memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_APPLICATION_STATUS_NONE);
+        }
+
         float interestRate = Optional.ofNullable(memberQueryRepository.findLatestInterestRate(memberId))
                 .orElse(0.0f); // 기본값
 
         // 날짜 관련 계산
         LocalDate now = LocalDate.now();
-        LocalDate startDate = app.getStartDate().toLocalDate();
-        LocalDate endDate = app.getEndDate().toLocalDate();
+        LocalDate startDate;
+        LocalDate endDate;
+
+        if (app.getStartDate() != null) {
+            startDate = app.getStartDate().toLocalDate();
+        } else {
+            log.warn("대출 시작일 정보 없음, memberId={}, applicationId={}", memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_START_DATE_MISSING);
+        }
+        if (app.getEndDate() != null) {
+            endDate = app.getEndDate().toLocalDate();
+        } else {
+            log.warn("대출 종료일 정보 없음, memberId={}, applicationId={}", memberId, app.getApplicationId());
+            throw new FlexrateException(ErrorCode.LOAN_END_DATE_MISSING);
+        }
 
         int totalMonths = Period.between(startDate, endDate).getYears() * 12 +
                 Period.between(startDate, endDate).getMonths();
@@ -224,6 +286,8 @@ public class MemberService {
                 app.getEndDate().toLocalDate()
         );
 
+        log.info("MainPageResponse 생성 완료, memberId={}, loanAppId={}", memberId, app.getApplicationId());
+
         return MainPageResponse.builder()
                 .monthlyPayment(monthlyPayment)
                 .repaymentRate(repaymentRate)
@@ -239,11 +303,15 @@ public class MemberService {
                 .build();
     }
 
-
     // 회원 ID로 회원 조회
     public Member findById(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
-    }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("회원 정보 없음, memberId={}", memberId);
+                    return new FlexrateException(ErrorCode.USER_NOT_FOUND);
+                });
+        log.info("회원 정보 조회 성공, memberId={}", memberId);
 
+        return member;
+    }
 }

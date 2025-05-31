@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.financialdata.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.financialdata.application.UserFinancialDataService;
 import com.flexrate.flexrate_back.financialdata.dto.CreditScoreResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
@@ -26,7 +27,7 @@ public class CreditScoreController {
 
     /**
      * 회원의 신용점수 조회 api
-     * @param principal 인증된 사용자 정보
+     * @param memberId 현재 로그인한 회원의 ID
      * @return 계산된 신용점수 (0~1000 범위)
      */
     @Operation(
@@ -34,8 +35,8 @@ public class CreditScoreController {
             description = "회원의 신용점수를 반환합니다."
     )
     @GetMapping
-    public ResponseEntity<CreditScoreResponse> getCreditScore(Principal principal) {
-        Member member = memberService.findById(Long.parseLong(principal.getName()));
+    public ResponseEntity<CreditScoreResponse> getCreditScore(@CurrentMemberId Long memberId) {
+        Member member = memberService.findById(memberId);
         int creditScore = member.getLoanApplication().getCreditScore();
         int percentile = userFinancialDataService.getCreditScorePercentile(creditScore);
         return ResponseEntity.ok(new CreditScoreResponse(creditScore, percentile));
@@ -43,7 +44,7 @@ public class CreditScoreController {
 
     /**
      * 회원의 금융 데이터를 바탕으로 신용점수를 평가하는 API
-     * @param principal 인증된 사용자 정보
+     * @param memberId 현재 로그인한 회원의 ID
      * @return 계산된 신용점수 (0~1000 범위)
      */
     @Operation(
@@ -55,8 +56,8 @@ public class CreditScoreController {
             }
     )
     @GetMapping("/evaluate")
-    public ResponseEntity<CreditScoreResponse> evaluateCreditScore(Principal principal) {
-        Member member = memberService.findById(Long.parseLong(principal.getName()));
+    public ResponseEntity<CreditScoreResponse> evaluateCreditScore(@CurrentMemberId Long memberId) {
+        Member member = memberService.findById(memberId);
         int creditScore = userFinancialDataService.evaluateCreditScore(member);
         int percentile = userFinancialDataService.getCreditScorePercentile(creditScore);
         return ResponseEntity.ok(new CreditScoreResponse(creditScore, percentile));
