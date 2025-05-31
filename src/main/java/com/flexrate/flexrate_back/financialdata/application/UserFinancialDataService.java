@@ -6,10 +6,11 @@ import com.flexrate.flexrate_back.financialdata.domain.UserFinancialData;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
 import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.member.domain.Member;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -54,11 +55,12 @@ public class UserFinancialDataService {
         // 지출이 많을수록 감산
         score -= Math.min(expense / 100_000, 100); // 지출 10만원당 -1점, 최대 -100점
 
-        // 점수 제한 범위 조정 (0~1000)
-        int finalScore = (int) Math.max(0, Math.min(score, 1000));
+        // 점수 제한 범위 조정 (1~1000)
+        int finalScore = (int) Math.max(1, Math.min(score, 1000));
 
         // 신용 점수 적용
         loanApplication.patchCreditScore(finalScore);
+        member.updateCreditScoreEvaluated(true);
 
         return finalScore;
     }
@@ -67,4 +69,13 @@ public class UserFinancialDataService {
         return loanApplicationRepository.findCreditScorePercentile(score);
     }
 
+    @Transactional
+    public List<YearMonth> getReportAvailableMonths(Member member) {
+        return member.getFinancialData().stream()
+                .map(UserFinancialData::getCollectedAt)
+                .map(YearMonth::from)
+                .distinct()
+                .sorted()
+                .toList();
+    }
 }

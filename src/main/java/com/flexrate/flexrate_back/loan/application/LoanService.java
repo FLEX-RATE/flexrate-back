@@ -23,6 +23,8 @@ import com.flexrate.flexrate_back.member.domain.repository.MemberQueryRepository
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.enums.ConsumeGoal;
 import com.flexrate.flexrate_back.member.enums.Role;
+import com.flexrate.flexrate_back.notification.enums.NotificationType;
+import com.flexrate.flexrate_back.notification.event.NotificationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -66,6 +68,7 @@ public class LoanService {
     private final MemberRepository memberRepository;
     private final UserFinancialDataQueryRepositoryImpl userFinancialDataQueryRepository;
     private final InterestRepository interestRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
     /**
      * 대출 신청 사전 정보를 외부 심사 서버로 전달 후, 심사 결과 저장
      * @param request 대출 신청 기본 정보, Member 대출 신청자
@@ -126,14 +129,26 @@ public class LoanService {
                 .build();
 
         // 대출 신청 사전 정보 저장
-        LoanReviewHistory loanReviewHistory = LoanReviewHistory.builder()
-                .employmentType(request.employmentType())
-                .annualIncome(request.annualIncome())
-                .residenceType(request.residenceType())
-                .isBankrupt(request.isBankrupt())
-                .loanPurpose(request.loanPurpose())
-                .application(loanApplication)
-                .build();
+        LoanReviewHistory loanReviewHistory = loanApplication.getReviewHistory();
+
+        if (loanReviewHistory != null) {
+            loanReviewHistory.updateReview(
+                    request.employmentType(),
+                    request.residenceType(),
+                    request.loanPurpose(),
+                    request.annualIncome(),
+                    request.isBankrupt()
+            );
+        } else {
+            loanReviewHistory = LoanReviewHistory.builder()
+                    .employmentType(request.employmentType())
+                    .annualIncome(request.annualIncome())
+                    .residenceType(request.residenceType())
+                    .isBankrupt(request.isBankrupt())
+                    .loanPurpose(request.loanPurpose())
+                    .application(loanApplication)
+                    .build();
+        }
 
         loanReviewHistoryRepository.save(loanReviewHistory);
         loanApplication.applyReviewResult(externalResponse, loanReviewHistory);
@@ -156,7 +171,7 @@ public class LoanService {
 
         return LoanReviewApplicationResponse.builder()
                 .name(member.getName())
-                .screeningDate(loanApplication.getAppliedAt().toLocalDate().toString())
+                .screeningDate(loanApplication.getAppliedAt() != null ? loanApplication.getAppliedAt().toLocalDate().toString() : null)
                 .loanLimit(loanApplication.getTotalAmount())
                 .initialRate(loanApplication.getRate())
                 .rateRangeFrom(loanApplication.getProduct().getMinRate())
@@ -257,13 +272,25 @@ public class LoanService {
                     ? previousRate - INTEREST_REDUCTION_STEP
                     : previousRate;
 
+            if(finalRate == previousRate) matched = false;
+
             Interest interest = Interest.builder()
                     .loanApplication(member.getLoanApplication())
                     .interestRate(finalRate)
                     .interestDate(today)
+                    .interestChanged(matched)
                     .build();
 
             interestRepository.save(interest);
+
+            // 금리 변동 알림
+            if (interest.getInterestChanged()) {
+                notificationEventPublisher.sendInterestNotification(
+                        member,
+                        interest.getInterestId(),
+                        NotificationType.INTEREST_RATE_CHANGE
+                );
+            }
         }
     }
 
@@ -376,6 +403,5 @@ public class LoanService {
                 return false;
         }
     }
-
 
 }

@@ -22,23 +22,38 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException{
-        // 요청 헤더의 authorization 키의 값 조회
-        String authorizationHeader = request.getHeader(HEADER_AUTHORIZATION);
-        // 가져온 값에서 접두사 제거
-        String token = getAccessToken(authorizationHeader);
+
+        // 요청 헤더의 authorization 키의 값에서 접두사 제거
+        String token = getAccessToken(request);
+
         // 가져온 토큰이 유효한지 확인하고, 유효한 때는 인증 정보 설정
         if (token != null && tokenProvider.validToken(token)) {
             Authentication auth = tokenProvider.getAuthentication(token);
-
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
+
         filterChain.doFilter(request, response);
     }
 
-    private String getAccessToken(String authorizationHeader) {
-        if(authorizationHeader != null && authorizationHeader.startsWith(TOKEN_PREFIX)) {
-            return authorizationHeader.substring(TOKEN_PREFIX.length());
+    private String getAccessToken(HttpServletRequest request) {
+        // 1. Authorization 헤더에서 먼저 시도 (기존 방식 유지)
+        String header = request.getHeader(HEADER_AUTHORIZATION);
+        System.out.println("Authorization 헤더: " + header);
+
+        if (header != null && header.startsWith(TOKEN_PREFIX)) {
+            String token = header.substring(TOKEN_PREFIX.length());
+            System.out.println("헤더에서 추출한 토큰: " + token);
+            return token;
         }
+
+        // 2. 헤더가 없으면 쿼리 파라미터에서 시도 (SSE용)
+        String token = request.getParameter("token");
+        System.out.println("쿼리 파라미터 토큰: " + token);
+
+        if (token != null && !token.trim().isEmpty()) {
+            return token;
+        }
+
         return null;
     }
 }

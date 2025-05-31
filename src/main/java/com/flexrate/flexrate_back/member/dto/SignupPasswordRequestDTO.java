@@ -8,6 +8,7 @@ import com.flexrate.flexrate_back.member.enums.Sex;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 
 import java.time.LocalDate;
@@ -36,5 +37,9 @@ public record SignupPasswordRequestDTO(
         ConsumptionType consumptionType,
 
         @NotNull(message = "소비 목표는 필수 항목입니다.")
-        ConsumeGoal consumeGoal
+        ConsumeGoal consumeGoal,
+
+        @NotBlank(message = "pin은 필수 항목입니다.")
+        @Pattern(regexp = "\\d{6}", message = "PIN은 6자리 숫자여야 합니다.")
+        String pin
 ) {}

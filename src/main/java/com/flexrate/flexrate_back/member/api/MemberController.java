@@ -1,7 +1,11 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
+import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
+import com.flexrate.flexrate_back.member.dto.CreditScoreStatusResponse;
 import com.flexrate.flexrate_back.member.dto.MypageResponse;
 import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
@@ -21,6 +25,26 @@ public class MemberController {
     private final MemberService memberService;
 
     /**
+     * 메인페이지 조회
+     * @return 마이페이지(MainPageResponse)
+     * @since 2025.05.24
+     * @author 유승한
+     */
+    @Operation(summary = "로그인한 사용자의 메인페이지 조회",
+            description = "로그인한 사용자의 메인페이지 정보를 조회합니다.",
+            responses = {@ApiResponse(responseCode = "200", description = "사용자의 마이페이지 조회 결과 반환"),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
+    @GetMapping("/main")
+    public ResponseEntity<MainPageResponse> getMainPage(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long memberId = Long.parseLong(principal.getName());
+        return ResponseEntity.ok(memberService.getMainPage(memberId));
+    }
+
+    /**
      * 마이페이지 조회
      * @return 회원 정보(MypageResponse) - 이름, 이메일, 소비 목표, 소비 유형
      * @since 2025.05.07
@@ -32,6 +56,10 @@ public class MemberController {
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/mypage")
     public ResponseEntity<MypageResponse> getMyPage(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getMyPage(memberId));
     }
@@ -52,6 +80,10 @@ public class MemberController {
             @Valid @RequestBody MypageUpdateRequest request,
             Principal principal
     ) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.updateMyPage(memberId, request));
     }
@@ -82,7 +114,30 @@ public class MemberController {
                          @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
     @GetMapping("/loan-status")
     public ResponseEntity<String> getLoanStatus(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
         Long memberId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(memberService.getLoanStatus(memberId));
+    }
+
+    /**
+     * 사용자의 신용점수 평가 여부 조회
+     * @return 신용점수 평가 여부
+     * @since 2025.05.26
+     * @author 유승한
+     */
+    @Operation(summary = "사용자의 신용점수 평가 여부 조회", description = "사용자의 신용점수 평가 여부를 조회합니다.",
+            responses = {@ApiResponse(responseCode = "200", description = "사용자의 신용점수 평가 여부 반환"),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자입니다.")})
+    @GetMapping("/credit-score-status")
+    public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new FlexrateException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long memberId = Long.parseLong(principal.getName());
+        return ResponseEntity.ok(memberService.getCreditScoreStatus(memberId));
     }
 }

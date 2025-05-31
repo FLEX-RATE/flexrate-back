@@ -44,5 +44,12 @@ public class ConsumptionHabitReport {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDate createdAt;
 
+    // 소비 카테고리별 통계 정보
+    @Column(name = "consumptions", columnDefinition = "TEXT")
     private String consumptions;
+
+    public void setConsumptions(String consumptions) {
+        this.consumptions = consumptions;
+    }
+
 }
