@@ -40,9 +40,7 @@ public class SignUpController {
     )
     @PostMapping("/signup/password")
     public SignupResponseDTO signupByPassword(@RequestBody @Valid SignupPasswordRequestDTO dto) {
-        SignupResponseDTO response = signupService.registerByPassword(dto);
-        MDC.put("loginId", response.email());
-        return response;
+        return signupService.registerByPassword(dto);
     }
 
     @Operation(
