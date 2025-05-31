@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.member.application;
 
+import com.flexrate.flexrate_back.auth.application.AuthService;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
@@ -17,6 +18,7 @@ import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SignupService {
@@ -34,12 +37,13 @@ public class SignupService {
     private final WebAuthnService webAuthnService;
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
     private final LoanApplicationRepository loanApplicationRepository;
-
+    private final AuthService authService;
 
     // 비밀번호 기반 회원가입
     @Transactional
     public SignupResponseDTO registerByPassword(SignupPasswordRequestDTO dto) {
         if (memberRepository.existsByEmail(dto.email())) {
+            log.warn("이미 등록된 이메일로 회원가입 시도: email={}", dto.email());
             throw new FlexrateException(ErrorCode.EMAIL_ALREADY_REGISTERED);
         }
 
@@ -60,9 +64,14 @@ public class SignupService {
                 .build();
 
         Member saved = memberRepository.save(member);
-        dummyFinancialDataGenerator.generateDummyFinancialData(saved);
+        log.debug("회원 DB 저장 성공: memberId={}, email={}", saved.getMemberId(), saved.getEmail());
 
-        // LoanApplication 생성
+        authService.registerPin(dto.pin(), saved.getMemberId());
+        log.debug("회원 PIN 등록 완료: memberId={}", saved.getMemberId());
+
+        dummyFinancialDataGenerator.generateDummyFinancialData(saved);
+        log.debug("회원 금융 데이터 생성 완료: memberId={}", saved.getMemberId());
+
         LoanApplication application = LoanApplication.builder()
                 .member(member)
                 .status(LoanApplicationStatus.NONE)
@@ -72,8 +81,7 @@ public class SignupService {
                 .build();
 
         loanApplicationRepository.save(application);
-
-
+        log.debug("회원 대출 신청 객체 생성 완료: memberId={}, applicationId={}", saved.getMemberId(), application.getApplicationId());
 
         return SignupResponseDTO.builder()
                 .userId(saved.getMemberId())
@@ -81,6 +89,11 @@ public class SignupService {
                 .build();
     }
 
+    /**
+     * FIDO(패스키) 등록
+     * @param memberId 회원 ID
+     * @param dto 패스키 등록 요청 정보
+     */
     @Transactional
     public void addFidoCredential(Long memberId, PasskeyRequestDTO dto) {
         Member member = memberRepository.findById(memberId)
@@ -98,6 +111,8 @@ public class SignupService {
         ConsumptionType[] types = ConsumptionType.values();
         int randomIndex = ThreadLocalRandom.current().nextInt(types.length);
         ConsumptionType randomType = types[randomIndex];
+
+        log.debug("소비타입 분석 결과: consumptionType={}", randomType);
 
         return AnalyzeConsumptionTypeResponse.builder()
                 .consumptionType(randomType)

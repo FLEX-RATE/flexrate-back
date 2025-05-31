@@ -36,5 +36,8 @@ public record SignupPasswordRequestDTO(
         ConsumptionType consumptionType,
 
         @NotNull(message = "소비 목표는 필수 항목입니다.")
-        ConsumeGoal consumeGoal
+        ConsumeGoal consumeGoal,
+
+        @NotBlank(message = "pin은 필수 항목입니다.")
+        String pin
 ) {}
