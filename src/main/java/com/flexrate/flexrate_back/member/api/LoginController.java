@@ -76,8 +76,20 @@ public class LoginController {
             tags = { "Auth Controller" }
     )
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@CookieValue(value = "refresh_token") String refreshToken) {
-        loginService.logout(refreshToken);
+    public ResponseEntity<String> logout(@CookieValue(value = "refresh_token") String refreshToken, HttpServletResponse response) {
+
+        if(refreshToken != null) {
+            loginService.logout(refreshToken);
+
+            ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                    .httpOnly(true)
+                    .secure(false) // <---- https일 시, true로 변경하기!
+                    .path("/")
+                    .maxAge(0)
+                    .build();
+
+            response.setHeader("Set-Cookie", deleteCookie.toString());
+        }
         return ResponseEntity.ok("로그아웃");
     }
 }
