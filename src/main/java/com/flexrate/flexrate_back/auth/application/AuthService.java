@@ -65,7 +65,7 @@ public class AuthService {
     public boolean verifyPin(PinRequest pinRequest, Member member) {
         PinCredential pinCredential = pinCredentialRepository.findByMember_MemberId(member.getMemberId())
                 .orElseThrow(() -> {
-                    log.warn("PIN 인증 실패: 등록되지 않은 사용자 PIN, memberId={}", member.getMemberId());
+                    log.warn("PIN 인증 실패:\n등록되지 않은 사용자 PIN, memberId={}", member.getMemberId());
                     return new FlexrateException(ErrorCode.PIN_NOT_REGISTERED);
                 });
 

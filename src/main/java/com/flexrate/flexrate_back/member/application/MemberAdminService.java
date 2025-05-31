@@ -85,14 +85,14 @@ public class MemberAdminService {
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> {
-                    log.warn("수정 실패: 존재하지 않는 회원 memberId={}", memberId);
+                    log.warn("수정 실패:\n존재하지 않는 회원 memberId={}", memberId);
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
 
         // A000 필수 입력값 누락 체크
         if (request.name() == null && request.sex() == null
                 && request.birthDate() == null && request.memberStatus() == null) {
-            log.warn("수정 실패: 필수 입력값 누락 memberId={}", memberId);
+            log.warn("수정 실패:\n필수 입력값 누락 memberId={}", memberId);
             throw new FlexrateException(ErrorCode.AUTH_REQUIRED_FIELD_MISSING);
         }
 
@@ -140,7 +140,7 @@ public class MemberAdminService {
         // U001 유저 존재 여부 체크
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> {
-                    log.warn("회원 상세조회 실패: 존재하지 않는 회원 memberId={}", memberId);
+                    log.warn("회원 상세조회 실패:\n존재하지 않는 회원 memberId={}", memberId);
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
 

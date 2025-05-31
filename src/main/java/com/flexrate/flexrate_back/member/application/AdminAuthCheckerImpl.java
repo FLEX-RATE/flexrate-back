@@ -21,7 +21,7 @@ public class AdminAuthCheckerImpl implements AdminAuthChecker {
             log.info("관리자 권한 확인 성공");
             return true;
         } else {
-            log.warn("관리자 권한 확인 실패: memberRole = {}", member.getRole());
+            log.warn("관리자 권한 확인 실패:\nmemberRole = {}", member.getRole());
             return false;
         }
     }
