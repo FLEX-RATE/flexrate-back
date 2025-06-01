@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +22,12 @@ public class LoginController {
 
     private final LoginService loginService;
 
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
+
     @Operation(
             summary = "패스워드 로그인",
-            description = "이메일과 비밀번호를 사용하여 로그인합니다.",
-            tags = { "Auth Controller" }
+            description = "이메일과 비밀번호를 사용하여 로그인합니다."
     )
     @PostMapping("/login/password")
     public ResponseEntity<LoginResponseDTO> loginWithPassword(
@@ -37,7 +40,7 @@ public class LoginController {
 
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(false) // <---- https일 시, true로 변경하기!
+                .secure(cookieSecure)
                 .path("/")
                 .sameSite("Lax")
                 .build();
@@ -50,8 +53,7 @@ public class LoginController {
 
     @Operation(
             summary = "Passkey 로그인",
-            description = "Passkey를 사용하여 로그인합니다.",
-            tags = { "Auth Controller" }
+            description = "Passkey를 사용하여 로그인합니다."
     )
     @PostMapping("/login/passkey")
     public ResponseEntity<LoginResponseDTO> loginWithPasskey(@RequestBody @Valid PasskeyLoginRequestDTO request) {
@@ -61,8 +63,7 @@ public class LoginController {
 
     @Operation(
             summary = "MFA 로그인",
-            description = "다중 인증(MFA)을 사용하여 로그인합니다.",
-            tags = { "Auth Controller" }
+            description = "다중 인증(MFA)을 사용하여 로그인합니다."
     )
     @PostMapping("/login/mfa")
     public ResponseEntity<LoginResponseDTO> loginWithMfa(@RequestBody @Valid MfaLoginRequestDTO request) {
@@ -72,8 +73,7 @@ public class LoginController {
 
     @Operation(
             summary = "로그아웃",
-            description = "로그인된 사용자의 로그아웃을 처리하며, refreshToken을 삭제합니다.",
-            tags = { "Auth Controller" }
+            description = "로그인된 사용자의 로그아웃을 처리하며, refreshToken을 삭제합니다."
     )
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@CookieValue(value = "refresh_token") String refreshToken, HttpServletResponse response) {
@@ -83,7 +83,7 @@ public class LoginController {
 
             ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                     .httpOnly(true)
-                    .secure(false) // <---- https일 시, true로 변경하기!
+                    .secure(cookieSecure)
                     .path("/")
                     .maxAge(0)
                     .build();

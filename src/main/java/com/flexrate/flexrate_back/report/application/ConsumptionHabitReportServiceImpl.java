@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -23,6 +24,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReportService {
@@ -44,10 +46,12 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
     @Override
     public ConsumptionHabitReport createReport(Member member, YearMonth reportMonth, String summary) {
         if (reportRepository.findByMemberAndReportMonth(member, reportMonth).isPresent()) {
+            log.warn("이미 존재하는 소비 개선 리포트 생성 시도 :\nreportMonth={}", reportMonth);
             throw new FlexrateException(ErrorCode.REPORT_ALREADY_EXISTS);
         }
 
         if (summary == null || summary.isBlank()) {
+            log.info("소비 개선 리포트 생성 :\nreportMonth={}", reportMonth);
             summary = apiClient.createConsumptionSummary(member.getMemberId(), reportMonth);
         }
 
@@ -56,6 +60,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
                 .reportMonth(reportMonth)
                 .summary(summary)
                 .build();
+        log.info("소비 개선 리포트 생성 성공 :\nreportMonth={}", reportMonth);
 
         return reportRepository.save(report);
     }
@@ -70,6 +75,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      */
     @Override
     public Optional<ConsumptionHabitReport> getReport(Member member, YearMonth reportMonth) {
+        log.info("특정 소비 개선 리포트 조회 :\nreportMonth={}", reportMonth);
         return reportRepository.findByMemberAndReportMonth(member, reportMonth);
     }
 
@@ -82,6 +88,7 @@ public class ConsumptionHabitReportServiceImpl implements ConsumptionHabitReport
      */
     @Override
     public List<ConsumptionHabitReport> getAllReportsByMember(Member member) {
+        log.info("소비 개선 리포트 목록 조회");
         return reportRepository.findAllByMember(member);
     }
 

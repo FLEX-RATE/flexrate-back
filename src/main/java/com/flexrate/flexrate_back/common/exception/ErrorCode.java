@@ -29,6 +29,9 @@ public enum ErrorCode {
     LOAN_REQUEST_CONFLICT("L009", "대출 신청 요청이 제약 조건에 위배됩니다.", HttpStatus.BAD_REQUEST),
     LOAN_NOT_APPLIED("L010", "신청을 하지 않은 대출입니다.", HttpStatus.BAD_REQUEST),
     LOAN_CONSUMPTION_TYPE_MISMATCH("L011", "소비 유형이 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+    LOAN_START_DATE_MISSING("L012", "대출 시작일이 누락되었습니다.", HttpStatus.BAD_REQUEST),
+    LOAN_END_DATE_MISSING("L013", "대출 종료일이 누락되었습니다.", HttpStatus.BAD_REQUEST),
+    LOAN_APPLICATION_STATUS_NONE("L014", "대출 신청 상태가 NONE(초기)입니다. 정보를 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
 
     // 리포트
     REPORT_MEMBER_OR_MONTH_NULL("R001", "member 또는 month는 null일 수 없습니다.", HttpStatus.BAD_REQUEST),
@@ -48,6 +51,7 @@ public enum ErrorCode {
     MESSAGING_EXCEPTION("M001", "이메일 오류가 발생하였습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ALREADY_USING("M002", "이메일 오류가 발생하였습니다.", HttpStatus.BAD_REQUEST),
     WRONG_AUTH_CODE("M003", "제공된 인증코드가 불일치합니다.", HttpStatus.BAD_REQUEST),
+    DUPLICATE_EMAIL("M004", "이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
 
     // 인증/인가
     AUTH_REQUIRED_FIELD_MISSING("A000", "필수 입력값이 누락되었습니다.", HttpStatus.BAD_REQUEST),
@@ -72,7 +76,10 @@ public enum ErrorCode {
     NOT_FOUND_STATIC_RESOURCE("S404", "요청한 정적 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // 유효성
-    VALIDATION_ERROR("V001", "유효성 검사 오류", HttpStatus.BAD_REQUEST);
+    VALIDATION_ERROR("V001", "유효성 검사 오류", HttpStatus.BAD_REQUEST),
+
+    // 예상치 못한 에러
+    UNEXPECTED_ERROR("E001", "예상치 못한 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String message;

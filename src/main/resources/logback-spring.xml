@@ -20,7 +20,7 @@
     <!-- Logstash로 로그 전송하는 appender(로그 메시지를 출력할 위치를 결정하는 컴포넌트) 설정 -->
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
 <!--        <destination>${LOGSTASH_HOST}:${LOGSTASH_PORT}</destination>-->
-        <destination>localhost:5000</destination>
+        <destination>logstash:5000</destination>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
                 <timestamp>
@@ -32,7 +32,12 @@
                         "level": "%level",
                         "logger": "%logger",
                         "thread": "%thread",
+                        "traceId": "%X{traceId}",
+                        "loginId": "%X{loginId}",
+                        "pageId": "%X{pageId}",
                         "message": "%replace(%message){'(?i)(password\\s*[:=]\\s*)[^,\\s\"]+', '$1****'}",
+                        "errorCode": "%X{errorCode}",
+                        "details": "%X{details}",
                         "exception": "%replace(%exception){'(?i)(password\\s*[:=]\\s*)[^,\\s\"]+', '$1****'}"
                         }
                     </pattern>
@@ -60,7 +65,12 @@
                         "level": "%level",
                         "logger": "%logger",
                         "thread": "%thread",
+                        "traceId": "%X{traceId}",
+                        "loginId": "%X{loginId}",
+                        "pageId": "%X{pageId}",
                         "message": "%replace(%message){'(?i)(password\\s*[:=]\\s*)[^,\\s\"]+', '$1****'}",
+                        "errorCode": "%X{errorCode}",
+                        "details": "%X{details}",
                         "exception": "%replace(%exception){'(?i)(password\\s*[:=]\\s*)[^,\\s\"]+', '$1****'}"
                         }
                     </pattern>

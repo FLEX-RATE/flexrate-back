@@ -49,7 +49,8 @@ public class ReportStatisticsController {
     ) {
         Long memberId = Long.parseLong(principal.getName());
         Member member = memberService.findById(memberId);
+        ConsumptionCategoryStatsResponse response = statisticsService.getCategoryStats(member, month);
 
-        return statisticsService.getCategoryStats(member, month);
+        return response;
     }
 }

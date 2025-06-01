@@ -1,5 +1,6 @@
 package com.flexrate.flexrate_back.loan.api;
 
+import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.loan.application.LoanService;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationRequest;
 import com.flexrate.flexrate_back.loan.dto.LoanApplicationResultResponse;
@@ -40,9 +41,9 @@ public class LoanController {
     @PostMapping("/loan-review-application")
     public ResponseEntity<Void> preApplyLoan(
             @RequestBody @Valid LoanReviewApplicationRequest request,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         loanService.preApply(request, member);
         return ResponseEntity.ok().build();
 
@@ -60,9 +61,9 @@ public class LoanController {
     )
     @GetMapping("/loan-review-application")
     public ResponseEntity<LoanReviewApplicationResponse> preApplyResult(
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        LoanReviewApplicationResponse result = loanService.preApplyResult(getMember(principal));
+        LoanReviewApplicationResponse result = loanService.preApplyResult(getMember(memberId));
         return ResponseEntity.ok(result);
     }
 
@@ -82,9 +83,9 @@ public class LoanController {
     @PostMapping("/loan-application")
     public ResponseEntity<Void> applyLoan(
             @RequestBody @Valid LoanApplicationRequest request,
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         loanService.applyLoan(member, request);
         return ResponseEntity.ok().build();
     }
@@ -105,9 +106,9 @@ public class LoanController {
     )
     @GetMapping("/loan-application-result")
     public ResponseEntity<LoanApplicationResultResponse> getLoanApplicationResult(
-            Principal principal
+            @CurrentMemberId Long memberId
     ) {
-        Member member = getMember(principal);
+        Member member = getMember(memberId);
         LoanApplicationResultResponse response = loanService.getLoanApplicationResult(member);
         return ResponseEntity.ok(response);
     }
@@ -116,11 +117,11 @@ public class LoanController {
     /**
      * Principal 객체를 통해 현재 로그인한 회원을 조회합니다.
      *
-     * @param principal Spring Security에서 주입한 사용자 인증 정보
+     * @param memberId 현재 로그인한 사용자의 ID
      * @return 해당 사용자의 Member 엔티티
      */
-    private Member getMember(Principal principal) {
-        return memberService.findById(Long.parseLong(principal.getName()));
+    private Member getMember(@CurrentMemberId Long memberId) {
+        return memberService.findById(memberId);
     }
 
 
