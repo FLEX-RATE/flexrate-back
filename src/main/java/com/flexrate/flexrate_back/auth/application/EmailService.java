@@ -58,8 +58,8 @@ public class EmailService {
     private void checkDuplicatedEmail(String email) {
         Optional<Member> optional = memberRepository.findByEmail(email);
         // 중복된 이메일을 사용하는 회원이 존재하지 않으면 성공
-        if (optional.isEmpty()) {
-            return;
+        if (optional.isPresent()) {
+            throw new FlexrateException(ErrorCode.DUPLICATED_EMAIL);
         }
     }
 
