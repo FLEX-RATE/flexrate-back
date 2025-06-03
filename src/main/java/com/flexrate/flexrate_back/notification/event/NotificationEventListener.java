@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.notification.event;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationRepository;
 import com.flexrate.flexrate_back.notification.application.NotificationEmitterService;
@@ -31,8 +33,14 @@ public class NotificationEventListener {
                 .isRead(false)
                 .build();
 
-        Notification saved = notificationRepository.save(notification);
-        log.info("Notification saved: id={}, memberId={}", saved.getNotificationId(), saved.getMember().getMemberId());
+        Notification saved;
+        try {
+            saved = notificationRepository.save(notification);
+            log.info("Notification saved: id={}, memberId={}", saved.getNotificationId(), saved.getMember().getMemberId());
+        } catch (Exception e) {
+            log.error("Notification 저장 실패: memberId={}, error={}", event.getMember().getMemberId(), e.getMessage(), e);
+            throw new FlexrateException(ErrorCode.NOTIFICATION_SAVE_FAILED, e);
+        }
 
         notificationEmitterService.sendNotification(event.getMember().getMemberId(), saved);
         log.info("Notification sent via SSE: memberId={}, notificationId={}", saved.getMember().getMemberId(), saved.getNotificationId());

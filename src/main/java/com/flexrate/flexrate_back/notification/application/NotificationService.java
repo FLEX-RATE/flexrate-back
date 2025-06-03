@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.notification.application;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationQueryRepository;
 import com.flexrate.flexrate_back.notification.domain.repository.NotificationRepository;
@@ -54,7 +56,7 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다: " + notificationId));
+                .orElseThrow(() -> new FlexrateException(ErrorCode.NOTIFICATION_NOT_FOUND));
         notification.markAsRead();
     }
 
