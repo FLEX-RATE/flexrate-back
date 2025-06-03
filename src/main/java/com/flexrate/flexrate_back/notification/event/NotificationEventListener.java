@@ -39,7 +39,7 @@ public class NotificationEventListener {
             log.info("Notification saved: id={}, memberId={}", saved.getNotificationId(), saved.getMember().getMemberId());
         } catch (Exception e) {
             log.error("Notification 저장 실패: memberId={}, error={}", event.getMember().getMemberId(), e.getMessage(), e);
-            throw new FlexrateException(ErrorCode.NOTIFICATION_SAVE_FAILED);
+            throw new FlexrateException(ErrorCode.NOTIFICATION_SAVE_FAILED, e);
         }
 
         notificationEmitterService.sendNotification(event.getMember().getMemberId(), saved);
