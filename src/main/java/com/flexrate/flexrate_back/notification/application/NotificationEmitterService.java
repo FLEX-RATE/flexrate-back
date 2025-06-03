@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.notification.application;
 
+import com.flexrate.flexrate_back.common.exception.ErrorCode;
+import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.notification.domain.Notification;
 import com.flexrate.flexrate_back.notification.dto.NotificationSummaryDto;
 import jakarta.annotation.PreDestroy;
@@ -56,7 +58,7 @@ public class NotificationEmitterService {
         } catch (IOException e) {
             log.error("connect 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
-            return emitter;
+            throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
         }
 
         // Heartbeat 스케줄링 (30초로 늘림)
@@ -101,9 +103,11 @@ public class NotificationEmitterService {
             } catch (IOException e) {
                 log.warn("heartbeat 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
+                throw new FlexrateException(ErrorCode.NOTIFICATION_HEARTBEAT_FAILED, e);
             } catch (Exception e) {
                 log.error("heartbeat 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
+                throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
             }
         }, 30, 30, TimeUnit.SECONDS); // 30초로 변경
 
@@ -127,9 +131,11 @@ public class NotificationEmitterService {
         } catch (IOException e) {
             log.warn("notification 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
+            throw new FlexrateException(ErrorCode.NOTIFICATION_SEND_FAILED, e);
         } catch (Exception e) {
             log.error("notification 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
+            throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
         }
     }
 

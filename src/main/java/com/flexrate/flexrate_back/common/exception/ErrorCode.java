@@ -71,6 +71,14 @@ public enum ErrorCode {
     PRODUCT_LOAD_ERROR("P001", "상품을 불러오는 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND("P002", "해당 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    // 알림
+    NOTIFICATION_NOT_FOUND("N001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    NOTIFICATION_ACCESS_DENIED("N002", "해당 알림에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    SSE_CONNECTION_ERROR("N003", "실시간 알림 연결에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOTIFICATION_SEND_FAILED("N004", "알림 전송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOTIFICATION_HEARTBEAT_FAILED("N005", "SSE heartbeat 전송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOTIFICATION_SAVE_FAILED("N006", "알림 저장에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
     // 서버 오류
     INTERNAL_SERVER_ERROR("S500", "서버 내부 오류", HttpStatus.INTERNAL_SERVER_ERROR),
     NOT_FOUND_STATIC_RESOURCE("S404", "요청한 정적 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
