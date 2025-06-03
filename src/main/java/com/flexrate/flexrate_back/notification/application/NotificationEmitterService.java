@@ -58,7 +58,7 @@ public class NotificationEmitterService {
         } catch (IOException e) {
             log.error("connect 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
-            throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
+            emitter.completeWithError(e);
         }
 
         // Heartbeat 스케줄링 (30초로 늘림)
