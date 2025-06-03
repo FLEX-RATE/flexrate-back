@@ -103,11 +103,11 @@ public class NotificationEmitterService {
             } catch (IOException e) {
                 log.warn("heartbeat 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
-                throw new FlexrateException(ErrorCode.NOTIFICATION_HEARTBEAT_FAILED, e);
+                // Exception handled without rethrowing to keep the scheduler running
             } catch (Exception e) {
                 log.error("heartbeat 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
                 cleanupConnection(memberId);
-                throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
+                // Exception handled without rethrowing to keep the scheduler running
             }
         }, 30, 30, TimeUnit.SECONDS); // 30초로 변경
 
