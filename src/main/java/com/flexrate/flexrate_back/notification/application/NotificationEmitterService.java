@@ -131,11 +131,11 @@ public class NotificationEmitterService {
         } catch (IOException e) {
             log.warn("notification 이벤트 전송 실패:\nmemberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
-            throw new FlexrateException(ErrorCode.NOTIFICATION_SEND_FAILED, e);
+            log.info("Connection cleaned up for memberId={} after notification send failure.", memberId);
         } catch (Exception e) {
             log.error("notification 전송 중 예상치 못한 에러: memberId={}, error={}", memberId, e.getMessage());
             cleanupConnection(memberId);
-            throw new FlexrateException(ErrorCode.SSE_CONNECTION_ERROR, e);
+            log.info("Connection cleaned up for memberId={} after unexpected error.", memberId);
         }
     }
 
