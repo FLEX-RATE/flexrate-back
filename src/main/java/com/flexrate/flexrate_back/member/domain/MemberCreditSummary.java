@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 public class MemberCreditSummary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "summary_id")
     private Long summaryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
