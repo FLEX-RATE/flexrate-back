@@ -53,7 +53,15 @@ public class UserFinancialDataService {
         }
 
         // 기본 가중치 기반 점수 계산 (가상의 기준, 필요 시 조정)
-        double score = 600.0;
+        double score = 500.0;
+
+        // 1. 통신비 및 공과금 납부이력 (25%)
+
+
+        // 2. 과거 대출 상환 이력 (15%)
+
+
+        //
 
         // 소득이 많을수록 가산
         score += Math.min(income / 100_000, 100); // 소득 10만원당 1점, 최대 100점
