@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class FidoCredential {
 
     @Id
-    private String credentialId;
+    private Long credentialId;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id", nullable = false)
