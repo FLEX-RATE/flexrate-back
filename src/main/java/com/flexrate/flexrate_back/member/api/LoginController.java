@@ -1,10 +1,7 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.LoginService;
-import com.flexrate.flexrate_back.member.dto.LoginResponseDTO;
-import com.flexrate.flexrate_back.member.dto.MfaLoginRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyLoginRequestDTO;
-import com.flexrate.flexrate_back.member.dto.PasswordLoginRequestDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -48,6 +45,26 @@ public class LoginController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @PostMapping("/login/passkey/challenge")
+    public ResponseEntity<PasskeyLoginChallengeResponseDTO> getPasskeyChallenge(
+            @RequestBody @Valid PasskeyLoginChallengeRequestDTO request
+    ) {
+        PasskeyLoginChallengeResponseDTO response = loginService.generateLoginChallenge(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Passkey 로그인 Challenge 요청",
+            description = "Passkey 로그인을 위한 challenge를 발급합니다."
+    )
+    @PostMapping("/login/passkey/options")
+    public ResponseEntity<PasskeyLoginChallengeResponseDTO> getPasskeyLoginChallenge(
+            @RequestBody @Valid PasskeyLoginChallengeRequestDTO request
+    ) {
+        PasskeyLoginChallengeResponseDTO response = loginService.generateLoginChallenge(request);
+        return ResponseEntity.ok(response);
     }
 
 

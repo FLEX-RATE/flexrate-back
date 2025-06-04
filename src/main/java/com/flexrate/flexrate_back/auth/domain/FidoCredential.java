@@ -15,8 +15,7 @@ import java.time.LocalDateTime;
 public class FidoCredential {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long credentialId;
+    private String credentialId;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id", nullable = false)
@@ -35,4 +34,10 @@ public class FidoCredential {
     private String deviceInfo;
 
     private boolean isActive;
+
+
+    public void updateSignCountAndLastUsed(int newSignCount, LocalDateTime now) {
+        this.signCount = newSignCount;
+        this.lastUsedDate = now;
+    }
 }

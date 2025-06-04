@@ -6,5 +6,6 @@ public record MfaLoginRequestDTO(
         String challenge,
         String clientDataJSON,
         String authenticatorData,
-        String signature
+        String signature,
+        String deviceInfo
 ) {}

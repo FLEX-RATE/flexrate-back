@@ -9,6 +9,7 @@ import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.common.util.StringRedisUtil;
 import com.flexrate.flexrate_back.member.domain.Member;
+import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.*;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -31,6 +34,7 @@ public class LoginService {
     private final WebAuthnService webAuthnService;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisUtil stringRedisUtil;
+    private final FidoCredentialRepository fidoCredentialRepository;
 
     public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request) {
         log.info("로그인 시도: email={}", request.email());
@@ -57,6 +61,29 @@ public class LoginService {
                 .challenge("")
                 .build();
     }
+
+    public PasskeyLoginChallengeResponseDTO generateLoginChallenge(PasskeyLoginChallengeRequestDTO request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        String challenge = webAuthnService.generateChallenge(member.getMemberId());
+
+        List<FidoCredential> credentials = fidoCredentialRepository.findAllByMember_MemberIdAndIsActiveTrue(member.getMemberId());
+
+        List<String> allowedCredentialIds = credentials.stream()
+                .map(FidoCredential::getCredentialId)
+                .toList();
+
+        return PasskeyLoginChallengeResponseDTO.builder()
+                .challenge(challenge)
+                .rpId("flexrate.com")
+                .userHandle(member.getMemberId().toString())
+                .allowedCredentialIds(allowedCredentialIds)
+                .build();
+    }
+
+
+
 
     public LoginResponseDTO loginWithPasskey(PasskeyLoginRequestDTO request) {
         log.info("Passkey 로그인 시도 email={}", request.email());
@@ -107,30 +134,101 @@ public class LoginService {
                 .build();
     }
 
+
+
+    public PasskeyChallengeResponseDTO generatePasskeyRegistrationChallenge(String email) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        Long memberId = member.getMemberId();
+        String challenge = webAuthnService.generateChallenge(memberId);
+
+        List<String> pubKeyCredParams = List.of("{\"type\":\"public-key\",\"alg\":-7}");
+
+        return new PasskeyChallengeResponseDTO(
+                challenge,
+                "flexrate.com",        // relyingPartyId
+                "Flexrate",             // relyingPartyName
+                memberId.toString(),    // userId
+                member.getEmail(),      // userName
+                member.getEmail(),      // userDisplayName
+                60000L,                 // timeout (ms)
+                pubKeyCredParams,
+                "preferred",            // userVerification
+                true                    // residentKey
+        );
+    }
+
+    /**
+     * 패스키 로그인용 Challenge 생성 (로그인 시 사용)
+     */
+    public PasskeyLoginChallengeResponseDTO generatePasskeyLoginChallenge(PasskeyLoginChallengeRequestDTO request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+
+        String challenge = webAuthnService.generateChallenge(member.getMemberId());
+
+        // FidoCredentialRepository로 memberId 기준 조회
+        List<FidoCredential> credentials = fidoCredentialRepository.findAllByMember_MemberIdAndIsActiveTrue(member.getMemberId());
+
+        List<String> allowedCredentialIds = credentials.stream()
+                .map(FidoCredential::getCredentialId)
+                .toList();
+
+        return PasskeyLoginChallengeResponseDTO.builder()
+                .challenge(challenge)
+                .rpId("flexrate.com")
+                .userHandle(member.getMemberId().toString())
+                .allowedCredentialIds(allowedCredentialIds)
+                .build();
+    }
+
+
     public LoginResponseDTO loginWithMFA(MfaLoginRequestDTO request) {
         log.info("MFA 로그인 시도 memberId={}", request.memberId());
 
-        // 사용자 존재 여부 확인
         Member member = memberRepository.findById(request.memberId())
                 .orElseThrow(() -> {
                     log.warn("MFA 로그인: 존재하지 않는 사용자 memberId={}", request.memberId());
                     return new FlexrateException(ErrorCode.USER_NOT_FOUND);
                 });
-        // WebAuthn 인증
+
         PasskeyAuthenticationDTO passkeyAuthDTO = PasskeyAuthenticationDTO.builder()
                 .clientDataJSON(request.clientDataJSON())
                 .authenticatorData(request.authenticatorData())
                 .signature(request.signature())
                 .build();
 
-        FidoCredential credential = webAuthnService
-                .authenticatePasskey(member.getMemberId(), passkeyAuthDTO, request.challenge())
-                .orElseThrow(() -> {
-                    log.warn("MFA 인증 실패 userId={}, email={}", member.getMemberId(), member.getEmail());
-                    return new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
-                });
+        FidoCredential credential;
+        AuthResult authResult;
+        try {
+            credential = webAuthnService
+                    .authenticatePasskey(member.getMemberId(), passkeyAuthDTO, request.challenge())
+                    .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS));
+            authResult = AuthResult.SUCCESS;
+        } catch (FlexrateException e) {
+            authResult = AuthResult.FAILURE;
+            // 인증 실패 로그 저장
+            MfaLog failLog = MfaLog.builder()
+                    .mfaType(MfaType.FIDO2)
+                    .authenticatedAt(LocalDateTime.now())
+                    .result(authResult)
+                    .deviceInfo(request.deviceInfo())
+                    .build();
+            mfaLogRepository.save(failLog);
+            throw e;  // 인증 실패 예외 다시 던짐
+        }
 
-        // 인증 성공 → 토큰 발급
+        // 인증 성공 로그 저장
+        MfaLog successLog = MfaLog.builder()
+                .mfaType(MfaType.FIDO2)
+                .authenticatedAt(LocalDateTime.now())
+                .result(authResult)
+                .deviceInfo(request.deviceInfo())
+                .build();
+        mfaLogRepository.save(successLog);
+
+        // 토큰 발급 및 Redis 저장 등 후속 처리
         String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
         String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
         log.info("JWT 토큰 발급 완료 userId={}", member.getMemberId());

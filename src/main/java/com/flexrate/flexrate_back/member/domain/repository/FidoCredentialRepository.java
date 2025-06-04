@@ -4,7 +4,7 @@ import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
 
 /*
  * FIDO 자격 증명을 저장, 조회하는 JPA 레포지토리.
@@ -16,9 +16,11 @@ import java.util.Optional;
 * */
 
 @Repository
-public interface FidoCredentialRepository extends JpaRepository<FidoCredential, Long> {
-    Optional<FidoCredential> findByMember_MemberId(Long memberId);
-    boolean existsByPublicKey(String publicKey);
+public interface FidoCredentialRepository extends JpaRepository<FidoCredential, String> {
 
-    boolean existsByCredentialId(Long credential);
+    List<FidoCredential> findByMember_MemberId(Long memberId);
+    boolean existsByPublicKey(String publicKey);
+    boolean existsByCredentialId(String credentialId);
+    List<FidoCredential> findAllByMember_MemberIdAndIsActiveTrue(Long memberId);
+
 }
