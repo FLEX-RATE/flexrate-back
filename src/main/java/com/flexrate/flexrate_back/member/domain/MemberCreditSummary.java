@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.member.domain;
 
+import com.flexrate.flexrate_back.loan.domain.LoanApplication;
+import com.flexrate.flexrate_back.loan.domain.LoanTransaction;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,12 +23,12 @@ import java.time.LocalDateTime;
 public class MemberCreditSummary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "summary_id")
     private Long summaryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "application_id", nullable = false)
+    private LoanApplication loanApplication;
 
     @CreatedDate
     @Column(name = "calculated_at", nullable = false)
@@ -78,9 +80,6 @@ public class MemberCreditSummary {
 
     @Column(name = "credit_score", nullable = false)
     private Integer creditScore;
-
-    @Column(name = "interest_rate", nullable = false)
-    private Float interestRate;
 
     @Column(name = "remark", length = 255)
     private String remark;
