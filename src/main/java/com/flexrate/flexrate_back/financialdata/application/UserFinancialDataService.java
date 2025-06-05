@@ -37,6 +37,10 @@ public class UserFinancialDataService {
      */
     @Transactional
     public int evaluateCreditScore(Member member) {
+        if(member == null) {
+            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+        }
+
         log.info("신용점수 평가 시작:\nmemberId={}", member.getMemberId());
         LoanApplication loanApplication = loanApplicationRepository.findByMember(member)
                 .orElseThrow(() -> {
