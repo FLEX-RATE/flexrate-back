@@ -206,11 +206,6 @@ public class UserFinancialDataService {
 
         log.info("patchCreditScore 호출 후 LoanApplication 신용점수: {}", loanApplication.getCreditScore());
 
-        // 명시적으로 저장 (테스트용)
-        LoanApplication savedLoanApplication = loanApplicationRepository.save(loanApplication);
-        log.info("LoanApplication 저장 완료: applicationId={}, creditScore={}",
-                savedLoanApplication.getApplicationId(), savedLoanApplication.getCreditScore());
-
         // Member 업데이트
         log.info("=== Member 신용점수 평가 상태 업데이트 ===");
         log.info("업데이트 전 Member creditScoreEvaluated: {}", member.getCreditScoreEvaluated());
