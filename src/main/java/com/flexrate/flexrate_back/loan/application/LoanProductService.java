@@ -86,7 +86,7 @@ public class LoanProductService {
                     return new FlexrateException(ErrorCode.LOAN_NOT_FOUND);
                 });
 
-        if (app.getStatus() != LoanApplicationStatus.NONE) {
+        if (app.getStatus() != LoanApplicationStatus.NONE && app.getStatus() !=  LoanApplicationStatus.REJECTED) {
             log.warn("대출 상품 선택 실패:\n이미 신청된 대출 존재, memberId={}, status={}", persistentMember.getMemberId(), app.getStatus());
             throw new FlexrateException(ErrorCode.LOAN_APPLICATION_ALREADY_EXISTS);
         }

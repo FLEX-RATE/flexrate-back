@@ -81,7 +81,7 @@ public class LoanApplication {
 
     /**
      * 대출 상태 전환 유효성 체크
-     * 가능한 상태 전환: NONE -> PRE_APPLIED, PRE_APPLIED -> NONE, PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED, COMPLETED -> NONE, REJECTED -> NONE
+     * 가능한 상태 전환: NONE -> PRE_APPLIED, PRE_APPLIED -> NONE, PENDING -> REJECTED/EXECUTED, EXECUTED -> REJECTED/COMPLETED, COMPLETED -> NONE, REJECTED -> NONE, PRE_APPLIED
      * - NONE: 대출 상품 선택 전
      * - PRE_APPLIED: 신청 접수 중
      * - PENDING: 심사 중
@@ -95,7 +95,7 @@ public class LoanApplication {
                 (currentStatus == LoanApplicationStatus.PENDING && (newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.EXECUTED)) ||
                 (currentStatus == LoanApplicationStatus.EXECUTED && newStatus == LoanApplicationStatus.REJECTED || newStatus == LoanApplicationStatus.COMPLETED) ||
                 (currentStatus == LoanApplicationStatus.COMPLETED && newStatus == LoanApplicationStatus.NONE) ||
-                (currentStatus == LoanApplicationStatus.REJECTED && newStatus == LoanApplicationStatus.NONE);
+                (currentStatus == LoanApplicationStatus.REJECTED && (newStatus == LoanApplicationStatus.NONE || newStatus == LoanApplicationStatus.PRE_APPLIED));
     }
 
     /**
