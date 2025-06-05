@@ -15,7 +15,11 @@ import java.time.LocalDateTime;
 public class FidoCredential {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long credentialId;
+
+    @Column(nullable = false, unique = true, length = 255)
+    private String credentialKey;  // 실제 패스키 식별자
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id", nullable = false)
@@ -33,6 +37,7 @@ public class FidoCredential {
     @Column(nullable = false, length = 20)
     private String deviceInfo;
 
+    @Column(nullable = false)
     private boolean isActive;
 
 

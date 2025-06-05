@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -71,8 +70,9 @@ public class LoginService {
         List<FidoCredential> credentials = fidoCredentialRepository.findAllByMember_MemberIdAndIsActiveTrue(member.getMemberId());
 
         List<String> allowedCredentialIds = credentials.stream()
-                .map(FidoCredential::getCredentialId)
+                .map(FidoCredential::getCredentialKey) // ← credentialId ❌ → credentialKey ✅
                 .toList();
+
 
         return PasskeyLoginChallengeResponseDTO.builder()
                 .challenge(challenge)
@@ -172,7 +172,7 @@ public class LoginService {
         List<FidoCredential> credentials = fidoCredentialRepository.findAllByMember_MemberIdAndIsActiveTrue(member.getMemberId());
 
         List<String> allowedCredentialIds = credentials.stream()
-                .map(FidoCredential::getCredentialId)
+                .map(FidoCredential::getCredentialKey) // ← credentialId ❌ → credentialKey ✅
                 .toList();
 
         return PasskeyLoginChallengeResponseDTO.builder()

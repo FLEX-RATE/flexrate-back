@@ -1,6 +1,7 @@
 package com.flexrate.flexrate_back.member.application;
 
 import com.flexrate.flexrate_back.auth.application.AuthService;
+import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.common.exception.ErrorCode;
 import com.flexrate.flexrate_back.common.exception.FlexrateException;
 import com.flexrate.flexrate_back.loan.application.repository.LoanApplicationRepository;
@@ -8,6 +9,7 @@ import com.flexrate.flexrate_back.loan.domain.LoanApplication;
 import com.flexrate.flexrate_back.loan.enums.LoanApplicationStatus;
 import com.flexrate.flexrate_back.loan.enums.LoanType;
 import com.flexrate.flexrate_back.member.domain.Member;
+import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
 import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
@@ -37,6 +39,7 @@ public class SignupService {
     private final WebAuthnService webAuthnService;
     private final DummyFinancialDataGenerator dummyFinancialDataGenerator;
     private final LoanApplicationRepository loanApplicationRepository;
+    private final FidoCredentialRepository fidoCredentialRepository;
     private final AuthService authService;
 
     // 비밀번호 기반 회원가입
@@ -89,6 +92,18 @@ public class SignupService {
                 .build();
     }
 
+
+    /*
+     * FIDO 패스키 등록여부 조회
+     * @param memberId 회원 ID
+     * @param dto 패스키 등록 요청 정보
+     */
+    public boolean isFidoCredentialRegisteredByMemberId(Long memberId) {
+        return fidoCredentialRepository.findByMember_MemberId(memberId)
+                .stream()
+                .anyMatch(FidoCredential::isActive);
+    }
+
     /**
      * FIDO(패스키) 등록
      * @param memberId 회원 ID
@@ -102,7 +117,12 @@ public class SignupService {
         webAuthnService.registerPasskey(member, dto);
     }
 
+    // 챌린지 발급
     public String generateFidoChallenge(Long memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new FlexrateException(ErrorCode.USER_NOT_FOUND);
+        }
+        log.info("FIDO 등록 요청: memberId={}", memberId);
         return webAuthnService.generateChallenge(memberId);
     }
 

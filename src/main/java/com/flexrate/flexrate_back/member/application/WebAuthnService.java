@@ -61,15 +61,18 @@ public class WebAuthnService {
     // 패스키 등록
     @Transactional
     public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
-        log.info("패스키 중복 체크: memberId={}", member.getMemberId());
+        log.info("패스키 등록 시도: memberId={}, credentialKey={}", member.getMemberId(), passkeyDTO.credentialKey());
 
-        if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey()) ||
-                fidoCredentialRepository.existsByCredentialId(passkeyDTO.credentialId())) {
-            log.warn("중복된 패스키 등록 시도: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
+        if (fidoCredentialRepository.existsByCredentialKey(passkeyDTO.credentialKey())) {
+            log.warn("중복된 credentialKey: {}", passkeyDTO.credentialKey());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
-        // 서명 검증 필수
+        if (fidoCredentialRepository.existsByPublicKey(passkeyDTO.publicKey())) {
+            log.warn("중복된 publicKey: {}", passkeyDTO.publicKey());
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+        }
+
         boolean isValid = verifySignature(
                 passkeyDTO.publicKey(),
                 Base64.getDecoder().decode(passkeyDTO.authenticatorData()),
@@ -78,22 +81,22 @@ public class WebAuthnService {
         );
 
         if (!isValid) {
+            log.warn("패스키 등록 실패 - 서명 검증 실패: memberId={}", member.getMemberId());
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
-        FidoCredential fidoCredential = FidoCredential.builder()
+        FidoCredential credential = FidoCredential.builder()
+                .credentialKey(passkeyDTO.credentialKey())
                 .member(member)
                 .publicKey(passkeyDTO.publicKey())
-                .credentialId(passkeyDTO.credentialId())
                 .signCount(passkeyDTO.signCount())
                 .deviceInfo(passkeyDTO.deviceInfo())
                 .isActive(true)
                 .lastUsedDate(LocalDateTime.now())
                 .build();
 
-        fidoCredentialRepository.save(fidoCredential);
-
-        log.info("패스키 등록 완료: memberId={}, credentialId={}", member.getMemberId(), passkeyDTO.credentialId());
+        fidoCredentialRepository.save(credential);
+        log.info("패스키 등록 완료: credentialKey={}", passkeyDTO.credentialKey());
     }
 
     // 패스키 인증
@@ -182,7 +185,7 @@ public class WebAuthnService {
         redisUtil.set("fido:challenge:login:" + member.getMemberId(), challenge, Duration.ofMinutes(5));
 
         List<String> credentialIds = fidoCredentialRepository.findByMember_MemberId(member.getMemberId()).stream()
-                .map(FidoCredential::getCredentialId)
+                .map(fido -> String.valueOf(fido.getCredentialId()))
                 .toList();
 
         return new PasskeyLoginChallengeResponseDTO(
@@ -204,32 +207,35 @@ public class WebAuthnService {
         return mfaLogRepository.save(mfaLog);
     }
 
-    private boolean verifySignature(String pemPublicKey, byte[] authenticatorData, byte[] clientDataJSON, byte[] signature) throws FlexrateException {
+    private boolean verifySignature(String pemPublicKey, byte[] authenticatorData, byte[] clientDataHash, byte[] signature) throws FlexrateException {
         try {
-            // 공개키 PEM에서 공개키를 객체로 변환
+            // PEM 공개키 정제 및 디코딩
             String publicKeyPEM = pemPublicKey
                     .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace("-----END PUBLIC KEY-----", "")
-                    .replaceAll("\\s+", "").strip();  // 공백 제거 및 strip
+                    .replaceAll("\\s+", "").strip();
 
             byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyPEM);
             KeyFactory keyFactory = KeyFactory.getInstance("EC");
             PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyBytes));
 
-            // clientDataJSON을 SHA-256 해시로 변환
-            byte[] clientDataHash = MessageDigest.getInstance("SHA-256").digest(clientDataJSON);
+            // 서명 검증용 데이터 생성 (authenticatorData || clientDataHash)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            baos.write(authenticatorData);
+            baos.write(clientDataHash);
+            byte[] signedData = baos.toByteArray();
 
-            // authenticatorData와 clientDataHash 결합하여 서명 검증용 데이터 생성
-            byte[] dataToVerify = concatenate(authenticatorData, clientDataHash);
+            // ECDSA with SHA-256 서명 검증 객체 생성
+            Signature sig = Signature.getInstance("SHA256withECDSA");
+            sig.initVerify(publicKey);
+            sig.update(signedData);
 
-            // ECDSA 서명 검증
-            Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA");
-            ecdsaVerify.initVerify(publicKey);
-            ecdsaVerify.update(dataToVerify);
+            // 서명 검증 수행
+            return sig.verify(signature);
 
-            return ecdsaVerify.verify(signature);
         } catch (Exception e) {
-            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS, e);
+            log.error("Signature verification failed", e);
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
     }
 

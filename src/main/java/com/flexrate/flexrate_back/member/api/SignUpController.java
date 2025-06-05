@@ -8,8 +8,11 @@ import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
@@ -19,6 +22,7 @@ import java.util.Base64;
  * @since 2025.04.28
  * @author 윤영찬
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -62,6 +66,36 @@ public class SignUpController {
     public ResponseEntity<String> getFido2RegistrationChallenge(@RequestParam Long memberId) {
         String challenge = signupService.generateFidoChallenge(memberId);
         return ResponseEntity.ok(Base64.getEncoder().encodeToString(challenge.getBytes()));
+    }
+
+    @Operation(
+            summary = "패스키 등록여부 확인",
+            description = "이메일을 통해 사용자가 패스키를 등록했는지 확인합니다."
+    )
+    @GetMapping("/fido2/exists")
+    public ResponseEntity<Boolean> isPasskeyRegistered() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            log.warn("Authentication is null! 인증 정보가 없습니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String memberIdStr = auth.getName();
+        log.info("Authenticated principal from token (getName): {}", memberIdStr);
+
+        Long memberId;
+        try {
+            memberId = Long.parseLong(memberIdStr);
+            log.info("Parsed memberId: {}", memberId);
+        } catch (NumberFormatException e) {
+            log.error("Invalid memberId format: '{}'", memberIdStr, e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        boolean exists = signupService.isFidoCredentialRegisteredByMemberId(memberId);
+        log.info("Fido credential registered for memberId {}: {}", memberId, exists);
+
+        return ResponseEntity.ok(exists);
     }
 
     /**
