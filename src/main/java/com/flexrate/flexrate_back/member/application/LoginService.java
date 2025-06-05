@@ -46,7 +46,7 @@ public class LoginService {
         String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));  // 2시간 만료
         String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
         String redisKey = "refreshToken:" + refreshToken;
-        stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofDays(7));
+        stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofSeconds(60));
 
         return LoginResponseDTO.builder()
                 .userId(member.getMemberId())
@@ -54,6 +54,7 @@ public class LoginService {
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .role(member.getRole())
                 .challenge("")
                 .build();
     }
@@ -103,6 +104,7 @@ public class LoginService {
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .role(member.getRole())
                 .challenge("")
                 .build();
     }
@@ -145,6 +147,7 @@ public class LoginService {
                 .email(member.getEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .role(member.getRole())
                 .challenge("")
                 .build();
     }
