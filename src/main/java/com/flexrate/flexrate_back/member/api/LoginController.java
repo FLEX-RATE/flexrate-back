@@ -47,6 +47,11 @@ public class LoginController {
         return ResponseEntity.ok(loginResponse);
     }
 
+
+    @Operation(
+            summary = "Passkey 로그인 Challenge 요청",
+            description = "Passkey 로그인을 위한 challenge를 발급합니다."
+    )
     @PostMapping("/login/passkey/challenge")
     public ResponseEntity<PasskeyLoginChallengeResponseDTO> getPasskeyChallenge(
             @RequestBody @Valid PasskeyLoginChallengeRequestDTO request
@@ -54,19 +59,6 @@ public class LoginController {
         PasskeyLoginChallengeResponseDTO response = loginService.generateLoginChallenge(request);
         return ResponseEntity.ok(response);
     }
-
-    @Operation(
-            summary = "Passkey 로그인 Challenge 요청",
-            description = "Passkey 로그인을 위한 challenge를 발급합니다."
-    )
-    @PostMapping("/login/passkey/options")
-    public ResponseEntity<PasskeyLoginChallengeResponseDTO> getPasskeyLoginChallenge(
-            @RequestBody @Valid PasskeyLoginChallengeRequestDTO request
-    ) {
-        PasskeyLoginChallengeResponseDTO response = loginService.generateLoginChallenge(request);
-        return ResponseEntity.ok(response);
-    }
-
 
     @Operation(
             summary = "Passkey 로그인",

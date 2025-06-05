@@ -63,9 +63,21 @@ public class SignUpController {
                     "사용자는 로그인된 상태여야 하며, 해당 challenge는 서버에 5분간 저장됩니다."
     )
     @GetMapping("/fido2/register/options")
-    public ResponseEntity<String> getFido2RegistrationChallenge(@RequestParam Long memberId) {
+    public ResponseEntity<String> getFido2RegistrationChallenge() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long memberId;
+        try {
+            memberId = Long.parseLong(auth.getName());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
         String challenge = signupService.generateFidoChallenge(memberId);
-        return ResponseEntity.ok(Base64.getEncoder().encodeToString(challenge.getBytes()));
+        return ResponseEntity.ok(challenge); // Base64 인코딩은 서비스 내부에서 처리되었는지 확인
     }
 
     @Operation(
@@ -98,7 +110,7 @@ public class SignUpController {
         return ResponseEntity.ok(exists);
     }
 
-    /**
+    /*
      * FIDO2 패스키 등록 검증 및 저장
      * @param credentialDTO 패스키 등록 정보
      * @param memberId 회원 ID
@@ -110,10 +122,21 @@ public class SignUpController {
                     "이 API는 FIDO2 패스키 등록 과정의 마지막 단계로, 클라이언트는 이 API를 호출하여 패스키를 등록해야 합니다."
     )
     @PostMapping("/fido2/register/verify")
-    public ResponseEntity<?> verifyAndRegisterFidoCredential(
-            @RequestBody PasskeyRequestDTO credentialDTO,
-            @RequestParam Long memberId) {
+    public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRequestDTO credentialDTO) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long memberId;
+        try {
+            memberId = Long.parseLong(auth.getName());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
         signupService.addFidoCredential(memberId, credentialDTO);
         return ResponseEntity.ok().build();
     }
+
 }
