@@ -20,28 +20,6 @@ create table member
     status                   enum ('ACTIVE', 'SUSPENDED', 'WITHDRAWN')                                                                                                                                                                                                                                                                                                                                   not null
 );
 
--- MEMBER_CREDIT_SUMMARY (회원 신용정보 산정 이력)
-create table member_credit_summary
-(
-    summary_id                 bigint auto_increment primary key,
-    application_id             bigint       not null,
-    calculated_at              datetime(6)  not null,                          -- 평가 시점
-    total_loan_count           int          not null default 0,                -- 보유 대출 건수
-    active_loan_count          int          not null default 0,                -- 현재 상환 중인 대출 건수
-    total_loan_balance         int          not null default 0,                -- 전체 대출 잔액
-    total_loan_overdue_30d     int          not null default 0,                -- 30일 이상 연체 건수
-    total_loan_overdue_90d     int          not null default 0,                -- 90일 이상 연체 건수
-    has_current_overdue        boolean      not null default false,            -- 현재 연체 여부
-    last_overdue_date          date         null,                              -- 최근 연체 발생일
-    comm_overdue_count         int          not null default 0,                -- 통신비 연체 건수
-    comm_overdue_max_days      int          not null default 0,                -- 통신비 최장 연체일수
-    utility_overdue_count      int          not null default 0,                -- 공과금 연체 건수
-    utility_overdue_max_days   int          not null default 0,                -- 공과금 최장 연체일수
-    credit_score               int          not null,                          -- 신용점수(산정 결과)
-    remark                     varchar(255) null,                              -- 비고
-    constraint FK_member_credit_summary_member foreign key (application_id) references loan_application (application_id)
-);
-
 -- LOAN_PRODUCT (대출 상품)
 create table loan_product
 (
@@ -73,6 +51,28 @@ create table loan_application
     constraint UK_loan_application_member unique (member_id),
     constraint FK_loan_application_member foreign key (member_id) references member (member_id),
     constraint FK_loan_application_product foreign key (product_id) references loan_product (product_id)
+);
+
+-- MEMBER_CREDIT_SUMMARY (회원 신용정보 산정 이력)
+create table member_credit_summary
+(
+    summary_id                 bigint auto_increment primary key,
+    application_id             bigint       not null,
+    calculated_at              datetime(6)  not null,                          -- 평가 시점
+    total_loan_count           int          not null default 0,                -- 보유 대출 건수
+    active_loan_count          int          not null default 0,                -- 현재 상환 중인 대출 건수
+    total_loan_balance         int          not null default 0,                -- 전체 대출 잔액
+    total_loan_overdue_30d     int          not null default 0,                -- 30일 이상 연체 건수
+    total_loan_overdue_90d     int          not null default 0,                -- 90일 이상 연체 건수
+    has_current_overdue        boolean      not null default false,            -- 현재 연체 여부
+    last_overdue_date          date         null,                              -- 최근 연체 발생일
+    comm_overdue_count         int          not null default 0,                -- 통신비 연체 건수
+    comm_overdue_max_days      int          not null default 0,                -- 통신비 최장 연체일수
+    utility_overdue_count      int          not null default 0,                -- 공과금 연체 건수
+    utility_overdue_max_days   int          not null default 0,                -- 공과금 최장 연체일수
+    credit_score               int          not null,                          -- 신용점수(산정 결과)
+    remark                     varchar(255) null,                              -- 비고
+    constraint FK_member_credit_summary_member foreign key (application_id) references loan_application (application_id)
 );
 
 -- FIDO_CREDENTIAL (패스키)
