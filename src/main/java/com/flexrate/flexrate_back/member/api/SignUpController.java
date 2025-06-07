@@ -1,7 +1,9 @@
 package com.flexrate.flexrate_back.member.api;
 
+import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.application.SignupService;
 import com.flexrate.flexrate_back.member.application.WebAuthnService;
+import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -14,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 /*
  * 회원가입 로그인 API 컨트롤러
@@ -28,6 +32,7 @@ public class SignUpController {
 
     private final SignupService signupService;
     private final WebAuthnService webAuthService;
+    private final MemberService memberService;
 
     /*
      * 회원가입
@@ -62,7 +67,7 @@ public class SignUpController {
                     "사용자는 로그인된 상태여야 하며, 해당 challenge는 서버에 5분간 저장됩니다."
     )
     @GetMapping("/fido2/register/options")
-    public ResponseEntity<String> getFido2RegistrationChallenge() {
+    public ResponseEntity<Fido2RegisterOptionsResponse> getFido2RegistrationChallenge() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -75,8 +80,15 @@ public class SignUpController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        String challenge = signupService.generateFidoChallenge(memberId);
-        return ResponseEntity.ok(challenge); // Base64 인코딩은 서비스 내부에서 처리되었는지 확인
+        Member member = memberService.findById(memberId);
+        if (member == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // WebAuthService에 있는 메서드 호출
+        Fido2RegisterOptionsResponse response = webAuthService.generateRegistrationOptions(member);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(

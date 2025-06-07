@@ -1,6 +1,10 @@
 package com.flexrate.flexrate_back.member.application;
 
+
+
+
 import com.fasterxml.jackson.databind.JsonNode;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.upokecenter.cbor.CBORObject;
 import com.upokecenter.cbor.CBORType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,25 +19,22 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
-import com.flexrate.flexrate_back.member.dto.PasskeyAuthenticationDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyLoginChallengeResponseDTO;
-import com.flexrate.flexrate_back.member.dto.PasskeyRegistrationRequest;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERSequence;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.io.IOException;
+import java.math.BigInteger;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -120,7 +121,7 @@ public class WebAuthnService {
             }
 
             String origin = clientData.get("origin").asText();
-            String expectedOrigin = "https://your.domain.com";
+            String expectedOrigin = "http://localhost:3000";
             if (!expectedOrigin.equals(origin)) {
                 throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
             }
@@ -164,18 +165,34 @@ public class WebAuthnService {
 
     public PasskeyRequestDTO parseAndBuildDTO(PasskeyRegistrationRequest request) {
         try {
+            log.debug("attestationObject (base64): {}", request.attestationObject());
+
             byte[] attestationObjectBytes = Base64.getDecoder().decode(request.attestationObject());
+            log.debug("attestationObjectBytes 길이: {}", attestationObjectBytes.length);
 
             CBORObject attestationObject = CBORObject.DecodeFromBytes(attestationObjectBytes);
-            CBORObject authDataObject = attestationObject.get("authData");
-            if (authDataObject == null || authDataObject.getType() != CBORType.ByteString) {
-                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+            log.debug("attestationObject: {}", attestationObject.toString());
 
+            CBORObject authDataObject = attestationObject.get("authData");
+            if (authDataObject == null) {
+                log.error("authDataObject가 null입니다.");
+                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+            }
+            log.debug("authDataObject 타입: {}", authDataObject.getType());
+
+            if (authDataObject.getType() != CBORType.ByteString) {
+                log.error("authDataObject 타입이 ByteString이 아닙니다: {}", authDataObject.getType());
+                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
             }
 
             byte[] authDataBytes = authDataObject.GetByteString();
+            log.debug("authDataBytes 길이: {}", authDataBytes.length);
+
             int signCount = extractSignCount(authDataBytes);
+            log.debug("signCount 추출값: {}", signCount);
+
             String publicKeyPem = extractPublicKey(authDataBytes);
+            log.debug("publicKeyPem: {}", publicKeyPem);
 
             return PasskeyRequestDTO.builder()
                     .credentialKey(request.credentialKey())
@@ -195,34 +212,37 @@ public class WebAuthnService {
 
     private String extractPublicKey(byte[] authDataBytes) {
         try {
-            int aaguidLength = 16;
-            int credIdLengthIndex = 53;
-            int credIdLength = ByteBuffer.wrap(authDataBytes, credIdLengthIndex, 2).getShort();
+            int index = 0;
 
-            int credIdStart = 55;
-            int pubKeyStart = credIdStart + credIdLength;
+            // rpIdHash (32 bytes)
+            index += 32;
 
-            byte[] pubKeyBytes = new byte[authDataBytes.length - pubKeyStart];
-            System.arraycopy(authDataBytes, pubKeyStart, pubKeyBytes, 0, pubKeyBytes.length);
+            // flags (1 byte)
+            index += 1;
 
-            CBORObject coseKey = CBORObject.DecodeFromBytes(pubKeyBytes);
+            // signCount (4 bytes)
+            index += 4;
 
-            byte[] x = coseKey.get(-2).GetByteString();
-            byte[] y = coseKey.get(-3).GetByteString();
+            // aaguid (16 bytes)
+            index += 16;
 
-            byte[] uncompressed = new byte[65];
-            uncompressed[0] = 0x04;
-            System.arraycopy(x, 0, uncompressed, 1, 32);
-            System.arraycopy(y, 0, uncompressed, 33, 32);
+            // credentialIdLength (2 bytes, unsigned big endian)
+            int credentialIdLength = ((authDataBytes[index] & 0xFF) << 8) | (authDataBytes[index + 1] & 0xFF);
+            index += 2;
 
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
-            PublicKey ecPublicKey = keyFactory.generatePublic(new X509EncodedKeySpec(uncompressed));
+            // credentialId
+            index += credentialIdLength;
 
-            return "-----BEGIN PUBLIC KEY-----\n" +
-                    Base64.getEncoder().encodeToString(ecPublicKey.getEncoded()) +
-                    "\n-----END PUBLIC KEY-----";
+            // credentialPublicKey (CBOR)
+            byte[] credentialPublicKeyBytes = Arrays.copyOfRange(authDataBytes, index, authDataBytes.length);
+
+            CBORObject publicKeyObject = CBORObject.DecodeFromBytes(credentialPublicKeyBytes);
+
+            // 이후 필요한 대로 publicKeyObject 파싱
+            return publicKeyObject.toString(); // 또는 PEM 변환 로직
 
         } catch (Exception e) {
+            log.error("extractPublicKey 실패", e);
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
     }
@@ -253,17 +273,20 @@ public class WebAuthnService {
             baos.write(clientDataHash);
             byte[] signedData = baos.toByteArray();
 
+            byte[] derSignature = convertRawSignatureToDER(signature);
+
             Signature sig = Signature.getInstance("SHA256withECDSA");
             sig.initVerify(publicKey);
             sig.update(signedData);
 
-            return sig.verify(signature);
+            return sig.verify(derSignature);
 
         } catch (Exception e) {
             log.error("Signature verification failed", e);
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
     }
+
 
     public PasskeyLoginChallengeResponseDTO generateLoginChallenge(Member member) {
         final String rpId = "localhost";
@@ -289,5 +312,47 @@ public class WebAuthnService {
         return challenge;
     }
 
+    public Fido2RegisterOptionsResponse generateRegistrationOptions(Member member) {
+        String challenge = generateChallenge(member.getMemberId()); // Redis에 저장됨
 
+        // userId 숫자를 base64url 인코딩된 문자열로 변환
+        String encodedUserId = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(BigInteger.valueOf(member.getMemberId()).toByteArray());
+
+        List<Fido2RegisterOptionsResponse.PubKeyCredParam> pubKeyCredParams = List.of(
+                new Fido2RegisterOptionsResponse.PubKeyCredParam("public-key", -7),     // ES256
+                new Fido2RegisterOptionsResponse.PubKeyCredParam("public-key", -257)    // RS256
+        );
+
+        return new Fido2RegisterOptionsResponse(
+                challenge,
+                new Fido2RegisterOptionsResponse.UserDto(
+                        encodedUserId,
+                        member.getEmail(),
+                        member.getName()
+                ),
+                new Fido2RegisterOptionsResponse.RpDto("localhost", "Flexrate"),
+                pubKeyCredParams,
+                60000L,
+                "none",
+                Map.of() // 확장 사용 안 함
+        );
+    }
+
+    private byte[] convertRawSignatureToDER(byte[] rawSignature) throws IOException {
+        if (rawSignature.length != 64) {
+            throw new IllegalArgumentException("Invalid raw signature length");
+        }
+
+        byte[] rBytes = Arrays.copyOfRange(rawSignature, 0, 32);
+        byte[] sBytes = Arrays.copyOfRange(rawSignature, 32, 64);
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(new BigInteger(1, rBytes)));
+        v.add(new ASN1Integer(new BigInteger(1, sBytes)));
+
+        DERSequence sequence = new DERSequence(v);
+        return sequence.getEncoded("DER");
+    }
 }

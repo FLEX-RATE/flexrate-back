@@ -11,10 +11,7 @@ import com.flexrate.flexrate_back.loan.enums.LoanType;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.FidoCredentialRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
-import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupPasswordRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import com.flexrate.flexrate_back.member.enums.MemberStatus;
 import com.flexrate.flexrate_back.member.enums.Role;
@@ -90,6 +87,13 @@ public class SignupService {
                 .userId(saved.getMemberId())
                 .email(saved.getEmail())
                 .build();
+    }
+
+
+    public MemberInfoDTO getMemberInfoById(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
+        return new MemberInfoDTO(member.getEmail(), member.getName());
     }
 
 

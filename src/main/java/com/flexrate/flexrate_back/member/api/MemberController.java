@@ -3,10 +3,8 @@ package com.flexrate.flexrate_back.member.api;
 import com.flexrate.flexrate_back.auth.resolver.CurrentMemberId;
 import com.flexrate.flexrate_back.loan.dto.MainPageResponse;
 import com.flexrate.flexrate_back.member.application.MemberService;
-import com.flexrate.flexrate_back.member.dto.ConsumeGoalResponse;
-import com.flexrate.flexrate_back.member.dto.CreditScoreStatusResponse;
-import com.flexrate.flexrate_back.member.dto.MypageResponse;
-import com.flexrate.flexrate_back.member.dto.MypageUpdateRequest;
+import com.flexrate.flexrate_back.member.application.SignupService;
+import com.flexrate.flexrate_back.member.dto.*;
 import com.flexrate.flexrate_back.member.enums.ConsumptionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/members")
 public class MemberController {
     private final MemberService memberService;
+    private final SignupService signupservice;
 
     /**
      * 메인페이지 조회
@@ -112,4 +111,24 @@ public class MemberController {
     public ResponseEntity<CreditScoreStatusResponse> getCreditScoreStatus(@CurrentMemberId Long memberId) {
         return ResponseEntity.ok(memberService.getCreditScoreStatus(memberId));
     }
+
+    /**
+     * 회원 기본 정보 조회 (이메일, 이름)
+     * @return MemberInfoDTO
+     * @since 2025.06.07
+     * @author 윤영찬
+     */
+    @Operation(summary = "회원 기본 정보 조회",
+            description = "회원의 이메일과 이름 정보를 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "회원 기본 정보 조회 성공"),
+                    @ApiResponse(responseCode = "404", description = "회원이 존재하지 않음")
+            })
+    @GetMapping("/{memberId}/info")
+    public ResponseEntity<MemberInfoDTO> getMemberInfo(@PathVariable Long memberId) {
+        MemberInfoDTO dto = signupservice.getMemberInfoById(memberId);
+        return ResponseEntity.ok(dto);
+    }
+
+
 }
