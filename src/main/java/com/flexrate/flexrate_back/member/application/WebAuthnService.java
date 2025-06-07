@@ -1,5 +1,7 @@
 package com.flexrate.flexrate_back.member.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.auth.domain.MfaLog;
 import com.flexrate.flexrate_back.auth.enums.AuthResult;
@@ -107,29 +109,54 @@ public class WebAuthnService {
         String redisKey = CHALLENGE_KEY_PREFIX + userId;
         String savedChallenge = redisUtil.get(redisKey);
 
-        if (savedChallenge == null || !savedChallenge.equals(challengeFromClient)) {
+        if (savedChallenge == null) {
             throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        redisUtil.delete(redisKey); // 인증 후 삭제
+        try {
+            // 1. clientDataJSON 디코딩 및 JSON 파싱
+            String clientDataJsonStr = new String(Base64.getDecoder().decode(passkeyData.clientDataJSON()));
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode clientData = mapper.readTree(clientDataJsonStr);
 
+            // 2. clientData 내부 challenge 추출 (Base64Url 인코딩 상태)
+            String challengeInClientData = clientData.get("challenge").asText();
+
+            // 3. Base64Url 디코딩 후 Redis challenge와 비교
+            String decodedChallengeInClientData = new String(Base64.getUrlDecoder().decode(challengeInClientData));
+            String decodedSavedChallenge = new String(Base64.getUrlDecoder().decode(savedChallenge));
+            if (!decodedChallengeInClientData.equals(decodedSavedChallenge)) {
+                throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
+            }
+
+            // 4. origin 검증 (필요시)
+            String origin = clientData.get("origin").asText();
+            String expectedOrigin = "https://your.domain.com";  // 실제 서비스 도메인으로 변경
+            if (!expectedOrigin.equals(origin)) {
+                throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
+            }
+
+        } catch (Exception e) {
+            throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS, e);
+        }
+
+        // challenge 검증 완료 후 Redis에서 삭제
+        redisUtil.delete(redisKey);
+
+        // FidoCredential 조회 및 활성화 여부 확인
         FidoCredential credential = fidoCredentialRepository.findByMember_MemberId(userId).stream()
                 .filter(FidoCredential::isActive)
                 .findFirst()
                 .orElseThrow(() -> new FlexrateException(ErrorCode.INVALID_CREDENTIALS));
 
         try {
+            // clientDataHash 계산 (SHA-256)
             byte[] clientDataHash = MessageDigest.getInstance("SHA-256")
                     .digest(Base64.getDecoder().decode(passkeyData.clientDataJSON()));
 
+            // authenticatorData, signature Base64 디코딩
             byte[] authenticatorData = Base64.getDecoder().decode(passkeyData.authenticatorData());
             byte[] signature = Base64.getDecoder().decode(passkeyData.signature());
-
-            // signedData = authenticatorData || clientDataHash
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(authenticatorData);
-            baos.write(clientDataHash);
-            byte[] signedData = baos.toByteArray();
 
             // 서명 검증
             boolean isVerified = verifySignature(credential.getPublicKey(), authenticatorData, clientDataHash, signature);
@@ -138,17 +165,17 @@ public class WebAuthnService {
                 throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
             }
 
-            // authenticatorData에서 signCount 추출 (authenticatorData[33~36], 4 bytes)
+            // signCount 추출 (authenticatorData[33~36], 4 bytes, big-endian)
             int signCountFromDevice = extractSignCount(authenticatorData);
 
-            // 저장된 값보다 크지 않으면 해커로 부터 재사용 공격 의심
+            // 재사용 공격 방지: 새로운 signCount가 기존보다 커야 함
             if (signCountFromDevice <= credential.getSignCount()) {
                 log.warn("Replay 공격 의심: memberId={}, credentialId={}, oldSignCount={}, newSignCount={}",
                         userId, credential.getCredentialId(), credential.getSignCount(), signCountFromDevice);
                 throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
             }
 
-            // 인증 성공 후 signCount, lastUsedDate 업데이트
+            // 성공 시 signCount, lastUsedDate 업데이트 후 저장
             credential.updateSignCountAndLastUsed(signCountFromDevice, LocalDateTime.now());
             fidoCredentialRepository.save(credential);
 
