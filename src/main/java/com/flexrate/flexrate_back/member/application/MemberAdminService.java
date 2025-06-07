@@ -148,9 +148,8 @@ public class MemberAdminService {
 
         LoanApplication app = memberQueryRepository.findLatestLoanApplication(memberId);
         Long tsCount = memberQueryRepository.countLoanTransactions(memberId);
-        float interestRate = memberQueryRepository.findLatestInterestRate(memberId);
 
-        log.info("대출/거래/이율 조회 성공 memberId={} loanAppId={}", memberId, app != null ? app.getApplicationId() : null);
+        log.info("대출/거래 조회 성공 memberId={} loanAppId={}", memberId, app != null ? app.getApplicationId() : null);
 
         boolean hasLoan = false;
         LocalDate startDate = null;
@@ -167,6 +166,8 @@ public class MemberAdminService {
         // app이 null이 아니고, 실행된 대출일 때만 계산
         if (app != null && LoanApplicationStatus.EXECUTED.equals(app.getStatus())) {
             hasLoan = true;
+
+            float interestRate = memberQueryRepository.findLatestInterestRate(memberId);
 
             // 날짜 처리
             if (app.getStartDate() != null) {
