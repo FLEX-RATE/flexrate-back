@@ -72,6 +72,19 @@ public class WebAuthnService {
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
+        byte[] clientDataJSONBytes = Base64.getDecoder().decode(passkeyDTO.clientDataJSON());
+        log.debug("clientDataJSON (decoded bytes): {}", Arrays.toString(clientDataJSONBytes));
+
+        byte[] clientDataHash = null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            clientDataHash = digest.digest(clientDataJSONBytes);
+            log.debug("clientDataJSON SHA-256 해시: {}", Arrays.toString(clientDataHash));
+        } catch (NoSuchAlgorithmException e) {
+            log.error("SHA-256 해시 생성 실패", e);
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
+        }
+
         boolean isValid = verifySignature(
                 passkeyDTO.publicKey(),
                 Base64.getDecoder().decode(passkeyDTO.authenticatorData()),
@@ -109,13 +122,22 @@ public class WebAuthnService {
         }
 
         try {
-            String clientDataJsonStr = new String(Base64.getDecoder().decode(passkeyData.clientDataJSON()));
+            String clientDataJsonStr = new String(Base64.getUrlDecoder().decode(passkeyData.clientDataJSON()));
+
+            System.out.println("clientDataJSON: " + passkeyData.clientDataJSON());
+            System.out.println("clientDataJsonStr: " + clientDataJsonStr);
+            System.out.println("savedChallenge: " + savedChallenge);
+
             ObjectMapper mapper = new ObjectMapper();
             JsonNode clientData = mapper.readTree(clientDataJsonStr);
 
             String challengeInClientData = clientData.get("challenge").asText();
             String decodedChallengeInClientData = new String(Base64.getUrlDecoder().decode(challengeInClientData));
             String decodedSavedChallenge = new String(Base64.getUrlDecoder().decode(savedChallenge));
+
+            System.out.println("decodedChallengeInClientData: " + decodedChallengeInClientData);
+            System.out.println("decodedSavedChallenge: " + decodedSavedChallenge);
+
             if (!decodedChallengeInClientData.equals(decodedSavedChallenge)) {
                 throw new FlexrateException(ErrorCode.INVALID_CREDENTIALS);
             }
@@ -178,7 +200,6 @@ public class WebAuthnService {
                 log.error("authDataObject가 null입니다.");
                 throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
             }
-            log.debug("authDataObject 타입: {}", authDataObject.getType());
 
             if (authDataObject.getType() != CBORType.ByteString) {
                 log.error("authDataObject 타입이 ByteString이 아닙니다: {}", authDataObject.getType());
@@ -195,10 +216,8 @@ public class WebAuthnService {
             log.debug("publicKeyPem: {}", publicKeyPem);
 
             return PasskeyRequestDTO.builder()
-                    .credentialKey(request.credentialKey())
-                    .authenticatorData(request.authenticatorData())
+                    .credentialKey(request.credentialId())
                     .clientDataJSON(request.clientDataJSON())
-                    .signature(request.signature())
                     .publicKey(publicKeyPem)
                     .signCount(signCount)
                     .deviceInfo(request.deviceInfo())
@@ -209,6 +228,7 @@ public class WebAuthnService {
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
     }
+
 
     private String extractPublicKey(byte[] authDataBytes) {
         try {

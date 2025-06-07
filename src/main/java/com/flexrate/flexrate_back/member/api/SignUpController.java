@@ -135,6 +135,8 @@ public class SignUpController {
     @PostMapping("/fido2/register/verify")
     public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRegistrationRequest request) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Received credentialId: " + request.credentialId());
+
         if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
