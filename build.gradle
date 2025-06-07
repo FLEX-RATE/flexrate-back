@@ -79,6 +79,7 @@ dependencies {
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.15.2'
 	implementation 'com.upokecenter:cbor:4.4.0' // CBOR 파싱 라이브러리
+	implementation 'com.webauthn4j:webauthn4j-core:0.21.0.RELEASE'
 }
 
 def querydslDir = "$buildDir/generated/querydsl"
