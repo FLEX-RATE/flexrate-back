@@ -34,6 +34,8 @@ public class ConsumptionReportApiClient {
     private static final String BASE_PROMPT = """
             아래는 특정 사용자의 소비 데이터입니다.
             소비 성향을 요약하고, 소비 목표에 맞춘 개선 방법을 제시해주세요.
+            소비 항목에 대한 단순 나열이 아니라,
+            줄글 형태로 이해하기 쉽게 요약해 주세요.
 
             소비 성향: %s
             소비 목표: %s
