@@ -1,10 +1,7 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.SignupService;
-import com.flexrate.flexrate_back.member.dto.AnalyzeConsumptionTypeResponse;
-import com.flexrate.flexrate_back.member.dto.PasskeyRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupPasswordRequestDTO;
-import com.flexrate.flexrate_back.member.dto.SignupResponseDTO;
+import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -122,7 +119,7 @@ public class SignUpController {
                     "이 API는 FIDO2 패스키 등록 과정의 마지막 단계로, 클라이언트는 이 API를 호출하여 패스키를 등록해야 합니다."
     )
     @PostMapping("/fido2/register/verify")
-    public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRequestDTO credentialDTO) {
+    public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRegistrationRequest request) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -135,8 +132,14 @@ public class SignUpController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        signupService.addFidoCredential(memberId, credentialDTO);
-        return ResponseEntity.ok().build();
+        try {
+            // attestationObject 파싱 → publicKey, signCount 등 추출
+            PasskeyRequestDTO credentialDTO = fido2Service.parseAndBuildDTO(request);
+            signupService.addFidoCredential(memberId, credentialDTO);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
 }
