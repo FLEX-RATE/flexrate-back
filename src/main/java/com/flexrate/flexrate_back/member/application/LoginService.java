@@ -62,24 +62,12 @@ public class LoginService {
     }
 
     public PasskeyLoginChallengeResponseDTO generateLoginChallenge(PasskeyLoginChallengeRequestDTO request) {
+        // 이메일로 멤버 조회
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new FlexrateException(ErrorCode.USER_NOT_FOUND));
 
-        String challenge = webAuthnService.generateChallenge(member.getMemberId());
-
-        List<FidoCredential> credentials = fidoCredentialRepository.findAllByMember_MemberIdAndIsActiveTrue(member.getMemberId());
-
-        List<String> allowedCredentialIds = credentials.stream()
-                .map(FidoCredential::getCredentialKey) // ← credentialId ❌ → credentialKey ✅
-                .toList();
-
-
-        return PasskeyLoginChallengeResponseDTO.builder()
-                .challenge(challenge)
-                .rpId("flexrate.com")
-                .userHandle(member.getMemberId().toString())
-                .allowedCredentialIds(allowedCredentialIds)
-                .build();
+        // WebAuthService의 challenge 생성 메서드 호출
+        return webAuthnService.generateLoginChallenge(member);
     }
 
 

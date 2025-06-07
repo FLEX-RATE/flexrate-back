@@ -7,6 +7,8 @@ public record PasskeyRegistrationRequest(
         String credentialKey,
         String attestationObject,
         String clientDataJSON,
+        String authenticatorData,  // 추가
+        String signature,
         String deviceInfo
 ) {
     @Builder

@@ -1,6 +1,7 @@
 package com.flexrate.flexrate_back.member.api;
 
 import com.flexrate.flexrate_back.member.application.SignupService;
+import com.flexrate.flexrate_back.member.application.WebAuthnService;
 import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ import java.util.Base64;
 public class SignUpController {
 
     private final SignupService signupService;
+    private final WebAuthnService webAuthService;
 
     /*
      * 회원가입
@@ -134,7 +136,7 @@ public class SignUpController {
 
         try {
             // attestationObject 파싱 → publicKey, signCount 등 추출
-            PasskeyRequestDTO credentialDTO = fido2Service.parseAndBuildDTO(request);
+            PasskeyRequestDTO credentialDTO = webAuthService.parseAndBuildDTO(request);
             signupService.addFidoCredential(memberId, credentialDTO);
             return ResponseEntity.ok().build();
         } catch (Exception e) {

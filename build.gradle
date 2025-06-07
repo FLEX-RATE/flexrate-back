@@ -24,6 +24,7 @@ repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/milestone" }
 	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://jitpack.io" }
 }
 
 ext {
@@ -74,6 +75,10 @@ dependencies {
 	// thymeleaf
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+	implementation 'com.webauthn4j:webauthn4j-core:0.18.0' // WebAuth 추가
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.15.2'
+	implementation 'com.upokecenter:cbor:4.4.0' // CBOR 파싱 라이브러리
 }
 
 def querydslDir = "$buildDir/generated/querydsl"
