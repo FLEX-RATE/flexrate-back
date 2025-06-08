@@ -1,12 +1,10 @@
 package com.flexrate.flexrate_back.member.application;
 
-
-
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.flexrate.flexrate_back.member.dto.*;
+import com.upokecenter.cbor.CBORException;
 import com.upokecenter.cbor.CBORObject;
-import com.upokecenter.cbor.CBORType;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flexrate.flexrate_back.auth.domain.FidoCredential;
 import com.flexrate.flexrate_back.auth.domain.MfaLog;
@@ -31,7 +29,7 @@ import java.math.BigInteger;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -65,6 +63,14 @@ public class WebAuthnService {
 
     @Transactional
     public void registerPasskey(Member member, PasskeyRequestDTO passkeyDTO) {
+        log.info("passkeyDTO credentialKey: {}", passkeyDTO.credentialKey());
+        log.info("passkeyDTO clientDataJSON: {}", passkeyDTO.clientDataJSON());
+        log.info("passkeyDTO authenticatorData: {}", passkeyDTO.authenticatorData());
+        log.info("passkeyDTO signature: {}", passkeyDTO.signature());
+        log.info("passkeyDTO publicKey: {}", passkeyDTO.publicKey());
+        log.info("passkeyDTO signCount: {}", passkeyDTO.signCount());
+
+
         log.info("패스키 등록 시도: memberId={}, credentialKey={}", member.getMemberId(), passkeyDTO.credentialKey());
 
         if (fidoCredentialRepository.existsByCredentialKey(passkeyDTO.credentialKey()) ||
@@ -72,7 +78,7 @@ public class WebAuthnService {
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
         }
 
-        byte[] clientDataJSONBytes = Base64.getDecoder().decode(passkeyDTO.clientDataJSON());
+        byte[] clientDataJSONBytes = Base64.getUrlDecoder().decode(passkeyDTO.clientDataJSON());
         log.debug("clientDataJSON (decoded bytes): {}", Arrays.toString(clientDataJSONBytes));
 
         byte[] clientDataHash = null;
@@ -85,11 +91,15 @@ public class WebAuthnService {
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
 
+        var decode = Base64.getUrlDecoder().decode(passkeyDTO.signature());
+
+        log.debug("signature decoded (length={}): {}", decode.length, Arrays.toString(decode));
+
         boolean isValid = verifySignature(
                 passkeyDTO.publicKey(),
-                Base64.getDecoder().decode(passkeyDTO.authenticatorData()),
-                Base64.getDecoder().decode(passkeyDTO.clientDataJSON()),
-                Base64.getDecoder().decode(passkeyDTO.signature())
+                Base64.getUrlDecoder().decode(passkeyDTO.authenticatorData()),
+                clientDataHash,
+                decode
         );
 
         if (!isValid) {
@@ -185,84 +195,71 @@ public class WebAuthnService {
         return Optional.of(credential);
     }
 
+
     public PasskeyRequestDTO parseAndBuildDTO(PasskeyRegistrationRequest request) {
         try {
-            log.debug("attestationObject (base64): {}", request.attestationObject());
+            log.warn("request.credentialId() is null? {}", request.credentialId() == null);
 
-            byte[] attestationObjectBytes = Base64.getDecoder().decode(request.attestationObject());
-            log.debug("attestationObjectBytes 길이: {}", attestationObjectBytes.length);
+            log.debug("=== [parseAndBuildDTO] 수신된 FIDO2 등록 요청 데이터 ===");
+            log.debug("credentialId: {}", request.credentialId());
+            log.debug("rawId: {}", request.rawId());
+            log.debug("clientDataJSON: {}", request.clientDataJSON());
+            log.debug("attestationObject: {}", request.attestationObject());
+            log.debug("deviceInfo: {}", request.deviceInfo());
+            log.debug("publicKey: {}", request.publicKey());
+            log.debug("signCount: {}", request.signCount());
+            log.debug("authenticatorData: {}", request.authenticatorData());
+            log.debug("signature: {}", request.signature());
 
-            CBORObject attestationObject = CBORObject.DecodeFromBytes(attestationObjectBytes);
-            log.debug("attestationObject: {}", attestationObject.toString());
 
-            CBORObject authDataObject = attestationObject.get("authData");
-            if (authDataObject == null) {
-                log.error("authDataObject가 null입니다.");
-                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
+            log.debug("요청받은 데이터: {}", request);
+
+            // URL-safe Base64를 일반 Base64로 변환
+            String attestationObjectBase64Url = request.attestationObject();
+            String attestationObjectBase64 = attestationObjectBase64Url.replace('_', '/').replace('-', '+');
+
+            // Base64 변환 후 길이가 4의 배수가 되지 않으면 패딩 추가
+            while (attestationObjectBase64.length() % 4 != 0) {
+                attestationObjectBase64 += "=";
             }
 
-            if (authDataObject.getType() != CBORType.ByteString) {
-                log.error("authDataObject 타입이 ByteString이 아닙니다: {}", authDataObject.getType());
-                throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED);
-            }
+            // 변환된 Base64 문자열 로그
+            log.debug("변환된 Base64 attestationObject: {}", attestationObjectBase64);
 
-            byte[] authDataBytes = authDataObject.GetByteString();
-            log.debug("authDataBytes 길이: {}", authDataBytes.length);
+            // Base64 디코딩
+            byte[] attestationObjectBytes = Base64.getUrlDecoder().decode(attestationObjectBase64Url);
+            log.debug("AttestationObject 바이트 길이: {}", attestationObjectBytes.length);
 
-            int signCount = extractSignCount(authDataBytes);
-            log.debug("signCount 추출값: {}", signCount);
+            byte[] authDataBytes = WebAuthnCborParser.extractAuthData(attestationObjectBytes);
+            log.debug("authData 바이트 길이: {}", authDataBytes.length);
 
-            String publicKeyPem = extractPublicKey(authDataBytes);
-            log.debug("publicKeyPem: {}", publicKeyPem);
+            // signCount 추출
+            long signCount = WebAuthnCborParser.extractSignCount(authDataBytes);
+            log.debug("signCount: {}", signCount);
 
+            // 공개 키 추출
+            byte[] publicKeyBytes = WebAuthnCborParser.extractCredentialPublicKeyBytes(authDataBytes);
+            String publicKeyPem = convertPublicKeyToPem(publicKeyBytes);
+            log.debug("공개 키 PEM: {}", publicKeyPem);
+
+            // DTO 생성
             return PasskeyRequestDTO.builder()
                     .credentialKey(request.credentialId())
                     .clientDataJSON(request.clientDataJSON())
                     .publicKey(publicKeyPem)
                     .signCount(signCount)
                     .deviceInfo(request.deviceInfo())
+                    .authenticatorData(request.authenticatorData())
+                    .signature(request.signature())
                     .build();
-
+        } catch (IllegalArgumentException e) {
+            log.error("Base64 디코딩 오류 또는 잘못된 데이터 형식", e);
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
+        } catch (CBORException e) {
+            log.error("파싱 오류", e);
+            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         } catch (Exception e) {
             log.error("parseAndBuildDTO 실패", e);
-            throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
-        }
-    }
-
-
-    private String extractPublicKey(byte[] authDataBytes) {
-        try {
-            int index = 0;
-
-            // rpIdHash (32 bytes)
-            index += 32;
-
-            // flags (1 byte)
-            index += 1;
-
-            // signCount (4 bytes)
-            index += 4;
-
-            // aaguid (16 bytes)
-            index += 16;
-
-            // credentialIdLength (2 bytes, unsigned big endian)
-            int credentialIdLength = ((authDataBytes[index] & 0xFF) << 8) | (authDataBytes[index + 1] & 0xFF);
-            index += 2;
-
-            // credentialId
-            index += credentialIdLength;
-
-            // credentialPublicKey (CBOR)
-            byte[] credentialPublicKeyBytes = Arrays.copyOfRange(authDataBytes, index, authDataBytes.length);
-
-            CBORObject publicKeyObject = CBORObject.DecodeFromBytes(credentialPublicKeyBytes);
-
-            // 이후 필요한 대로 publicKeyObject 파싱
-            return publicKeyObject.toString(); // 또는 PEM 변환 로직
-
-        } catch (Exception e) {
-            log.error("extractPublicKey 실패", e);
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
         }
     }
@@ -279,6 +276,7 @@ public class WebAuthnService {
 
     private boolean verifySignature(String pemPublicKey, byte[] authenticatorData, byte[] clientDataHash, byte[] signature) {
         try {
+            // 1. PEM → PublicKey 객체로 변환
             String publicKeyPEM = pemPublicKey
                     .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace("-----END PUBLIC KEY-----", "")
@@ -288,22 +286,49 @@ public class WebAuthnService {
             KeyFactory keyFactory = KeyFactory.getInstance("EC");
             PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyBytes));
 
+            // 2. signedData = authenticatorData || clientDataHash
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(authenticatorData);
             baos.write(clientDataHash);
             byte[] signedData = baos.toByteArray();
 
-            byte[] derSignature = convertRawSignatureToDER(signature);
+            // 3. 서명(raw r||s)을 DER 인코딩 형식으로 변환
+            byte[] derEncodedSignature = convertRawEcdsaSignatureToDer(signature);
 
-            Signature sig = Signature.getInstance("SHA256withECDSA");
-            sig.initVerify(publicKey);
-            sig.update(signedData);
+            // 4. 서명 검증
+            Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA");
+            ecdsaVerify.initVerify(publicKey);
+            ecdsaVerify.update(signedData);
 
-            return sig.verify(derSignature);
+            return ecdsaVerify.verify(derEncodedSignature);
 
         } catch (Exception e) {
-            log.error("Signature verification failed", e);
+            log.error("서명 검증실패", e);
             throw new FlexrateException(ErrorCode.PASSKEY_AUTH_FAILED, e);
+        }
+    }
+
+    // helper 메서드: raw (r||s) → ASN.1 DER
+    private byte[] convertRawEcdsaSignatureToDer(byte[] rawSignature) {
+        if (rawSignature.length != 64) {
+            throw new IllegalArgumentException("Invalid raw ECDSA signature length");
+        }
+
+        byte[] rBytes = Arrays.copyOfRange(rawSignature, 0, 32);
+        byte[] sBytes = Arrays.copyOfRange(rawSignature, 32, 64);
+
+        BigInteger r = new BigInteger(1, rBytes);
+        BigInteger s = new BigInteger(1, sBytes);
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(r));
+        v.add(new ASN1Integer(s));
+        DERSequence seq = new DERSequence(v);
+
+        try {
+            return seq.getEncoded();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to encode DER sequence", e);
         }
     }
 
@@ -374,5 +399,60 @@ public class WebAuthnService {
 
         DERSequence sequence = new DERSequence(v);
         return sequence.getEncoded("DER");
+    }
+
+    public String convertPublicKeyToPem(byte[] publicKeyBytes) throws Exception {
+        try {
+            // RSA도 아니면 COSE 포맷으로 간주
+            CBORObject coseKey = CBORObject.DecodeFromBytes(publicKeyBytes);
+            System.out.println("COSE Key 구조: " + coseKey.toString());
+
+
+            // alg (3번 키) 검증: -7 (ES256)인 경우만 처리
+            int alg = coseKey.get(CBORObject.FromObject(3)).AsInt32();
+            if (alg != -7) {
+                throw new IllegalArgumentException("지원하지 않는 알고리즘: " + alg);
+            }
+                // x y 값 좌표 추출
+                byte[] x = coseKey.get(CBORObject.FromObject(-2)).GetByteString();
+                byte[] y = coseKey.get(CBORObject.FromObject(-3)).GetByteString();
+
+                // ECParameterSpec 가져오기 (NIST P-256)
+                AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC");
+                parameters.init(new ECGenParameterSpec("secp256r1"));
+                ECParameterSpec ecSpec = parameters.getParameterSpec(ECParameterSpec.class);
+
+                // ECPoint 및 공개키 생성
+                ECPoint ecPoint = new ECPoint(new BigInteger(1, x), new BigInteger(1, y));
+                ECPublicKeySpec ecPubSpec = new ECPublicKeySpec(ecPoint, ecSpec);
+                KeyFactory kf = KeyFactory.getInstance("EC");
+                PublicKey publicKey = kf.generatePublic(ecPubSpec);
+
+                // 공개키를 PEM 변환
+            return convertToPem(publicKey);
+        } catch(Exception e2){
+            System.out.println("COSE decode 실패. publicKeyBytes (hex): " + bytesToHex(publicKeyBytes));
+            throw new IllegalArgumentException("지원하지 않는 공개키 포맷입니다.", e2);
+        }
+    }
+
+    private String convertToPem(PublicKey publicKey) {
+        String base64Encoded = Base64.getEncoder().encodeToString(publicKey.getEncoded());
+        StringBuilder pemBuilder = new StringBuilder();
+        pemBuilder.append("-----BEGIN PUBLIC KEY-----\n");
+        for (int i = 0; i < base64Encoded.length(); i += 64) {
+            int end = Math.min(i + 64, base64Encoded.length());
+            pemBuilder.append(base64Encoded, i, end).append("\n");
+        }
+        pemBuilder.append("-----END PUBLIC KEY-----");
+        return pemBuilder.toString();
+    }
+
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder();
+        for (byte b : bytes) {
+            hex.append(String.format("%02X", b));
+        }
+        return hex.toString();
     }
 }

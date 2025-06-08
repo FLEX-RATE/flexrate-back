@@ -6,6 +6,7 @@ import com.flexrate.flexrate_back.member.application.WebAuthnService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
  * 회원가입 로그인 API 컨트롤러
@@ -133,7 +138,17 @@ public class SignUpController {
                     "이 API는 FIDO2 패스키 등록 과정의 마지막 단계로, 클라이언트는 이 API를 호출하여 패스키를 등록해야 합니다."
     )
     @PostMapping("/fido2/register/verify")
-    public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRegistrationRequest request) {
+    public ResponseEntity<?> verifyAndRegisterFidoCredential(@RequestBody PasskeyRegistrationRequest request, HttpServletRequest httpRequest) throws IOException {
+        System.out.println("Request credentialId: " + request.credentialId());
+        System.out.println("Request rawId: " + request.rawId());
+        System.out.println("Request clientDataJSON: " + request.clientDataJSON());
+        System.out.println("Request attestationObject: " + request.attestationObject());
+        System.out.println("Request authenticatorData: " + request.authenticatorData());
+        System.out.println("Request signature: " + request.signature());
+        System.out.println("Request signCount: " + request.signCount());
+        System.out.println("Request deviceInfo: " + request.deviceInfo());
+        System.out.println("Request publicKey: " + request.publicKey());
+
         var auth = SecurityContextHolder.getContext().getAuthentication();
         System.out.println("Received credentialId: " + request.credentialId());
 
