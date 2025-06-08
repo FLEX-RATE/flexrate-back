@@ -50,6 +50,28 @@ public class UserFinancialDataService {
         log.info("LoanApplication 조회 완료: applicationId={}", loanApplication.getApplicationId());
         log.info("현재 LoanApplication의 신용점수: {}", loanApplication.getCreditScore());
 
+        // 기존 신용점수가 있는지 확인
+        Integer existingCreditScore = loanApplication.getCreditScore();
+        if (existingCreditScore != null && existingCreditScore > 0) {
+            log.info("=== 기존 신용점수 존재 ===");
+            log.info("기존 신용점수: {}", existingCreditScore);
+
+            // -2 ~ +2 범위의 랜덤 변동값 생성 (기본값 500 유지)
+            int variation = getRandomInt(-2, 2);
+            int updatedScore = Math.max(500, Math.min(existingCreditScore + variation, 1000));
+
+            log.info("변동값: {}, 업데이트된 점수: {}", variation, updatedScore);
+
+            loanApplication.patchCreditScore(updatedScore);
+            log.info("LoanApplication 신용점수 업데이트 완료: {}", updatedScore);
+
+            member.updateCreditScoreEvaluated(true);
+            log.info("Member creditScoreEvaluated 업데이트 완료");
+
+            log.info("=== 기존 신용점수 기반 간단 업데이트 완료 ===");
+            return updatedScore;
+        }
+
         List<UserFinancialData> financialDataList = member.getFinancialData();
 
         // 평가 요소별 랜덤 값 생성 (기준 반영)
