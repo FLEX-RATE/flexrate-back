@@ -11,11 +11,11 @@ FLEXRATE는 국내 최초로 고객의 소비 패턴을 자체 AI가 분석하�
 ## 🧑‍💻 기여자  
 | 이름     | Github 프로필     | 역할                         |
 |----------|------------------|-----------------------------|
-| 유승한   | [mjgwon24](https://github.com/mjgwon24) | PM, Backend, AI                      |
+| 유승한   | [ryuseunghan](https://github.com/ryuseunghan) | PM, Backend, AI                      |
 | 권민지   | [mjgwon24](https://github.com/mjgwon24) | Backend 팀장, Frontend, Infra          |
-| 서채연   | [mjgwon24](https://github.com/mjgwon24) | Frontend 팀장, Backend, QA            |
-| 허연규   | [mjgwon24](https://github.com/mjgwon24) | Backend, Frontend, 정책 문서       |
-| 윤영찬   | [mjgwon24](https://github.com/mjgwon24) | Backend    |
+| 서채연   | [seocylucky](https://github.com/seocylucky) | Frontend 팀장, Backend, QA            |
+| 허연규   | [HeoYeonGyu](https://github.com/HeoYeonGyu) | Backend, Frontend, 정책 문서       |
+| 윤영찬   | [yyc0026](https://github.com/yyc0026) | Backend    |
 
 ---
 
