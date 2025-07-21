@@ -27,7 +27,8 @@ FLEXRATE는 국내 최초로 고객의 소비 패턴을 자체 AI가 분석하�
 ## 🛠️ 기술 스택 및 서비스 아키텍처
 ![image](https://github.com/user-attachments/assets/22b83a5f-e37e-450d-9744-2b74daabde20)
 
-![image](https://github.com/user-attachments/assets/e0bc6c63-25f1-43fd-ab1b-167ced4e1333)
+![image](https://github.com/user-attachments/assets/6d0288cb-1239-4e0e-aa03-93d688e5a800)
+
 
 ---
 
