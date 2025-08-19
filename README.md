@@ -32,6 +32,11 @@ FLEXRATE는 국내 최초로 고객의 소비 패턴을 자체 AI가 분석하�
 
 ---
 
+## 📋 ERD
+<img width="1411" height="759" alt="image" src="https://github.com/user-attachments/assets/fe51200d-b937-4b2b-a91a-34df12f0cb29" />
+
+---
+
 ## 🗒️ flexrate만의 신용 점수 및 우대 금리 평가 지표
 ![image](https://github.com/user-attachments/assets/7f633118-44ae-4673-b42b-0f726e541a5b)
 ![image](https://github.com/user-attachments/assets/890fc886-9e70-4e7d-a129-eba398bb1e2b)
