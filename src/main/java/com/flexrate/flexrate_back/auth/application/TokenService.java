@@ -8,7 +8,11 @@ import com.flexrate.flexrate_back.common.util.StringRedisUtil;
 import com.flexrate.flexrate_back.member.application.MemberService;
 import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -20,11 +24,10 @@ import static com.flexrate.flexrate_back.member.domain.QMember.member;
 public class TokenService {
     private final JwtTokenProvider tokenProvider;
     private final MemberService memberService;
-    private final RefreshTokenService refreshTokenService;
     private final StringRedisUtil redisUtil;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final MemberRepository memberRepository;
-    private final StringRedisUtil stringRedisUtil;
+
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
 
     /**
      * 리프레쉬 토큰으로 액세스 토큰 재발급
@@ -35,7 +38,7 @@ public class TokenService {
      * @since 2025.05.01
      * @author 유승한
      */
-    public String createNewAccessToken(String refreshToken) {
+    public String createNewAccessToken(String refreshToken, HttpServletResponse response) {
         // 1. JWT 유효성 검사
         if (!tokenProvider.validToken(refreshToken)) {
             throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
@@ -49,10 +52,23 @@ public class TokenService {
             throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 3. Member 엔티티 조회 및 새 accessToken 생성
+        // 3. Member 엔티티 조회
         Long memberId = Long.parseLong(memberIdStr);
         Member member = memberService.findById(memberId);
 
-        return tokenProvider.generateToken(member, Duration.ofHours(2));
+        // 4. 새로운 accessToken 생성
+        String newAccessToken = tokenProvider.generateAccessToken(member, Duration.ofHours(2));
+
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", newAccessToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(2 * 60 * 60)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+
+        return newAccessToken;
     }
 }

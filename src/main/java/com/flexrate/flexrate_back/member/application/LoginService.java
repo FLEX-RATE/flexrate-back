@@ -12,6 +12,7 @@ import com.flexrate.flexrate_back.member.domain.Member;
 import com.flexrate.flexrate_back.member.domain.repository.MemberRepository;
 import com.flexrate.flexrate_back.member.domain.repository.MfaLogRepository;
 import com.flexrate.flexrate_back.member.dto.*;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +33,7 @@ public class LoginService {
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisUtil stringRedisUtil;
 
-    public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request) {
+    public LoginResponseDTO loginWithPassword(PasswordLoginRequestDTO request, HttpServletResponse response) {
         log.info("로그인 시도: email={}", request.email());
 
         Member member = memberRepository.findByEmail(request.email())
@@ -43,8 +44,8 @@ public class LoginService {
 
         authenticateWithPassword(request, member);
 
-        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));  // 2시간 만료
-        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
+        String accessToken  = jwtTokenProvider.generateAccessToken(member, Duration.ofHours(2));
+        String refreshToken = jwtTokenProvider.generateRefreshToken(member, Duration.ofDays(7));
         String redisKey = "refreshToken:" + refreshToken;
         stringRedisUtil.set(redisKey, String.valueOf(member.getMemberId()), Duration.ofSeconds(60));
 
@@ -59,7 +60,7 @@ public class LoginService {
                 .build();
     }
 
-    public LoginResponseDTO loginWithPasskey(PasskeyLoginRequestDTO request) {
+    public LoginResponseDTO loginWithPasskey(PasskeyLoginRequestDTO request, HttpServletResponse response) {
         log.info("Passkey 로그인 시도 email={}", request.email());
 
         Member member = memberRepository.findByEmail(request.email())
@@ -79,8 +80,8 @@ public class LoginService {
         });
 
         // JWT 발급
-        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));  // 2시간 만료
-        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));  // 7일 만료
+        String accessToken  = jwtTokenProvider.generateAccessToken(member, Duration.ofHours(2));
+        String refreshToken = jwtTokenProvider.generateRefreshToken(member, Duration.ofDays(7));
         log.info("JWT 토큰 발급 완료 userId={}", member.getMemberId());
 
         // Redis 저장
@@ -109,7 +110,7 @@ public class LoginService {
                 .build();
     }
 
-    public LoginResponseDTO loginWithMFA(MfaLoginRequestDTO request) {
+    public LoginResponseDTO loginWithMFA(MfaLoginRequestDTO request, HttpServletResponse response) {
         log.info("MFA 로그인 시도 memberId={}", request.memberId());
 
         // 사용자 존재 여부 확인
@@ -133,8 +134,8 @@ public class LoginService {
                 });
 
         // 인증 성공 → 토큰 발급
-        String accessToken = jwtTokenProvider.generateToken(member, Duration.ofHours(2));
-        String refreshToken = jwtTokenProvider.generateToken(member, Duration.ofDays(7));
+        String accessToken  = jwtTokenProvider.generateAccessToken(member, Duration.ofHours(2));
+        String refreshToken = jwtTokenProvider.generateRefreshToken(member, Duration.ofDays(7));
         log.info("JWT 토큰 발급 완료 userId={}", member.getMemberId());
 
         String redisKey = "refreshToken:" + refreshToken;
