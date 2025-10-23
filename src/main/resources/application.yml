@@ -99,3 +99,5 @@ openai:
 
 cookie:
   secure: false
+  same-site: Lax
+  domain: ""
