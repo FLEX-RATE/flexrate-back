@@ -15,7 +15,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +44,9 @@ public class TestTokenApiController {
     @PostMapping("/auth/generate-dev-token")
     public ResponseEntity<CreateAccessTokenResponse> generateDevToken(
             @RequestParam(defaultValue = "1") Long memberId,
-            @RequestParam(defaultValue = "MEMBER") Role role) {
+            @RequestParam(defaultValue = "MEMBER") Role role,
+            HttpServletResponse response
+    ) {
 
         Member fakeMember = Member.builder()
                 .memberId(memberId)
@@ -56,7 +61,17 @@ public class TestTokenApiController {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        String token = jwtTokenProvider.generateToken(fakeMember, Duration.ofHours(1));
+        String token = jwtTokenProvider.generateAccessToken(fakeMember, Duration.ofHours(1));
+
+        ResponseCookie devCookie = ResponseCookie.from("access_token", token)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(60 * 60)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, devCookie.toString());
 
         return ResponseEntity.ok(new CreateAccessTokenResponse(token));
     }

@@ -34,18 +34,17 @@ public class LoginController {
             @RequestBody @Valid PasswordLoginRequestDTO request,
             HttpServletResponse response
     ) {
-        LoginResponseDTO loginResponse = loginService.loginWithPassword(request);
+        LoginResponseDTO loginResponse = loginService.loginWithPassword(request, response);
 
-        String refreshToken = loginResponse.refreshToken();
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", loginResponse.refreshToken())
+                .httpOnly(true).secure(cookieSecure).path("/").sameSite("Lax").build();
 
-        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .path("/")
-                .sameSite("Lax")
-                .build();
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", loginResponse.accessToken())
+                .httpOnly(true).secure(cookieSecure).path("/").sameSite("Strict")
+                .maxAge(60 * 60 * 2).build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
         return ResponseEntity.ok(loginResponse);
     }
@@ -56,9 +55,9 @@ public class LoginController {
             description = "Passkey를 사용하여 로그인합니다."
     )
     @PostMapping("/login/passkey")
-    public ResponseEntity<LoginResponseDTO> loginWithPasskey(@RequestBody @Valid PasskeyLoginRequestDTO request) {
-        LoginResponseDTO response = loginService.loginWithPasskey(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponseDTO> loginWithPasskey(@RequestBody @Valid PasskeyLoginRequestDTO request, HttpServletResponse response) {
+        LoginResponseDTO loginResponse = loginService.loginWithPasskey(request, response);
+        return ResponseEntity.ok(loginResponse);
     }
 
     @Operation(
@@ -66,30 +65,34 @@ public class LoginController {
             description = "다중 인증(MFA)을 사용하여 로그인합니다."
     )
     @PostMapping("/login/mfa")
-    public ResponseEntity<LoginResponseDTO> loginWithMfa(@RequestBody @Valid MfaLoginRequestDTO request) {
-        LoginResponseDTO response = loginService.loginWithMFA(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponseDTO> loginWithMfa(@RequestBody @Valid MfaLoginRequestDTO request, HttpServletResponse response) {
+        LoginResponseDTO loginResponse = loginService.loginWithMFA(request, response);
+        return ResponseEntity.ok(loginResponse);
     }
 
     @Operation(
             summary = "로그아웃",
             description = "로그인된 사용자의 로그아웃을 처리하며, refreshToken을 삭제합니다."
     )
+
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@CookieValue(value = "refresh_token") String refreshToken, HttpServletResponse response) {
-
-        if(refreshToken != null) {
+    public ResponseEntity<String> logout(
+            @CookieValue(value = "refresh_token", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
+        if (refreshToken != null) {
             loginService.logout(refreshToken);
-
-            ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
-                    .httpOnly(true)
-                    .secure(cookieSecure)
-                    .path("/")
-                    .maxAge(0)
-                    .build();
-
-            response.setHeader("Set-Cookie", deleteCookie.toString());
         }
+
+        ResponseCookie delRefresh = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true).secure(cookieSecure).path("/").maxAge(0).sameSite("Lax").build();
+        ResponseCookie delAccess  = ResponseCookie.from("access_token", "")
+                .httpOnly(true).secure(cookieSecure).path("/").maxAge(0).sameSite("Lax").build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, delRefresh.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, delAccess.toString());
+
         return ResponseEntity.ok("로그아웃");
     }
+
 }

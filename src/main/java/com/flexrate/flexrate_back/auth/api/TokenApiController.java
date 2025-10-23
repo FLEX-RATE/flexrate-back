@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,12 +48,12 @@ public class TokenApiController {
             }
     )
     @PostMapping("/token")
-    public ResponseEntity<CreateAccessTokenResponse> createNewAccessToken(@CookieValue(value = "refresh_token", required = false) String refreshToken){
+    public ResponseEntity<CreateAccessTokenResponse> createNewAccessToken(@CookieValue(value = "refresh_token", required = false) String refreshToken, HttpServletResponse response){
         if (refreshToken == null) {
             throw new FlexrateException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        String newAccessToken = tokenService.createNewAccessToken(refreshToken);
+        String newAccessToken = tokenService.createNewAccessToken(refreshToken, response);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateAccessTokenResponse(newAccessToken));
     }

@@ -5,7 +5,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,9 +24,12 @@ import java.util.Set;
 public class JwtTokenProvider {
     private final JwtProperties jwtProperties;
 
-    public String generateToken(Member member, Duration expiredAt) {
-        Date now = new Date();
-        return makeToken(new Date(now.getTime() + expiredAt.toMillis()), member);
+    public String generateAccessToken(Member member, Duration expiresIn) {
+        return makeToken(new Date(System.currentTimeMillis() + expiresIn.toMillis()), member);
+    }
+
+    public String generateRefreshToken(Member member, Duration expiresIn) {
+        return makeToken(new Date(System.currentTimeMillis() + expiresIn.toMillis()), member);
     }
     /**
      * JWT 토큰을 생성하는 메서드이다.
@@ -33,17 +39,27 @@ public class JwtTokenProvider {
      */
     private String makeToken(Date expiry, Member member) {
         Date now = new Date();
-
         return Jwts.builder()
-                .setHeaderParam(Header.TYPE, Header.JWT_TYPE) //헤더 타입 : jwt
+                .setHeaderParam(Header.TYPE, Header.JWT_TYPE)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .setSubject(String.valueOf(member.getMemberId()))
                 .claim("id", member.getMemberId())
                 .claim("role", member.getRole().name())
-                // 서명 : 시크릿 키와 함께 해시값을 hs256 방식으로 암호화
                 .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecretKey())
                 .compact();
+    }
+
+    private void setAccessTokenCookie(String accessToken, HttpServletResponse response) {
+        ResponseCookie accessTokenCookie = ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(60 * 60 * 2)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
     }
 
     public boolean validToken(String token) {
@@ -56,6 +72,7 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
     // 토큰 기반으로 인증 정보를 가져오는 메서드
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
@@ -70,7 +87,6 @@ public class JwtTokenProvider {
         return claims.get("id", Long.class);
     }
 
-    //
     private Claims getClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(jwtProperties.getSecretKey())
